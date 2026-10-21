@@ -77,7 +77,7 @@ export interface QuizSeed { quiz: Quiz; questions: Q[] }
 
 export const QUIZZES: QuizSeed[] = [
   {
-    quiz: { id: 1, title: 'Từ vựng B1 — Tuần 3', level: 'B1', questionCount: 5, timeLimit: 10, category: 'Vocabulary', status: 'ACTIVE' },
+    quiz: { id: 1, title: 'Business English Essentials', level: 'B1', questionCount: 5, timeLimit: 10, category: 'Business', status: 'ACTIVE' },
     questions: [
       { id: 101, content: '"ability" có nghĩa là gì?', options: ['khả năng', 'sự sợ hãi', 'cơ hội', 'thói quen'], correct: 0 },
       { id: 102, content: 'Chọn từ đồng nghĩa với "grateful":', options: ['angry', 'thankful', 'tired', 'lonely'], correct: 1 },
@@ -87,7 +87,7 @@ export const QUIZZES: QuizSeed[] = [
     ],
   },
   {
-    quiz: { id: 2, title: 'Ngữ pháp cơ bản — Thì quá khứ', level: 'A2', questionCount: 5, timeLimit: 10, category: 'Grammar', status: 'ACTIVE' },
+    quiz: { id: 2, title: 'Travel & Tourism Vocabulary', level: 'A2', questionCount: 5, timeLimit: 10, category: 'Travel', status: 'ACTIVE' },
     questions: [
       { id: 201, content: 'She ___ to Da Lat last summer.', options: ['go', 'goes', 'went', 'going'], correct: 2 },
       { id: 202, content: 'They ___ football yesterday.', options: ['played', 'play', 'playing', 'plays'], correct: 0 },
@@ -97,13 +97,33 @@ export const QUIZZES: QuizSeed[] = [
     ],
   },
   {
-    quiz: { id: 3, title: 'Từ vựng B2 — Tính từ', level: 'B2', questionCount: 5, timeLimit: 10, category: 'Vocabulary', status: 'ACTIVE' },
+    quiz: { id: 3, title: 'Information Technology & Computing', level: 'B2', questionCount: 5, timeLimit: 12, category: 'Technology', status: 'ACTIVE' },
     questions: [
       { id: 301, content: '"resilient" có nghĩa là gì?', options: ['kiên cường', 'lười biếng', 'ồn ào', 'mờ nhạt'], correct: 0 },
       { id: 302, content: 'Từ trái nghĩa với "ancient":', options: ['old', 'modern', 'brave', 'bright'], correct: 1 },
       { id: 303, content: 'Điền từ: "This method is very ___. It saves us hours."', options: ['efficient', 'lonely', 'ancient', 'humble'], correct: 0 },
       { id: 304, content: '"eager" gần nghĩa nhất với:', options: ['háo hức', 'mệt mỏi', 'tức giận', 'buồn ngủ'], correct: 0 },
       { id: 305, content: 'Chọn từ đúng: "Water is ___ for life."', options: ['essential', 'curious', 'patient', 'proud'], correct: 0 },
+    ],
+  },
+  {
+    quiz: { id: 6, title: 'Daily Communication & Basic Words', level: 'A1', questionCount: 5, timeLimit: 8, category: 'Everyday Life', status: 'ACTIVE' },
+    questions: [
+      { id: 601, content: 'When meeting someone in the morning, say: "Good ___!"', options: ['night', 'morning', 'bye', 'luck'], correct: 1 },
+      { id: 602, content: 'My mother\'s brother is my ___.', options: ['aunt', 'cousin', 'uncle', 'nephew'], correct: 2 },
+      { id: 603, content: 'I have coffee and bread for ___ at 7:00 AM.', options: ['dinner', 'lunch', 'breakfast', 'supper'], correct: 2 },
+      { id: 604, content: 'Can you speak slowly? I am still ___ English.', options: ['teaching', 'learning', 'selling', 'forgetting'], correct: 1 },
+      { id: 605, content: 'Today is Monday, tomorrow will be ___.', options: ['Tuesday', 'Wednesday', 'Friday', 'Sunday'], correct: 0 },
+    ],
+  },
+  {
+    quiz: { id: 21, title: 'Academic Research & Critical Epistemology', level: 'C1', questionCount: 5, timeLimit: 15, category: 'Education', status: 'ACTIVE' },
+    questions: [
+      { id: 2101, content: 'The scholar presented an ___ critique challenging orthodox theories.', options: ['incisive', 'indolent', 'inept', 'insipid'], correct: 0 },
+      { id: 2102, content: 'Scholarly papers must delineate their methodological ___.', options: ['glories', 'limitations', 'triumphs', 'fantasies'], correct: 1 },
+      { id: 2103, content: 'Academic arguments require ___ substantiated evidence.', options: ['empirically', 'randomly', 'superficially', 'emotionally'], correct: 0 },
+      { id: 2104, content: 'The thesis synthesized two seemingly ___ paradigms.', options: ['incompatible', 'identical', 'synonymous', 'redundant'], correct: 0 },
+      { id: 2105, content: 'Peer review safeguards epistemological ___ and ethics.', options: ['integrity', 'deception', 'falsification', 'plagiarism'], correct: 0 },
     ],
   },
 ];

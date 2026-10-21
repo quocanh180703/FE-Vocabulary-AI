@@ -22,7 +22,9 @@ export default function Login() {
     try {
       if (mode === 'login') {
         const { data } = await authApi.login({ emailOrUsername: id, password: pw });
-        login(data.user, data.accessToken, data.refreshToken);
+        const access = data.accessToken || data.access_token || '';
+        const refresh = data.refreshToken || data.refresh_token || '';
+        login(data.user, access, refresh);
         nav('/');
       } else {
         await authApi.validate({ email, username, fullName, password: pw });
@@ -33,7 +35,35 @@ export default function Login() {
   };
 
   return (
-    <div className="auth-wrap">
+    <div className="auth-wrap" style={{ position: 'relative' }}>
+      <button
+        type="button"
+        onClick={() => nav('/landing')}
+        title="Về trang giới thiệu (Landing Page)"
+        style={{
+          position: 'absolute',
+          top: 18,
+          left: 18,
+          zIndex: 50,
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: 6,
+          padding: '7px 14px',
+          borderRadius: 99,
+          background: 'rgba(255, 255, 255, 0.92)',
+          backdropFilter: 'blur(8px)',
+          border: '1px solid #E2E8F0',
+          color: '#334155',
+          fontSize: 13,
+          fontWeight: 700,
+          cursor: 'pointer',
+          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06)',
+          transition: 'all 0.18s ease',
+        }}
+      >
+        <Icon n="home" s={16} />
+        <span>Trang chủ</span>
+      </button>
       <div className="auth-left">
         <Mascot s={120} />
         <h1>VocabularyAI</h1>

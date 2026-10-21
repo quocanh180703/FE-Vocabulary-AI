@@ -2,7 +2,7 @@ import axios, { AxiosError } from 'axios';
 import type { InternalAxiosRequestConfig } from 'axios';
 import { mockAdapter } from '../demo/mockAdapter';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
 const IS_DEMO = import.meta.env.VITE_DEMO === '1';
 
 export const api = axios.create({ baseURL: API_URL, timeout: 60000 });
@@ -10,8 +10,14 @@ export const api = axios.create({ baseURL: API_URL, timeout: 60000 });
 // Demo mode: giả lập toàn bộ BE thật bằng mockAdapter (không gọi mạng).
 if (IS_DEMO) api.defaults.adapter = mockAdapter;
 
-const getAccess = () => localStorage.getItem('vocab_access');
-const getRefresh = () => localStorage.getItem('vocab_refresh');
+const getAccess = () => {
+  const t = localStorage.getItem('vocab_access') || localStorage.getItem('access_token') || localStorage.getItem('vocabularyai_token');
+  return t && t !== 'undefined' && t !== 'null' ? t : null;
+};
+const getRefresh = () => {
+  const t = localStorage.getItem('vocab_refresh') || localStorage.getItem('refresh_token');
+  return t && t !== 'undefined' && t !== 'null' ? t : null;
+};
 
 api.interceptors.request.use((cfg: InternalAxiosRequestConfig) => {
   const t = getAccess();
@@ -33,14 +39,26 @@ api.interceptors.response.use(
   },
   async (err: AxiosError) => {
     const orig = err.config as InternalAxiosRequestConfig & { _retried?: boolean };
-    if (err.response?.status === 401 && !orig._retried && getRefresh()) {
+    const refresh = getRefresh();
+    const isAuthErr = err.response?.status === 401 || err.response?.status === 403;
+
+    if (isAuthErr && !orig._retried && refresh) {
       orig._retried = true;
       try {
-        refreshing = refreshing || api.post('/api/auth/refresh', { refreshToken: getRefresh() })
+        refreshing = refreshing || api.post('/auth/refresh', { refreshToken: refresh })
           .then((r) => {
-            localStorage.setItem('vocab_access', r.data.accessToken);
-            if (r.data.refreshToken) localStorage.setItem('vocab_refresh', r.data.refreshToken);
-            return r.data.accessToken as string;
+            const token = r.data?.accessToken || r.data?.access_token;
+            const newRefresh = r.data?.refreshToken || r.data?.refresh_token;
+            if (token) {
+              localStorage.setItem('vocab_access', token);
+              localStorage.setItem('access_token', token);
+              if (newRefresh) {
+                localStorage.setItem('vocab_refresh', newRefresh);
+                localStorage.setItem('refresh_token', newRefresh);
+              }
+              return token as string;
+            }
+            throw new Error('No access token');
           })
           .finally(() => { refreshing = null; });
         const token = await refreshing;
@@ -48,10 +66,16 @@ api.interceptors.response.use(
         return api(orig);
       } catch {
         localStorage.removeItem('vocab_access');
+        localStorage.removeItem('access_token');
         localStorage.removeItem('vocab_refresh');
-        // Demo mode dùng HashRouter → redirect bằng hash để không cần SPA fallback.
+        localStorage.removeItem('refresh_token');
+        localStorage.removeItem('vocab_user');
         window.location.href = IS_DEMO ? '/#/login' : '/login';
       }
+    } else if (isAuthErr && !refresh && err.response?.status === 401) {
+      localStorage.removeItem('vocab_access');
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('vocab_user');
     }
     return Promise.reject(err);
   }
