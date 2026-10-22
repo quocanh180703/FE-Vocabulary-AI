@@ -5,7 +5,7 @@ import { mockAdapter } from '../demo/mockAdapter';
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
 const IS_DEMO = import.meta.env.VITE_DEMO === '1';
 
-export const api = axios.create({ baseURL: API_URL, timeout: 60000 });
+export const api = axios.create({ baseURL: API_URL, timeout: 120000 });
 
 // Demo mode: giả lập toàn bộ BE thật bằng mockAdapter (không gọi mạng).
 if (IS_DEMO) api.defaults.adapter = mockAdapter;

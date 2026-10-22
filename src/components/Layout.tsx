@@ -151,8 +151,29 @@ export function Layout() {
             </button>
           )}
 
-          <div className="uavatar" onClick={() => nav('/profile')} style={{ cursor: 'pointer' }} title="Hồ sơ cá nhân">
-            {(user?.username || 'U')[0].toUpperCase()}
+          <div
+            className="uavatar"
+            onClick={() => nav('/profile')}
+            style={{
+              cursor: 'pointer',
+              background: user?.avatarUrl?.startsWith('#') ? user.avatarUrl : undefined,
+              overflow: 'hidden',
+              padding: 0,
+            }}
+            title="Hồ sơ cá nhân"
+          >
+            {user?.avatarUrl && !user.avatarUrl.startsWith('#') ? (
+              <img
+                src={user.avatarUrl}
+                alt={user.fullName || user.username}
+                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                onError={(e) => {
+                  (e.currentTarget as HTMLElement).style.display = 'none';
+                }}
+              />
+            ) : (
+              (user?.fullName || user?.username || 'U')[0].toUpperCase()
+            )}
           </div>
         </div>
         <ErrorBoundary>

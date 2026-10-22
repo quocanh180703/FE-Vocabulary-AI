@@ -2059,7 +2059,7 @@ export default function AdminAiAssistant() {
                       <Icon n="spark" s={18} />
                       <span>
                         {generatingVocab
-                          ? 'Gemini đang sinh nội dung...'
+                          ? 'AI đang sinh nội dung...'
                           : `Sinh dữ liệu AI cho (${selectedMissingIds.length}) từ đã chọn`}
                       </span>
                     </motion.button>

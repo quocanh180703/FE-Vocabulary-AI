@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { wordApi, aiApi, learnApi, errMsg, formatPartOfSpeech, analyzeWordRelations } from '../api';
+import { wordApi, aiApi, learnApi, errMsg, formatPartOfSpeech, analyzeWordRelations, ttsApi } from '../api';
 import type { Word, Explain } from '../api';
 import { Icon } from '../components/icons';
 import { AiExplanationBox } from '../components/AiExplanationBox';
@@ -59,10 +59,15 @@ export default function WordDetail() {
     if (!word) return;
     if (word.audioUrl) {
       new Audio(word.audioUrl).play().catch(() => {});
-    } else if (window.speechSynthesis) {
-      const u = new SpeechSynthesisUtterance(word.word);
-      u.lang = 'en-US';
-      window.speechSynthesis.speak(u);
+    } else {
+      const audio = new Audio(ttsApi.getStreamUrl(word.word));
+      audio.play().catch(() => {
+        if (window.speechSynthesis) {
+          const u = new SpeechSynthesisUtterance(word.word);
+          u.lang = 'en-US';
+          window.speechSynthesis.speak(u);
+        }
+      });
     }
   };
 

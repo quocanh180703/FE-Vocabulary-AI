@@ -800,6 +800,16 @@ export const speakApi = {
     api.get<any>('/api/ai/speaking/sessions', { params: { page, size, sort: 'createdAt,desc' } }).then((res) => ({ ...res, data: res.data })),
 };
 
+/* ---------- tts (Text to Speech) ---------- */
+export const ttsApi = {
+  synthesizeWord: (word: string, language = 'en-US') =>
+    api.post<any>('/ai/speaking/tts/word', { word, language }).then((res) => ({ ...res, data: res.data })),
+  synthesizePhrase: (phrase: string, language = 'en-US') =>
+    api.post<any>('/ai/speaking/tts/phrase', { phrase, language }).then((res) => ({ ...res, data: res.data })),
+  getStreamUrl: (text: string, voice = 'alloy') =>
+    `${import.meta.env.VITE_API_URL || 'http://localhost:8080/api'}/ai/speaking/tts/stream?text=${encodeURIComponent(text)}&voice=${encodeURIComponent(voice)}`,
+};
+
 /* ---------- user ---------- */
 export const userApi = {
   me: () =>
@@ -812,6 +822,15 @@ export const userApi = {
       .catch(() => ({ data: null })),
   updateProfile: (data: { fullName?: string; avatarUrl?: string }) =>
     api.put<any>('/users/me', data).then((res) => ({ ...res, data: res.data?.data || res.data })),
+  uploadAvatar: (file: File) => {
+    const formData = new FormData();
+    formData.append('avatar', file);
+    return api.post<any>('/users/me/avatar', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }).then((res) => ({ ...res, data: (res.data?.data || res.data) as User }));
+  },
+  deleteAvatar: () =>
+    api.delete<any>('/users/me/avatar').then((res) => ({ ...res, data: (res.data?.data || res.data) as User })),
   changePassword: (data: { oldPassword: string; newPassword: string; confirmPassword: string }) =>
     api.put<any>('/users/me/password', data).then((res) => ({ ...res, data: res.data })),
 };
@@ -819,8 +838,9 @@ export const userApi = {
 /* ---------- personalized learning ---------- */
 export interface PerformanceMetric {
   score: number;
-  itemsLearned: number;
-  accuracy: number;
+  itemsLearned?: number;
+  totalActivities?: number;
+  accuracy?: number;
   level: string;
 }
 
@@ -945,8 +965,8 @@ export const personalizedApi = {
       ...res,
       data: (typeof res.data === 'string' ? res.data : (res.data?.data?.level || res.data?.level || 'B1')) as string,
     })),
-  analysis: () =>
-    api.get<any>('/ai/personalized/analysis').then((res) => ({
+  analysis: (refresh?: boolean) =>
+    api.get<any>(`/ai/personalized/analysis${refresh ? '?refresh=true' : ''}`).then((res) => ({
       ...res,
       data: (res.data?.data || res.data?.analysis || res.data) as WeaknessStrengthAnalysis,
     })),

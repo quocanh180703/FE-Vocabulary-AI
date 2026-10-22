@@ -326,7 +326,7 @@ export function AdminLayout() {
             <div
               className="uavatar"
               style={{
-                background: 'linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%)',
+                background: user?.avatarUrl?.startsWith('#') ? user.avatarUrl : 'linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%)',
                 color: '#FFFFFF',
                 width: 42,
                 height: 42,
@@ -338,9 +338,22 @@ export function AdminLayout() {
                 fontSize: '1.05rem',
                 boxShadow: '0 4px 14px rgba(79, 70, 229, 0.35)',
                 border: '2px solid #FFFFFF',
+                overflow: 'hidden',
+                padding: 0,
               }}
             >
-              {(user?.fullName || user?.username || 'A')[0].toUpperCase()}
+              {user?.avatarUrl && !user.avatarUrl.startsWith('#') ? (
+                <img
+                  src={user.avatarUrl}
+                  alt={user.fullName || user.username}
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                  onError={(e) => {
+                    (e.currentTarget as HTMLElement).style.display = 'none';
+                  }}
+                />
+              ) : (
+                (user?.fullName || user?.username || 'A')[0].toUpperCase()
+              )}
             </div>
           </div>
         </div>

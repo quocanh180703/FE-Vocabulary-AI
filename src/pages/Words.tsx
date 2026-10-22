@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { wordApi, errMsg, getPartOfSpeechBadgeStyle } from '../api';
+import { wordApi, errMsg, getPartOfSpeechBadgeStyle, ttsApi } from '../api';
 import type { Word } from '../api';
 import { Icon } from '../components/icons';
 import { AutocompleteSearch } from '../components/AutocompleteSearch';
@@ -85,10 +85,17 @@ export default function Words() {
     e.stopPropagation();
     if (w.audioUrl) {
       new Audio(w.audioUrl).play().catch(() => {});
-    } else if (window.speechSynthesis) {
-      const u = new SpeechSynthesisUtterance(w.word || w.lemma || '');
-      u.lang = 'en-US';
-      window.speechSynthesis.speak(u);
+    } else {
+      const text = w.word || w.lemma || '';
+      if (!text) return;
+      const audio = new Audio(ttsApi.getStreamUrl(text));
+      audio.play().catch(() => {
+        if (window.speechSynthesis) {
+          const u = new SpeechSynthesisUtterance(text);
+          u.lang = 'en-US';
+          window.speechSynthesis.speak(u);
+        }
+      });
     }
   };
 

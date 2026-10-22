@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useAuth } from '../auth/AuthContext';
 import { userApi, learnApi, paymentApi, errMsg } from '../api';
 import type { User, LearningStats } from '../api';
@@ -43,9 +43,13 @@ export default function Profile() {
   const isVipActive = Boolean(subscription && subscription.status === 'ACTIVE');
 
   // Edit Profile State
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [isEditingName, setIsEditingName] = useState(false);
   const [fullNameInput, setFullNameInput] = useState('');
   const [selectedAvatarColor, setSelectedAvatarColor] = useState('#1565C0');
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  const [avatarTab, setAvatarTab] = useState<'upload' | 'color'>('upload');
+  const [avatarHover, setAvatarHover] = useState(false);
   const [profileMsg, setProfileMsg] = useState<{ text: string; type: 'ok' | 'err' } | null>(null);
   const [profileBusy, setProfileBusy] = useState(false);
   const [copiedUser, setCopiedUser] = useState(false);
@@ -81,6 +85,9 @@ export default function Profile() {
         setFullNameInput(data.fullName || '');
         if (data.avatarUrl && data.avatarUrl.startsWith('#')) {
           setSelectedAvatarColor(data.avatarUrl);
+          setAvatarTab('color');
+        } else if (data.avatarUrl && !data.avatarUrl.startsWith('#')) {
+          setAvatarTab('upload');
         }
       }
     });
@@ -95,6 +102,62 @@ export default function Profile() {
 
   // Initial avatar color from user if present
   const currentAvatarBg = user.avatarUrl && user.avatarUrl.startsWith('#') ? user.avatarUrl : selectedAvatarColor;
+  const isPhotoAvatar = Boolean(user.avatarUrl && !user.avatarUrl.startsWith('#'));
+
+  // Handle Avatar Image Upload to Cloudinary
+  const handleAvatarFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      setProfileMsg({ text: 'Vui lòng chọn tệp hình ảnh hợp lệ (PNG, JPG, WEBP, GIF).', type: 'err' });
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      setProfileMsg({ text: 'Kích thước tệp quá lớn. Vui lòng chọn ảnh tối đa 10MB.', type: 'err' });
+      return;
+    }
+
+    setAvatarUploading(true);
+    setProfileMsg(null);
+    try {
+      const res = await userApi.uploadAvatar(file);
+      if (res.data) {
+        setProfile(res.data);
+        updateUser(res.data);
+        setAvatarTab('upload');
+        setProfileMsg({ text: '✨ Tải lên ảnh đại diện thành công và đã lưu trên Cloudinary!', type: 'ok' });
+        setTimeout(() => setProfileMsg(null), 4000);
+      }
+    } catch (err) {
+      setProfileMsg({ text: errMsg(err, 'Không thể tải ảnh lên, vui lòng thử lại!'), type: 'err' });
+    } finally {
+      setAvatarUploading(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
+  // Handle Remove Avatar Image
+  const handleDeleteAvatar = async () => {
+    if (!window.confirm('Bạn có chắc chắn muốn xóa ảnh đại diện và quay về màu mặc định không?')) return;
+    setAvatarUploading(true);
+    setProfileMsg(null);
+    try {
+      const res = await userApi.deleteAvatar();
+      if (res.data) {
+        setProfile(res.data);
+        updateUser(res.data);
+        setProfileMsg({ text: 'Đã xóa ảnh đại diện thành công!', type: 'ok' });
+        setTimeout(() => setProfileMsg(null), 4000);
+      }
+    } catch (err) {
+      setProfileMsg({ text: errMsg(err, 'Không thể xóa ảnh đại diện, vui lòng thử lại!'), type: 'err' });
+    } finally {
+      setAvatarUploading(false);
+    }
+  };
 
   // Handle Full Name and Avatar Update
   const handleSaveProfile = async () => {
@@ -110,16 +173,25 @@ export default function Profile() {
     setProfileBusy(true);
     setProfileMsg(null);
     try {
-      const res = await userApi.updateProfile({
+      const payload: { fullName: string; avatarUrl?: string } = {
         fullName: fullNameInput.trim(),
-        avatarUrl: selectedAvatarColor,
-      });
+      };
+      // If user switched to color tab, update avatar to selected color
+      if (avatarTab === 'color') {
+        payload.avatarUrl = selectedAvatarColor;
+      }
+
+      const res = await userApi.updateProfile(payload);
       const updated = res.data;
       if (updated) {
         setProfile(updated);
         updateUser(updated);
       } else {
-        const fallbackUser: User = { ...user, fullName: fullNameInput.trim(), avatarUrl: selectedAvatarColor };
+        const fallbackUser: User = {
+          ...user,
+          fullName: fullNameInput.trim(),
+          avatarUrl: avatarTab === 'color' ? selectedAvatarColor : user.avatarUrl,
+        };
         setProfile(fallbackUser);
         updateUser(fallbackUser);
       }
@@ -260,19 +332,106 @@ export default function Profile() {
       <div className="card" style={{ background: 'linear-gradient(180deg, #FFFFFF 0%, #F9FBFE 100%)' }}>
         <div className="row" style={{ alignItems: 'flex-start', flexWrap: 'wrap', gap: 16 }}>
           <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
+            {/* Hidden Cloudinary File Input */}
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleAvatarFileSelect}
+              accept="image/png,image/jpeg,image/jpg,image/webp,image/gif"
+              style={{ display: 'none' }}
+            />
+
+            {/* Interactive Avatar Container */}
             <div
-              className="uavatar"
-              style={{
-                width: 68,
-                height: 68,
-                fontSize: 30,
-                background: currentAvatarBg,
-                boxShadow: '0 4px 14px rgba(21, 101, 192, 0.25)',
-                transition: 'background 0.3s',
-              }}
+              style={{ position: 'relative', cursor: 'pointer', flexShrink: 0 }}
+              onMouseEnter={() => setAvatarHover(true)}
+              onMouseLeave={() => setAvatarHover(false)}
+              onClick={() => fileInputRef.current?.click()}
+              title="Nhấp để tải ảnh đại diện lên Cloudinary"
             >
-              {(user.fullName || user.username || 'U')[0].toUpperCase()}
+              <div
+                className="uavatar"
+                style={{
+                  width: 72,
+                  height: 72,
+                  fontSize: 32,
+                  background: isPhotoAvatar ? '#F1F5F9' : currentAvatarBg,
+                  boxShadow: '0 4px 14px rgba(21, 101, 192, 0.22)',
+                  transition: 'all 0.3s ease',
+                  overflow: 'hidden',
+                  position: 'relative',
+                  border: '3px solid #FFFFFF',
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                {isPhotoAvatar ? (
+                  <img
+                    src={user.avatarUrl}
+                    alt={user.fullName || user.username}
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                  />
+                ) : (
+                  (user.fullName || user.username || 'U')[0].toUpperCase()
+                )}
+
+                {/* Hover overlay with Camera Icon */}
+                <div
+                  style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    background: 'rgba(10, 37, 64, 0.65)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: '#fff',
+                    opacity: avatarHover || avatarUploading ? 1 : 0,
+                    transition: 'opacity 0.2s ease',
+                    borderRadius: '50%',
+                  }}
+                >
+                  {avatarUploading ? (
+                    <div style={{ textAlign: 'center', transform: 'scale(0.85)' }}>
+                      <span className="spinner" style={{ borderColor: 'rgba(255,255,255,0.3)', borderTopColor: '#fff', width: 22, height: 22 }} />
+                    </div>
+                  ) : (
+                    <>
+                      <Icon n="camera" s={18} />
+                      <span style={{ fontSize: 10, fontWeight: 700, marginTop: 2 }}>Đổi ảnh</span>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              {/* Camera Badge in bottom right */}
+              <div
+                style={{
+                  position: 'absolute',
+                  bottom: -2,
+                  right: -2,
+                  width: 26,
+                  height: 26,
+                  borderRadius: '50%',
+                  background: 'var(--brand)',
+                  color: '#fff',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  boxShadow: '0 2px 6px rgba(0,0,0,0.2)',
+                  border: '2px solid #fff',
+                }}
+                title="Tải ảnh đại diện mới lên Cloudinary"
+              >
+                <Icon n="camera" s={13} />
+              </div>
             </div>
+
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                 <h2 style={{ fontSize: 22, margin: 0 }}>{user.fullName || user.username}</h2>
@@ -351,36 +510,187 @@ export default function Profile() {
               />
             </div>
 
+            {/* Avatar Tab Selector & Config */}
             <div>
-              <label style={{ fontSize: 13, fontWeight: 900, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: 0.8 }}>
-                Màu đại diện đại biểu
-              </label>
-              <div style={{ display: 'flex', gap: 10, marginTop: 8, flexWrap: 'wrap' }}>
-                {AVATAR_COLORS.map((c) => (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8, flexWrap: 'wrap', gap: 8 }}>
+                <label style={{ fontSize: 13, fontWeight: 900, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: 0.8, margin: 0 }}>
+                  Ảnh đại diện & Giao diện
+                </label>
+                <div style={{ display: 'flex', gap: 6, background: '#F1F5F9', padding: 3, borderRadius: 10 }}>
                   <button
-                    key={c.id}
                     type="button"
-                    onClick={() => setSelectedAvatarColor(c.id)}
+                    onClick={() => setAvatarTab('upload')}
                     style={{
-                      width: 36,
-                      height: 36,
-                      borderRadius: 8,
-                      background: c.id,
-                      border: selectedAvatarColor === c.id ? '3px solid #0A2540' : '2px solid transparent',
+                      border: 'none',
+                      background: avatarTab === 'upload' ? '#fff' : 'transparent',
+                      color: avatarTab === 'upload' ? 'var(--brand)' : 'var(--muted)',
+                      fontWeight: 700,
+                      fontSize: 12,
+                      padding: '5px 12px',
+                      borderRadius: 7,
                       cursor: 'pointer',
+                      boxShadow: avatarTab === 'upload' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
                       display: 'flex',
                       alignItems: 'center',
-                      justifyContent: 'center',
-                      color: '#fff',
-                      transition: 'transform 0.15s',
-                      transform: selectedAvatarColor === c.id ? 'scale(1.15)' : 'none',
+                      gap: 5,
+                      transition: 'all 0.2s',
                     }}
-                    title={c.label}
                   >
-                    {selectedAvatarColor === c.id && <Icon n="check" s={18} />}
+                    <Icon n="camera" s={13} /> Tải ảnh lên (Cloudinary)
                   </button>
-                ))}
+                  <button
+                    type="button"
+                    onClick={() => setAvatarTab('color')}
+                    style={{
+                      border: 'none',
+                      background: avatarTab === 'color' ? '#fff' : 'transparent',
+                      color: avatarTab === 'color' ? 'var(--brand)' : 'var(--muted)',
+                      fontWeight: 700,
+                      fontSize: 12,
+                      padding: '5px 12px',
+                      borderRadius: 7,
+                      cursor: 'pointer',
+                      boxShadow: avatarTab === 'color' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 5,
+                      transition: 'all 0.2s',
+                    }}
+                  >
+                    <Icon n="palette" s={13} /> Chọn màu sắc
+                  </button>
+                </div>
               </div>
+
+              {avatarTab === 'upload' ? (
+                <div
+                  style={{
+                    background: '#F8FAFC',
+                    border: '1.5px dashed #CBD5E1',
+                    borderRadius: 12,
+                    padding: '16px 20px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    flexWrap: 'wrap',
+                    gap: 14,
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                    <div
+                      style={{
+                        width: 52,
+                        height: 52,
+                        borderRadius: '50%',
+                        overflow: 'hidden',
+                        background: '#E2E8F0',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        flexShrink: 0,
+                        border: '2px solid #fff',
+                        boxShadow: '0 2px 6px rgba(0,0,0,0.08)',
+                      }}
+                    >
+                      {isPhotoAvatar ? (
+                        <img
+                          src={user.avatarUrl}
+                          alt="Avatar"
+                          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                        />
+                      ) : (
+                        <Icon n="image" s={24} />
+                      )}
+                    </div>
+                    <div>
+                      <div style={{ fontWeight: 700, fontSize: 14, color: '#0F172A' }}>
+                        {isPhotoAvatar ? 'Ảnh đại diện hiện tại (Cloudinary)' : 'Chưa có ảnh đại diện'}
+                      </div>
+                      <div style={{ fontSize: 12, color: '#64748B', marginTop: 2 }}>
+                        Hỗ trợ JPG, PNG, WEBP, GIF tối đa 10MB • Tự động nhận diện khuôn mặt
+                      </div>
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                    {isPhotoAvatar && (
+                      <button
+                        type="button"
+                        onClick={handleDeleteAvatar}
+                        disabled={avatarUploading}
+                        className="btn ghost"
+                        style={{
+                          minHeight: 36,
+                          padding: '0 12px',
+                          fontSize: 13,
+                          color: 'var(--red)',
+                          borderColor: '#FECDD3',
+                        }}
+                      >
+                        <Icon n="trash" s={14} /> Xóa ảnh
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={avatarUploading}
+                      className="btn"
+                      style={{
+                        minHeight: 36,
+                        padding: '0 16px',
+                        fontSize: 13,
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 6,
+                      }}
+                    >
+                      {avatarUploading ? (
+                        <>
+                          <span className="spinner" style={{ width: 14, height: 14, borderColor: 'rgba(255,255,255,0.3)', borderTopColor: '#fff' }} />
+                          Đang tải lên...
+                        </>
+                      ) : (
+                        <>
+                          <Icon n="upload" s={14} />
+                          {isPhotoAvatar ? 'Đổi ảnh khác' : 'Chọn ảnh tải lên'}
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div style={{ background: '#F8FAFC', padding: 14, borderRadius: 12, border: '1px solid #E2E8F0' }}>
+                  <div style={{ fontSize: 12, color: '#64748B', marginBottom: 10 }}>
+                    Chọn màu sắc hiển thị chữ cái đầu tên người dùng:
+                  </div>
+                  <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                    {AVATAR_COLORS.map((c) => (
+                      <button
+                        key={c.id}
+                        type="button"
+                        onClick={() => setSelectedAvatarColor(c.id)}
+                        style={{
+                          width: 36,
+                          height: 36,
+                          borderRadius: 8,
+                          background: c.id,
+                          border: selectedAvatarColor === c.id ? '3px solid #0A2540' : '2px solid transparent',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          color: '#fff',
+                          transition: 'transform 0.15s',
+                          transform: selectedAvatarColor === c.id ? 'scale(1.15)' : 'none',
+                        }}
+                        title={c.label}
+                      >
+                        {selectedAvatarColor === c.id && <Icon n="check" s={18} />}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
 
             <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 4 }}>

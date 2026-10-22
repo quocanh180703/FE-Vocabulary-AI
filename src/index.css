@@ -53,6 +53,9 @@
   }
 }
 * { margin: 0; padding: 0; box-sizing: border-box; }
+html {
+  scroll-behavior: smooth;
+}
 html, body { height: 100%; }
 body {
   font-family: 'Nunito', system-ui, -apple-system, sans-serif;

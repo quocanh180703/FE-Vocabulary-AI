@@ -49,6 +49,65 @@ const DEFAULT_FALLBACK_ACTIVITIES: DailyActivity[] = [
   },
 ];
 
+const formatLearningStyle = (style?: string) => {
+  if (!style) return 'Học kết hợp (Ngữ cảnh + Flashcard SRS)';
+  const s = style.trim().toUpperCase();
+  if (s.includes('MIX')) return 'Đa phong cách (Kết hợp Nghe - Nhìn - Thực hành)';
+  if (s.includes('VISUAL')) return 'Thị giác (Hình ảnh & Flashcard trực quan)';
+  if (s.includes('AUDITORY')) return 'Thính giác (Luyện nghe & Âm thanh phát âm)';
+  if (s.includes('KINESTHETIC')) return 'Vận động / Tương tác (Làm bài trắc nghiệm & Phản xạ)';
+  return style;
+};
+
+const formatMotivationLevel = (level?: string) => {
+  if (!level) return 'Trung bình (Cần duy trì đều đặn)';
+  const l = level.trim().toUpperCase();
+  if (l === 'HIGH' || l.includes('CAO')) return 'Cao (Duy trì streak đều đặn)';
+  if (l === 'MEDIUM' || l.includes('TRUNG')) return 'Trung bình (Cần giữ nhịp học ổn định)';
+  if (l === 'LOW' || l.includes('THẤP')) return 'Cần cải thiện (Chưa học thường xuyên)';
+  return level;
+};
+
+const formatExcellenceLevel = (level?: string) => {
+  if (!level) return 'XUẤT SẮC';
+  const l = level.trim().toUpperCase();
+  if (l === 'OUTSTANDING') return 'XUẤT SẮC';
+  if (l === 'STRONG') return 'KHÁ TỐT';
+  if (l === 'SOLID') return 'VỮNG VÀNG';
+  return level;
+};
+
+const formatSeverity = (sev?: string) => {
+  if (!sev) return 'CẦN LƯU Ý';
+  const s = sev.trim().toUpperCase();
+  if (s === 'CRITICAL') return 'CẤP THIẾT';
+  if (s === 'HIGH') return 'ƯU TIÊN CAO';
+  if (s === 'MEDIUM') return 'TRUNG BÌNH';
+  if (s === 'LOW') return 'MỨC ĐỘ NHẸ';
+  return sev;
+};
+
+const formatArea = (area?: string, idx: number = 0) => {
+  if (!area) return idx === 0 ? 'Luyện nói' : idx === 1 ? 'Từ vựng' : 'Thói quen học';
+  const a = area.trim().toUpperCase();
+  if (a.includes('SPEAK') || a.includes('NÓI') || a.includes('ORAL') || a.includes('PRONUNCIATION')) return 'Luyện nói';
+  if (a.includes('VOCAB') || a.includes('TỪ VỰNG')) return 'Từ vựng';
+  if (a.includes('GRAMMAR') || a.includes('NGỮ PHÁP')) return 'Ngữ pháp';
+  if (a.includes('CONSISTEN') || a.includes('HABIT') || a.includes('THÓI QUEN') || a.includes('STREAK')) return 'Thói quen học';
+  if (a.includes('READ') || a.includes('ĐỌC')) return 'Đọc hiểu';
+  if (a.includes('LISTEN') || a.includes('NGHE')) return 'Luyện nghe';
+  return area;
+};
+
+const formatImpact = (impact?: string) => {
+  if (!impact) return 'Cao';
+  const i = impact.trim().toUpperCase();
+  if (i === 'HIGH') return 'Cao';
+  if (i === 'MEDIUM') return 'Trung bình';
+  if (i === 'LOW') return 'Thấp';
+  return impact;
+};
+
 export default function Roadmap() {
   const { user } = useAuth();
   const nav = useNavigate();
@@ -109,24 +168,27 @@ export default function Roadmap() {
 
       // Step 2: Analyze strengths and weaknesses
       setAnalyzingStep(2);
-      const anaRes = await personalizedApi.analysis().catch(() => null);
+      const anaRes = await personalizedApi.analysis(true).catch(() => null);
       const newAnalysis = anaRes?.data || null;
 
       await new Promise((r) => setTimeout(r, 700));
 
-      // Step 3: Generate 4-week learning plan and daily practice
+      // Step 3: Generate 4-week learning plan
       setAnalyzingStep(3);
-      const [planRes, dailyRes] = await Promise.all([
-        personalizedApi.plan().catch(() => null),
-        personalizedApi.dailyPractice().catch(() => null),
-      ]);
+      const planRes = await personalizedApi.plan().catch(() => null);
       const newPlan = planRes?.data || null;
+
+      await new Promise((r) => setTimeout(r, 400));
+
+      // Step 4: Daily practice (called sequentially on its own)
+      setAnalyzingStep(4);
+      const dailyRes = await personalizedApi.dailyPractice().catch(() => null);
       const newDaily = dailyRes?.data || null;
 
-      await new Promise((r) => setTimeout(r, 600));
+      await new Promise((r) => setTimeout(r, 400));
 
-      // Step 4: Progress prediction
-      setAnalyzingStep(4);
+      // Step 5: Progress prediction (called sequentially after daily practice)
+      setAnalyzingStep(5);
       const predRes = await personalizedApi.prediction().catch(() => null);
       const newPrediction = predRes?.data || null;
 
@@ -217,11 +279,11 @@ export default function Roadmap() {
     });
   };
 
-  const currentLevel = profile?.currentLevel || 'B1';
-  const overallScore = Math.round(profile?.overallScore || 72);
-  const vocabScore = Math.round(profile?.vocabulary?.score || 75);
-  const grammarScore = Math.round(profile?.grammar?.score || 68);
-  const speakingScore = Math.round(profile?.speaking?.score || 65);
+  const currentLevel = profile?.currentLevel || 'A1';
+  const overallScore = Math.round(profile?.overallScore != null ? profile.overallScore : 0);
+  const vocabScore = Math.round(profile?.vocabulary?.score != null ? profile.vocabulary.score : 0);
+  const grammarScore = Math.round(profile?.grammar?.score != null ? profile.grammar.score : 0);
+  const speakingScore = Math.round(profile?.speaking?.score != null ? profile.speaking.score : 0);
 
   const activities = (daily?.activities && daily.activities.length > 0)
     ? daily.activities
@@ -328,8 +390,9 @@ export default function Roadmap() {
               {[
                 { step: 1, title: 'Thu thập lịch sử từ vựng, Quiz và kết quả luyện nói gần đây' },
                 { step: 2, title: 'AI phân tích phong cách học, điểm mạnh vượt trội & lỗ hổng kiến thức' },
-                { step: 3, title: 'Xây dựng kế hoạch Microlearning 4 tuần và bài tập hôm nay' },
-                { step: 4, title: 'Dự báo tiến độ về đích & lưu lại kết quả phân tích' },
+                { step: 3, title: 'Xây dựng kế hoạch Microlearning 4 tuần' },
+                { step: 4, title: 'AI thiết lập bài tập tối ưu hóa cho ngày hôm nay' },
+                { step: 5, title: 'AI dự báo tiến độ về đích & lưu lại kết quả phân tích' },
               ].map((s) => {
                 const isPassed = analyzingStep > s.step;
                 const isCurrent = analyzingStep === s.step;
@@ -543,7 +606,9 @@ export default function Roadmap() {
                 </div>
                 <div style={{ textAlign: 'center', background: 'rgba(255,255,255,0.08)', backdropFilter: 'blur(8px)', padding: '14px 22px', borderRadius: 16, border: '1px solid rgba(255,255,255,0.1)' }}>
                   <div style={{ fontSize: 12.5, color: '#94A3B8', fontWeight: 700 }}>🎙️ Luyện nói</div>
-                  <div style={{ fontSize: 26, fontWeight: 900, color: '#F59E0B', marginTop: 2 }}>{speakingScore}%</div>
+                  <div style={{ fontSize: 24, fontWeight: 900, color: '#F59E0B', marginTop: 2 }}>
+                    {(profile?.speaking?.totalActivities && profile.speaking.totalActivities > 0) || speakingScore > 0 ? `${speakingScore}%` : 'Chưa luyện'}
+                  </div>
                 </div>
               </div>
             </div>
@@ -722,7 +787,7 @@ export default function Roadmap() {
                   <div>
                     <h2 style={{ margin: 0 }}>Đặc điểm phong cách học của bạn</h2>
                     <div className="sub mt8">
-                      Phong cách chính: <b>{analysis?.learningStyle || 'Học kết hợp (Mixed: Ngữ cảnh + Flashcard SRS)'}</b> · Mức độ duy trì: <b>{analysis?.motivationLevel || 'Cao (Duy trì streak đều đặn)'}</b>
+                      Phong cách chính: <b>{formatLearningStyle(analysis?.learningStyle)}</b> · Mức độ duy trì: <b>{formatMotivationLevel(analysis?.motivationLevel)}</b>
                     </div>
                   </div>
                 </div>
@@ -749,7 +814,7 @@ export default function Roadmap() {
                           },
                           {
                             skill: 'Đọc hiểu ngữ cảnh đề bài Quiz',
-                            proficiencyLevel: 'KHÁ',
+                            proficiencyLevel: 'KHÁ TỐT',
                             description: 'Tốc độ trả lời câu hỏi trắc nghiệm nhanh, ít bị bẫy ngữ nghĩa.',
                           },
                         ]
@@ -760,7 +825,7 @@ export default function Roadmap() {
                         <div key={idx} style={{ padding: 14, background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 10 }}>
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <b style={{ color: '#166534', fontSize: 15 }}>{name}</b>
-                            <span className="pill green" style={{ fontSize: 11 }}>{level}</span>
+                            <span className="pill green" style={{ fontSize: 11 }}>{formatExcellenceLevel(level)}</span>
                           </div>
                           <div className="sub mt8" style={{ fontSize: 13, color: '#14532d' }}>
                             {s.description || s.leverageStrategy}
@@ -785,16 +850,16 @@ export default function Roadmap() {
                       ? analysis.criticalWeaknesses
                       : [
                           {
-                            skill: 'Phát âm đuôi (-ed, -s/es)',
-                            severity: 'CẦN LƯU Ý',
-                            description: 'Trong các bài luyện nói, các âm đuôi thường bị bỏ qua hoặc phát âm chưa rõ.',
-                            recommendation: 'Nói chậm lại 10-15% và tập nhấn các phụ âm cuối khi thực hành với Vi.',
+                            skill: 'Kỹ năng nói & Phản xạ giao tiếp',
+                            severity: 'CẤP THIẾT',
+                            description: 'Chưa có nhiều hoạt động luyện nói được ghi nhận, phản xạ đàm thoại cần được rèn luyện thêm.',
+                            recommendation: 'Dành 5 phút mỗi ngày shadowing theo phát âm mẫu chậm để quen khẩu hình không áp lực.',
                           },
                           {
-                            skill: 'Từ vựng chuyên ngành Công nghệ & Y tế',
-                            severity: 'TRUNG BÌNH',
-                            description: 'Tỉ lệ câu trả lời đúng ở chủ đề này dưới 65%.',
-                            recommendation: 'Làm thêm bài Quiz chủ đề IT & Y tế để làm quen với các thuật ngữ.',
+                            skill: 'Cấu trúc câu căn bản',
+                            severity: 'ƯU TIÊN CAO',
+                            description: 'Điểm số ngữ pháp ở mức cơ bản, cần làm quen thêm với các cấu trúc thì hiện tại và trật tự từ.',
+                            recommendation: 'Hoàn thành các bài luyện tập ngữ pháp ngắn 10 phút tập trung vào từng cấu trúc.',
                           },
                         ]
                     ).map((w: any, idx: number) => {
@@ -804,7 +869,7 @@ export default function Roadmap() {
                         <div key={idx} style={{ padding: 14, background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 10 }}>
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <b style={{ color: '#991b1b', fontSize: 15 }}>{name}</b>
-                            <span className="pill warn" style={{ fontSize: 11 }}>{w.severity || 'CẦN LƯU Ý'}</span>
+                            <span className="pill warn" style={{ fontSize: 11 }}>{formatSeverity(w.severity)}</span>
                           </div>
                           <div className="sub mt8" style={{ fontSize: 13, color: '#7f1d1d' }}>
                             {w.description}
@@ -828,17 +893,40 @@ export default function Roadmap() {
 
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 14, marginTop: 16 }}>
                   {(analysis?.priorityActions && analysis.priorityActions.length > 0
-                    ? analysis.priorityActions.slice(0, 3).map((act: any, i: number) => ({
-                        title: act.action || `Hành động ${i + 1}`,
-                        area: act.addressesArea || (i === 0 ? 'Luyện nói' : i === 1 ? 'Từ vựng' : 'Thói quen'),
-                        desc: act.rationale || act.expectedImpact ? `Tác động: ${act.expectedImpact || 'Cao'}. ${act.rationale || ''}` : '',
-                        actionText: i === 0 ? 'Luyện nói ngay' : i === 1 ? 'Làm Quiz' : 'Vào Ôn tập',
-                        link: i === 0 ? '/speaking' : i === 1 ? '/quiz' : '/review',
-                      }))
+                    ? analysis.priorityActions.slice(0, 3).map((act: any, i: number) => {
+                        const area = formatArea(act.addressesArea, i);
+                        let actionText = 'Bắt đầu ngay';
+                        let link = '/review';
+                        if (area === 'Luyện nói') {
+                          actionText = 'Luyện nói ngay';
+                          link = '/speaking';
+                        } else if (area === 'Ngữ pháp' || area.includes('Quiz')) {
+                          actionText = 'Làm Quiz';
+                          link = '/quiz';
+                        } else if (area === 'Từ vựng') {
+                          actionText = 'Học từ vựng';
+                          link = '/words';
+                        } else {
+                          actionText = 'Vào Ôn tập';
+                          link = '/review';
+                        }
+                        const impactStr = formatImpact(act.expectedImpact);
+                        const desc = act.rationale
+                          ? `Tác động: ${impactStr}. ${act.rationale}`
+                          : `Tác động: ${impactStr}`;
+
+                        return {
+                          title: act.action || `Hành động ${i + 1}`,
+                          area,
+                          desc,
+                          actionText,
+                          link,
+                        };
+                      })
                     : [
-                        { title: '1. Khắc phục phát âm đuôi', area: 'Luyện nói', desc: 'Thực hành phiên nói 60s với AI, chú ý đọc rõ các phụ âm cuối.', actionText: 'Luyện nói ngay', link: '/speaking' },
-                        { title: '2. Bổ sung từ vựng Technology B2', area: 'Từ vựng', desc: 'Làm bài Quiz chủ đề IT để củng cố các từ vựng học thuật.', actionText: 'Làm Quiz IT', link: '/quiz' },
-                        { title: '3. Giữ vững chuỗi streak học', area: 'Thói quen', desc: 'Mỗi ngày mở app ôn ít nhất 5 từ để kích hoạt thuật toán lặp lại ngắt quãng.', actionText: 'Vào Ôn tập', link: '/review' },
+                        { title: '1. Thêm 1 phiên luyện nói 5 phút với AI', area: 'Luyện nói', desc: 'Tác động: Cao. Shadowing câu mẫu giúp xóa bỏ tâm lý sợ nói.', actionText: 'Luyện nói ngay', link: '/speaking' },
+                        { title: '2. Luyện tập ngữ pháp căn bản 10 phút', area: 'Ngữ pháp', desc: 'Tác động: Cao. Củng cố cấu trúc câu trọng tâm nâng điểm đọc hiểu.', actionText: 'Làm Quiz', link: '/quiz' },
+                        { title: '3. Giữ vững chuỗi streak học hàng ngày', area: 'Thói quen học', desc: 'Tác động: Cao. Mở app ôn ít nhất 5 từ kích hoạt thuật toán SRS.', actionText: 'Vào Ôn tập', link: '/review' },
                       ]
                   ).map((act: any, i: number) => (
                     <div key={i} style={{ border: '1px solid var(--border)', borderRadius: 12, padding: 16, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>

@@ -28,6 +28,8 @@ import AdminQuizzes from './pages/admin/AdminQuizzes';
 import AdminReports from './pages/admin/AdminReports';
 import AdminAiAssistant from './pages/admin/AdminAiAssistant';
 import LandingPage from './pages/LandingPage';
+import TermsOfService from './pages/TermsOfService';
+import PrivacyPolicy from './pages/PrivacyPolicy';
 
 function HomeSwitcher() {
   const { user, loading } = useAuth();
@@ -46,8 +48,10 @@ export default function App() {
       <ErrorBoundary>
         <AuthProvider>
         <Routes>
-          {/* Public Landing Page */}
+          {/* Public Landing Page & Legal Pages */}
           <Route path="/landing" element={<LandingPage />} />
+          <Route path="/dieu-khoan" element={<TermsOfService />} />
+          <Route path="/chinh-sach-bao-mat" element={<PrivacyPolicy />} />
 
           {/* Root switch: Public guest sees LandingPage; Authenticated user redirects to /dashboard */}
           <Route path="/" element={<HomeSwitcher />} />
