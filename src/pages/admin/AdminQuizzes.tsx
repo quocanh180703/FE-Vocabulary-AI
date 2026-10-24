@@ -27,7 +27,7 @@ export default function AdminQuizzes() {
     level: 'A1',
     timeLimit: 600,
     description: '',
-    status: 'PUBLISHED'
+    status: 'PUBLISHED',
   });
 
   // Question Form
@@ -35,7 +35,7 @@ export default function AdminQuizzes() {
     content: '',
     options: ['', '', '', ''],
     correctAnswer: 0,
-    explanation: ''
+    explanation: '',
   });
 
   const fetchQuizzes = async () => {
@@ -62,7 +62,7 @@ export default function AdminQuizzes() {
       level: 'A1',
       timeLimit: 600,
       description: '',
-      status: 'PUBLISHED'
+      status: 'PUBLISHED',
     });
     setShowCreateModal(true);
   };
@@ -74,7 +74,7 @@ export default function AdminQuizzes() {
       level: q.level || 'A1',
       timeLimit: q.timeLimit || 600,
       description: q.description || '',
-      status: q.status || 'PUBLISHED'
+      status: q.status || 'PUBLISHED',
     });
   };
 
@@ -92,7 +92,7 @@ export default function AdminQuizzes() {
         setEditingQuiz(null);
       } else {
         await adminApi.createQuiz(quizForm);
-        setMessage({ text: `Đã tạo bài trắc nghiệm mới thành công!` });
+        setMessage({ text: 'Đã tạo bài trắc nghiệm mới thành công!' });
         setShowCreateModal(false);
       }
       await fetchQuizzes();
@@ -149,7 +149,7 @@ export default function AdminQuizzes() {
         content: questionForm.content,
         options: questionForm.options,
         correctAnswer: questionForm.correctAnswer,
-        explanation: questionForm.explanation
+        explanation: questionForm.explanation,
       });
       setMessage({ text: 'Đã thêm câu hỏi mới vào bài thi!' });
       setShowAddQuestion(false);
@@ -157,7 +157,7 @@ export default function AdminQuizzes() {
         content: '',
         options: ['', '', '', ''],
         correctAnswer: 0,
-        explanation: ''
+        explanation: '',
       });
       await openManageQuestions(managingQuiz);
       await fetchQuizzes();
@@ -188,634 +188,408 @@ export default function AdminQuizzes() {
   });
 
   return (
-    <div style={{ maxWidth: 1240, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 24 }}>
-      {/* Title */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+      {/* Header */}
+      <div className="pagehead" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12 }}>
         <div>
-          <h1 style={{ fontSize: '1.9rem', fontWeight: 900, margin: 0, color: '#0F172A', letterSpacing: '-0.5px' }}>
-            Quản lý Bài Trắc Nghiệm & Đề Thi
-          </h1>
-          <p style={{ margin: '4px 0 0 0', color: '#64748B', fontSize: '0.94rem' }}>
-            Tổng số: <b style={{ color: '#0F172A' }}>{quizzes.length}</b> bài trắc nghiệm phân hóa theo các trình độ CEFR
-          </p>
+          <h1>Quản lý Trắc nghiệm</h1>
+          <div className="sub">
+            {quizzes.length} bài trắc nghiệm theo chủ đề &amp; cấp độ · quản lý từng câu hỏi trong bài
+          </div>
         </div>
         <button
+          type="button"
+          className="btn"
           onClick={openCreate}
-          style={{
-            background: '#4F46E5',
-            color: '#FFFFFF',
-            border: 'none',
-            padding: '11px 22px',
-            borderRadius: 12,
-            fontWeight: 700,
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8,
-            boxShadow: '0 4px 12px rgba(79, 70, 229, 0.3)'
-          }}
         >
-          <Icon n="spark" s={18} />
-          Tạo đề thi mới
+          <Icon n="plus" s={18} />
+          Tạo quiz mới
         </button>
       </div>
 
       {message && (
-        <div style={{
-          background: message.error ? '#FEE2E2' : '#D1FAE5',
-          color: message.error ? '#991B1B' : '#065F46',
-          border: `1px solid ${message.error ? '#FCA5A5' : '#6EE7B7'}`,
-          padding: '12px 18px',
-          borderRadius: 12,
-          marginBottom: 20,
-          fontWeight: 600,
-          fontSize: '0.92rem'
-        }}>
+        <div className={message.error ? 'error' : 'ok'}>
           {message.text}
         </div>
       )}
 
-      {/* Filter Tabs */}
-      <div style={{
-        background: '#FFFFFF',
-        borderRadius: 16,
-        padding: '16px 20px',
-        border: '1px solid #E2E8F0',
-        marginBottom: 22,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        flexWrap: 'wrap',
-        gap: 14
-      }}>
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-          {LEVELS.map((lvl) => (
-            <button
-              key={lvl}
-              onClick={() => setLevelFilter(lvl)}
-              style={{
-                padding: '7px 16px',
-                borderRadius: 10,
-                border: 'none',
-                background: levelFilter === lvl ? '#4F46E5' : '#F1F5F9',
-                color: levelFilter === lvl ? '#FFFFFF' : '#475569',
-                fontWeight: 700,
-                fontSize: '0.86rem',
-                cursor: 'pointer',
-                transition: 'all 0.15s'
-              }}
-            >
-              {lvl === 'ALL' ? 'Tất cả cấp độ' : `Cấp độ ${lvl}`}
-            </button>
-          ))}
-        </div>
-
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#64748B' }}>Trạng thái:</span>
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            style={{
-              padding: '8px 12px',
-              borderRadius: 8,
-              border: '1px solid #CBD5E1',
-              fontWeight: 600,
-              fontSize: '0.88rem',
-              outline: 'none',
-              background: '#FFFFFF'
-            }}
+      {/* Chiprow Filters */}
+      <div className="chiprow">
+        {LEVELS.map((lvl) => (
+          <button
+            key={lvl}
+            type="button"
+            className={'fchip' + (levelFilter === lvl ? ' on' : '')}
+            onClick={() => setLevelFilter(lvl)}
           >
-            <option value="ALL">Tất cả</option>
-            <option value="PUBLISHED">Công khai (PUBLISHED)</option>
-            <option value="DRAFT">Bản nháp (DRAFT)</option>
-          </select>
-        </div>
+            {lvl === 'ALL' ? 'Tất cả cấp độ' : lvl}
+          </button>
+        ))}
+        <span style={{ borderRight: '1.5px solid var(--line)', margin: '0 4px', height: 24, alignSelf: 'center' }} />
+        {['ALL', 'PUBLISHED', 'DRAFT'].map((st) => (
+          <button
+            key={st}
+            type="button"
+            className={'fchip' + (statusFilter === st ? ' on' : '')}
+            onClick={() => setStatusFilter(st)}
+          >
+            {st === 'ALL' ? 'Mọi trạng thái' : st === 'PUBLISHED' ? 'Đang mở' : 'Bản nháp'}
+          </button>
+        ))}
       </div>
 
-      {/* Quizzes Table */}
-      <div style={{
-        background: '#FFFFFF',
-        borderRadius: 18,
-        border: '1px solid #E2E8F0',
-        overflow: 'hidden',
-        boxShadow: '0 2px 10px rgba(0,0,0,0.02)'
-      }}>
-        <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.9rem' }}>
-            <thead>
-              <tr style={{ background: '#F8FAFC', borderBottom: '1px solid #E2E8F0', color: '#64748B' }}>
-                <th style={{ padding: '14px 18px' }}>Mã Đề</th>
-                <th style={{ padding: '14px 18px' }}>Tiêu đề Bài thi</th>
-                <th style={{ padding: '14px 18px' }}>Cấp độ</th>
-                <th style={{ padding: '14px 18px' }}>Thời gian</th>
-                <th style={{ padding: '14px 18px' }}>Số câu hỏi</th>
-                <th style={{ padding: '14px 18px' }}>Trạng thái</th>
-                <th style={{ padding: '14px 18px', textAlign: 'right' }}>Thao tác</th>
-              </tr>
-            </thead>
-            <tbody>
-              {loading ? (
-                <tr>
-                  <td colSpan={7} style={{ padding: 40, textAlign: 'center', color: '#64748B' }}>
-                    Đang tải danh sách bài trắc nghiệm...
-                  </td>
-                </tr>
-              ) : filteredQuizzes.length === 0 ? (
-                <tr>
-                  <td colSpan={7} style={{ padding: 40, textAlign: 'center', color: '#64748B' }}>
-                    Không có đề thi nào trong danh mục này.
-                  </td>
-                </tr>
-              ) : (
-                filteredQuizzes.map((q) => (
-                  <tr key={q.id} style={{ borderBottom: '1px solid #F1F5F9' }}>
-                    <td style={{ padding: '14px 18px', fontWeight: 700, color: '#64748B' }}>
-                      #{q.id}
-                    </td>
-                    <td style={{ padding: '14px 18px', fontWeight: 700, color: '#0F172A', fontSize: '0.96rem' }}>
-                      {q.title}
-                      {q.description && (
-                        <div style={{ fontSize: '0.8rem', fontWeight: 400, color: '#64748B', marginTop: 2 }}>
-                          {q.description}
-                        </div>
-                      )}
-                    </td>
-                    <td style={{ padding: '14px 18px' }}>
-                      <span style={{
-                        padding: '3px 8px',
-                        borderRadius: 6,
-                        fontSize: '0.78rem',
-                        fontWeight: 800,
-                        color: '#FFFFFF',
-                        background:
-                          q.level === 'A1' ? '#10B981' :
-                          q.level === 'A2' ? '#06B6D4' :
-                          q.level === 'B1' ? '#3B82F6' :
-                          q.level === 'B2' ? '#8B5CF6' : '#EC4899'
-                      }}>
-                        {q.level || 'A1'}
-                      </span>
-                    </td>
-                    <td style={{ padding: '14px 18px', color: '#475569', fontWeight: 600 }}>
-                      {Math.round((q.timeLimit || 600) / 60)} phút
-                    </td>
-                    <td style={{ padding: '14px 18px', fontWeight: 700, color: '#4F46E5' }}>
-                      {q.questionCount ?? 5} câu
-                    </td>
-                    <td style={{ padding: '14px 18px' }}>
-                      <span style={{
-                        padding: '3px 10px',
-                        borderRadius: 20,
-                        fontSize: '0.78rem',
-                        fontWeight: 700,
-                        background: q.status === 'PUBLISHED' ? '#ECFDF5' : '#FEF3C7',
-                        color: q.status === 'PUBLISHED' ? '#059669' : '#D97706',
-                        border: `1px solid ${q.status === 'PUBLISHED' ? '#A7F3D0' : '#FDE68A'}`
-                      }}>
-                        {q.status}
-                      </span>
-                    </td>
-                    <td style={{ padding: '14px 18px', textAlign: 'right' }}>
-                      <div style={{ display: 'inline-flex', gap: 6 }}>
-                        <button
-                          onClick={() => openManageQuestions(q)}
-                          style={{
-                            background: '#EEF2FF',
-                            border: '1px solid #C7D2FE',
-                            color: '#4F46E5',
-                            padding: '5px 11px',
-                            borderRadius: 8,
-                            fontSize: '0.82rem',
-                            fontWeight: 700,
-                            cursor: 'pointer'
-                          }}
-                        >
-                          Câu hỏi
-                        </button>
-                        <button
-                          onClick={() => openEdit(q)}
-                          style={{
-                            background: '#F1F5F9',
-                            border: '1px solid #E2E8F0',
-                            color: '#334155',
-                            padding: '5px 10px',
-                            borderRadius: 8,
-                            fontSize: '0.82rem',
-                            fontWeight: 600,
-                            cursor: 'pointer'
-                          }}
-                        >
-                          Sửa
-                        </button>
-                        <button
-                          onClick={() => handleDeleteQuiz(q)}
-                          style={{
-                            background: 'rgba(239, 68, 68, 0.1)',
-                            border: '1px solid rgba(239, 68, 68, 0.2)',
-                            color: '#DC2626',
-                            padding: '5px 10px',
-                            borderRadius: 8,
-                            fontSize: '0.82rem',
-                            fontWeight: 700,
-                            cursor: 'pointer'
-                          }}
-                        >
-                          Xóa
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+      {/* Quizzes Grid */}
+      {loading ? (
+        <div className="card center" style={{ padding: 48, color: 'var(--muted)' }}>
+          Đang tải danh sách bài trắc nghiệm...
         </div>
-      </div>
+      ) : filteredQuizzes.length === 0 ? (
+        <div className="card center" style={{ padding: 48, color: 'var(--muted)' }}>
+          Không có bài trắc nghiệm nào phù hợp.
+        </div>
+      ) : (
+        <div className="cols2">
+          {filteredQuizzes.map((q) => {
+            const isPub = q.status === 'PUBLISHED';
+            return (
+              <div key={q.id} className="card">
+                <div className="row" style={{ alignItems: 'flex-start' }}>
+                  <b style={{ fontSize: 17.5, color: 'var(--ink)' }}>{q.title}</b>
+                  <span className={isPub ? 'pill greensoft' : 'pill warn'}>
+                    {isPub ? 'Đang mở' : 'Bản nháp'}
+                  </span>
+                </div>
 
-      {/* Create / Edit Quiz Modal */}
-      {(showCreateModal || editingQuiz) && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'rgba(15, 23, 42, 0.65)',
-          backdropFilter: 'blur(4px)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 1000,
-          padding: 20
-        }}>
-          <div style={{
-            background: '#FFFFFF',
-            borderRadius: 22,
-            padding: '28px 32px',
-            maxWidth: 540,
-            width: '100%',
-            boxShadow: '0 20px 40px rgba(0,0,0,0.2)'
-          }}>
-            <h2 style={{ fontSize: '1.4rem', fontWeight: 800, margin: '0 0 18px 0', color: '#0F172A' }}>
-              {editingQuiz ? `Chỉnh sửa đề thi #${editingQuiz.id}` : 'Tạo bài trắc nghiệm mới'}
-            </h2>
+                <div className="mt8" style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                  <span className="pill level">Cấp {q.level || 'A1'}</span>
+                  <span className="pill">{q.questionCount ?? 10} câu hỏi</span>
+                  <span className="pill">{Math.round((q.timeLimit || 600) / 60)} phút</span>
+                </div>
 
-            <form onSubmit={handleSaveQuiz}>
-              <div style={{ marginBottom: 14 }}>
-                <label style={{ display: 'block', fontSize: '0.84rem', fontWeight: 700, color: '#334155', marginBottom: 4 }}>
-                  Tiêu đề đề thi (*)
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="Ví dụ: Luyện đề CEFR B1 - Cụm động từ cơ bản"
-                  value={quizForm.title}
-                  onChange={(e) => setQuizForm({ ...quizForm, title: e.target.value })}
-                  style={{ width: '100%', padding: '9px 12px', borderRadius: 8, border: '1px solid #CBD5E1', boxSizing: 'border-box' }}
-                />
-              </div>
+                {q.description && (
+                  <div className="sub mt8" style={{ fontSize: 13, lineHeight: 1.5 }}>
+                    {q.description}
+                  </div>
+                )}
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 14 }}>
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.84rem', fontWeight: 700, color: '#334155', marginBottom: 4 }}>
-                    Trình độ CEFR
-                  </label>
-                  <select
-                    value={quizForm.level}
-                    onChange={(e) => setQuizForm({ ...quizForm, level: e.target.value })}
-                    style={{ width: '100%', padding: '9px 12px', borderRadius: 8, border: '1px solid #CBD5E1', boxSizing: 'border-box', background: '#FFFFFF' }}
+                <div className="btn-row mt16">
+                  <button
+                    type="button"
+                    className="btn ghost"
+                    style={{ flex: 1, minHeight: 42 }}
+                    onClick={() => openManageQuestions(q)}
                   >
-                    {['A1', 'A2', 'B1', 'B2', 'C1'].map((c) => (
-                      <option key={c} value={c}>{c}</option>
-                    ))}
-                  </select>
+                    Quản lý câu hỏi
+                  </button>
+                  <button
+                    type="button"
+                    className="btn ghost"
+                    style={{ minHeight: 42, padding: '0 16px' }}
+                    onClick={() => openEdit(q)}
+                  >
+                    Sửa
+                  </button>
+                  <button
+                    type="button"
+                    className="btn ghost"
+                    style={{ minHeight: 42, padding: '0 14px', color: 'var(--red-dark)', borderColor: 'rgba(229,72,77,0.3)' }}
+                    onClick={() => handleDeleteQuiz(q)}
+                  >
+                    Xóa
+                  </button>
                 </div>
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.84rem', fontWeight: 700, color: '#334155', marginBottom: 4 }}>
-                    Thời gian làm bài (Giây)
-                  </label>
-                  <input
-                    type="number"
-                    min={60}
-                    step={30}
-                    value={quizForm.timeLimit}
-                    onChange={(e) => setQuizForm({ ...quizForm, timeLimit: Number(e.target.value) })}
-                    style={{ width: '100%', padding: '9px 12px', borderRadius: 8, border: '1px solid #CBD5E1', boxSizing: 'border-box' }}
-                  />
-                </div>
               </div>
-
-              <div style={{ marginBottom: 14 }}>
-                <label style={{ display: 'block', fontSize: '0.84rem', fontWeight: 700, color: '#334155', marginBottom: 4 }}>
-                  Mô tả bài thi
-                </label>
-                <textarea
-                  rows={3}
-                  placeholder="Mô tả mục tiêu bài kiểm tra..."
-                  value={quizForm.description}
-                  onChange={(e) => setQuizForm({ ...quizForm, description: e.target.value })}
-                  style={{ width: '100%', padding: '9px 12px', borderRadius: 8, border: '1px solid #CBD5E1', boxSizing: 'border-box', resize: 'vertical' }}
-                />
-              </div>
-
-              <div style={{ marginBottom: 20 }}>
-                <label style={{ display: 'block', fontSize: '0.84rem', fontWeight: 700, color: '#334155', marginBottom: 4 }}>
-                  Trạng thái
-                </label>
-                <select
-                  value={quizForm.status}
-                  onChange={(e) => setQuizForm({ ...quizForm, status: e.target.value })}
-                  style={{ width: '100%', padding: '9px 12px', borderRadius: 8, border: '1px solid #CBD5E1', boxSizing: 'border-box', background: '#FFFFFF' }}
-                >
-                  <option value="PUBLISHED">Công khai (PUBLISHED)</option>
-                  <option value="DRAFT">Bản nháp (DRAFT)</option>
-                </select>
-              </div>
-
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
-                <button
-                  type="button"
-                  onClick={() => { setShowCreateModal(false); setEditingQuiz(null); }}
-                  style={{
-                    background: '#F1F5F9',
-                    color: '#334155',
-                    border: '1px solid #CBD5E1',
-                    padding: '10px 18px',
-                    borderRadius: 10,
-                    fontWeight: 600,
-                    cursor: 'pointer'
-                  }}
-                >
-                  Hủy
-                </button>
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  style={{
-                    background: '#4F46E5',
-                    color: '#FFFFFF',
-                    border: 'none',
-                    padding: '10px 22px',
-                    borderRadius: 10,
-                    fontWeight: 700,
-                    cursor: submitting ? 'wait' : 'pointer',
-                    boxShadow: '0 4px 12px rgba(79, 70, 229, 0.3)'
-                  }}
-                >
-                  {submitting ? 'Đang lưu...' : 'Lưu đề thi'}
-                </button>
-              </div>
-            </form>
-          </div>
+            );
+          })}
         </div>
       )}
 
-      {/* Manage Questions Modal */}
-      {managingQuiz && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'rgba(15, 23, 42, 0.65)',
-          backdropFilter: 'blur(4px)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 1000,
-          padding: 20
-        }}>
-          <div style={{
-            background: '#FFFFFF',
-            borderRadius: 22,
-            padding: '28px 32px',
-            maxWidth: 720,
-            width: '100%',
-            boxShadow: '0 20px 40px rgba(0,0,0,0.2)',
-            maxHeight: '90vh',
-            display: 'flex',
-            flexDirection: 'column'
-          }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 18 }}>
-              <div>
-                <h2 style={{ fontSize: '1.4rem', fontWeight: 800, margin: 0, color: '#0F172A' }}>
-                  Quản lý Câu hỏi: "{managingQuiz.title}"
-                </h2>
-                <span style={{ fontSize: '0.86rem', color: '#64748B' }}>
-                  Cấp độ {managingQuiz.level} • {quizDetails?.questions?.length || 0} câu hỏi trong đề
-                </span>
-              </div>
+      {/* Create / Edit Quiz Modal */}
+      {(showCreateModal || editingQuiz) && (
+        <>
+          <div className="scrim" onClick={() => { setShowCreateModal(false); setEditingQuiz(null); }} />
+          <div className="modal" style={{ maxWidth: 540 }}>
+            <div className="row" style={{ alignItems: 'center', marginBottom: 16 }}>
+              <h2 style={{ fontSize: 20 }}>
+                {editingQuiz ? `Chỉnh sửa Quiz #${editingQuiz.id}` : 'Tạo bài trắc nghiệm mới'}
+              </h2>
               <button
-                onClick={() => { setManagingQuiz(null); setQuizDetails(null); setShowAddQuestion(false); }}
-                style={{
-                  background: '#F1F5F9',
-                  border: 'none',
-                  width: 32,
-                  height: 32,
-                  borderRadius: '50%',
-                  cursor: 'pointer',
-                  fontWeight: 800,
-                  color: '#64748B'
-                }}
+                type="button"
+                className="btn ghost sm"
+                onClick={() => { setShowCreateModal(false); setEditingQuiz(null); }}
+                style={{ padding: '4px 8px' }}
               >
                 ✕
               </button>
             </div>
 
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
-              <div style={{ fontWeight: 700, fontSize: '0.94rem', color: '#1E293B' }}>Danh sách câu hỏi</div>
+            <form onSubmit={handleSaveQuiz} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              <div className="field">
+                <label>Tiêu đề bài trắc nghiệm (*)</label>
+                <input
+                  className="input"
+                  value={quizForm.title}
+                  onChange={(e) => setQuizForm({ ...quizForm, title: e.target.value })}
+                  placeholder="e.g. Từ vựng Business Căn bản"
+                  required
+                />
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                <div className="field">
+                  <label>Cấp độ CEFR</label>
+                  <select
+                    className="input"
+                    value={quizForm.level}
+                    onChange={(e) => setQuizForm({ ...quizForm, level: e.target.value })}
+                  >
+                    <option value="A1">A1 - Sơ cấp căn bản</option>
+                    <option value="A2">A2 - Sơ cấp</option>
+                    <option value="B1">B1 - Trung cấp</option>
+                    <option value="B2">B2 - Trung cấp cao</option>
+                    <option value="C1">C1 - Cao cấp</option>
+                  </select>
+                </div>
+
+                <div className="field">
+                  <label>Thời gian làm bài (giây)</label>
+                  <input
+                    type="number"
+                    className="input"
+                    value={quizForm.timeLimit}
+                    onChange={(e) => setQuizForm({ ...quizForm, timeLimit: Number(e.target.value) })}
+                    min={60}
+                    step={30}
+                  />
+                </div>
+              </div>
+
+              <div className="field">
+                <label>Trạng thái phát hành</label>
+                <select
+                  className="input"
+                  value={quizForm.status}
+                  onChange={(e) => setQuizForm({ ...quizForm, status: e.target.value })}
+                >
+                  <option value="PUBLISHED">Mở cho học viên (PUBLISHED)</option>
+                  <option value="DRAFT">Lưu bản nháp (DRAFT)</option>
+                </select>
+              </div>
+
+              <div className="field">
+                <label>Mô tả ngắn</label>
+                <textarea
+                  className="input"
+                  value={quizForm.description}
+                  onChange={(e) => setQuizForm({ ...quizForm, description: e.target.value })}
+                  placeholder="e.g. Bài tập kiểm tra nhanh 10 từ vựng chủ đề công sở..."
+                  style={{ minHeight: 70 }}
+                />
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 6 }}>
+                <button
+                  type="button"
+                  className="btn ghost"
+                  onClick={() => { setShowCreateModal(false); setEditingQuiz(null); }}
+                >
+                  Hủy
+                </button>
+                <button
+                  type="submit"
+                  className="btn"
+                  disabled={submitting}
+                >
+                  {submitting ? 'Đang lưu...' : editingQuiz ? 'Cập nhật đề' : 'Tạo bài thi'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </>
+      )}
+
+      {/* Manage Questions Modal / Drawer */}
+      {managingQuiz && (
+        <>
+          <div className="scrim" onClick={() => { setManagingQuiz(null); setQuizDetails(null); setShowAddQuestion(false); }} />
+          <div className="modal" style={{ maxWidth: 680, maxHeight: '85vh', overflowY: 'auto' }}>
+            <div className="row" style={{ alignItems: 'flex-start', marginBottom: 16 }}>
+              <div>
+                <h2 style={{ fontSize: 20 }}>
+                  Quản lý câu hỏi: &ldquo;{managingQuiz.title}&rdquo;
+                </h2>
+                <div className="sub mt8">
+                  Cấp {managingQuiz.level} · {quizDetails?.questions?.length || 0} câu hỏi trong bài
+                </div>
+              </div>
               <button
-                onClick={() => setShowAddQuestion(!showAddQuestion)}
-                style={{
-                  background: showAddQuestion ? '#F1F5F9' : '#4F46E5',
-                  color: showAddQuestion ? '#334155' : '#FFFFFF',
-                  border: 'none',
-                  padding: '7px 14px',
-                  borderRadius: 8,
-                  fontWeight: 700,
-                  fontSize: '0.84rem',
-                  cursor: 'pointer'
-                }}
+                type="button"
+                className="btn ghost sm"
+                onClick={() => { setManagingQuiz(null); setQuizDetails(null); setShowAddQuestion(false); }}
+                style={{ padding: '4px 8px' }}
               >
-                {showAddQuestion ? 'Thu gọn form' : '+ Thêm câu hỏi'}
+                ✕
               </button>
             </div>
 
-            {/* Add Question Form Drawer */}
-            {showAddQuestion && (
-              <form onSubmit={handleSaveQuestion} style={{
-                background: '#F8FAFC',
-                border: '1px solid #CBD5E1',
-                borderRadius: 14,
-                padding: '16px 20px',
-                marginBottom: 16
-              }}>
-                <div style={{ fontWeight: 700, fontSize: '0.95rem', color: '#0F172A', marginBottom: 10 }}>
-                  Thêm câu hỏi mới vào đề #{managingQuiz.id}
-                </div>
+            {/* Questions list */}
+            {detailLoading ? (
+              <div className="center" style={{ padding: 30, color: 'var(--muted)' }}>
+                Đang tải danh sách câu hỏi...
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                {quizDetails?.questions && quizDetails.questions.length > 0 ? (
+                  quizDetails.questions.map((q, idx) => (
+                    <div
+                      key={q.id || idx}
+                      style={{
+                        padding: '14px 16px',
+                        background: '#F8FAFC',
+                        borderRadius: 14,
+                        border: '1px solid var(--line)',
+                      }}
+                    >
+                      <div className="row" style={{ alignItems: 'flex-start' }}>
+                        <div style={{ flex: 1 }}>
+                          <b>Câu {idx + 1}: {q.content}</b>
+                        </div>
+                        <button
+                          type="button"
+                          className="link"
+                          style={{ color: 'var(--red-dark)', fontSize: 13 }}
+                          onClick={() => handleDeleteQuestion(q.id)}
+                        >
+                          Xóa
+                        </button>
+                      </div>
 
-                <div style={{ marginBottom: 10 }}>
-                  <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: '#334155', marginBottom: 4 }}>
-                    Nội dung câu hỏi (*)
-                  </label>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, marginTop: 8 }}>
+                        {q.options?.map((opt: string, oIdx: number) => {
+                          const isRight = oIdx === q.correctAnswer;
+                          return (
+                            <div
+                              key={oIdx}
+                              style={{
+                                fontSize: 13,
+                                padding: '4px 8px',
+                                borderRadius: 8,
+                                background: isRight ? 'var(--green-bg)' : '#fff',
+                                color: isRight ? 'var(--green-dark)' : 'var(--ink)',
+                                fontWeight: isRight ? 800 : 600,
+                                border: '1px solid var(--line)',
+                              }}
+                            >
+                              {String.fromCharCode(65 + oIdx)}. {opt} {isRight && '✓'}
+                            </div>
+                          );
+                        })}
+                      </div>
+
+                      {q.explanation && (
+                        <div className="sub mt8" style={{ fontSize: 12 }}>
+                          💡 Giải thích: {q.explanation}
+                        </div>
+                      )}
+                    </div>
+                  ))
+                ) : (
+                  <div className="center" style={{ padding: 24, color: 'var(--muted)', fontSize: 14 }}>
+                    Chưa có câu hỏi nào trong đề thi này. Hãy thêm câu hỏi đầu tiên!
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Add Question Form inline toggle */}
+            {!showAddQuestion ? (
+              <div className="mt16">
+                <button
+                  type="button"
+                  className="btn block"
+                  onClick={() => setShowAddQuestion(true)}
+                >
+                  <Icon n="plus" s={18} /> Thêm câu hỏi vào đề
+                </button>
+              </div>
+            ) : (
+              <form onSubmit={handleSaveQuestion} style={{ marginTop: 18, borderTop: '1.5px dashed var(--line)', paddingTop: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
+                <b style={{ fontSize: 16 }}>Thêm câu hỏi mới</b>
+
+                <div className="field">
+                  <label>Nội dung câu hỏi (*)</label>
                   <input
-                    type="text"
-                    required
-                    placeholder="Ví dụ: What is the opposite of 'generous'?"
+                    className="input"
                     value={questionForm.content}
                     onChange={(e) => setQuestionForm({ ...questionForm, content: e.target.value })}
-                    style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid #CBD5E1', boxSizing: 'border-box' }}
+                    placeholder="e.g. What is the synonym of 'resilient'?"
+                    required
                   />
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 10 }}>
-                  {['A', 'B', 'C', 'D'].map((lbl, idx) => (
-                    <div key={lbl}>
-                      <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#475569', marginBottom: 2 }}>
-                        Phương án {lbl}
-                      </label>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                  {['A', 'B', 'C', 'D'].map((letter, idx) => (
+                    <div key={letter} className="field">
+                      <label>Phương án {letter} (*)</label>
                       <input
-                        type="text"
-                        required
+                        className="input"
                         value={questionForm.options[idx]}
                         onChange={(e) => {
-                          const newOpts = [...questionForm.options];
-                          newOpts[idx] = e.target.value;
-                          setQuestionForm({ ...questionForm, options: newOpts });
+                          const next = [...questionForm.options];
+                          next[idx] = e.target.value;
+                          setQuestionForm({ ...questionForm, options: next });
                         }}
-                        style={{ width: '100%', padding: '7px 10px', borderRadius: 6, border: '1px solid #CBD5E1', boxSizing: 'border-box' }}
+                        placeholder={`Phương án ${letter}`}
+                        required
                       />
                     </div>
                   ))}
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: 10, marginBottom: 12 }}>
-                  <div>
-                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: 2 }}>
-                      Đáp án đúng (*)
-                    </label>
-                    <select
-                      value={questionForm.correctAnswer}
-                      onChange={(e) => setQuestionForm({ ...questionForm, correctAnswer: Number(e.target.value) })}
-                      style={{ width: '100%', padding: '7px 10px', borderRadius: 6, border: '1px solid #CBD5E1', background: '#FFFFFF' }}
-                    >
-                      <option value={0}>Phương án A</option>
-                      <option value={1}>Phương án B</option>
-                      <option value={2}>Phương án C</option>
-                      <option value={3}>Phương án D</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: 2 }}>
-                      Giải thích đáp án
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="Giải thích tại sao chọn đáp án này..."
-                      value={questionForm.explanation}
-                      onChange={(e) => setQuestionForm({ ...questionForm, explanation: e.target.value })}
-                      style={{ width: '100%', padding: '7px 10px', borderRadius: 6, border: '1px solid #CBD5E1', boxSizing: 'border-box' }}
-                    />
-                  </div>
+                <div className="field">
+                  <label>Đáp án đúng</label>
+                  <select
+                    className="input"
+                    value={questionForm.correctAnswer}
+                    onChange={(e) => setQuestionForm({ ...questionForm, correctAnswer: Number(e.target.value) })}
+                  >
+                    <option value={0}>Phương án A là đúng</option>
+                    <option value={1}>Phương án B là đúng</option>
+                    <option value={2}>Phương án C là đúng</option>
+                    <option value={3}>Phương án D là đúng</option>
+                  </select>
                 </div>
 
-                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+                <div className="field">
+                  <label>Giải thích đáp án</label>
+                  <input
+                    className="input"
+                    value={questionForm.explanation}
+                    onChange={(e) => setQuestionForm({ ...questionForm, explanation: e.target.value })}
+                    placeholder="e.g. 'Strong' hoặc 'Tough' có nghĩa tương tự 'Resilient'..."
+                  />
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
                   <button
                     type="button"
+                    className="btn ghost sm"
                     onClick={() => setShowAddQuestion(false)}
-                    style={{ background: '#E2E8F0', border: 'none', padding: '6px 14px', borderRadius: 6, fontWeight: 600, cursor: 'pointer' }}
                   >
-                    Hủy
+                    Hủy thêm
                   </button>
                   <button
                     type="submit"
+                    className="btn sm"
                     disabled={submitting}
-                    style={{ background: '#10B981', color: '#FFFFFF', border: 'none', padding: '6px 16px', borderRadius: 6, fontWeight: 700, cursor: submitting ? 'wait' : 'pointer' }}
                   >
-                    {submitting ? 'Đang thêm...' : 'Lưu câu hỏi'}
+                    {submitting ? 'Đang lưu...' : 'Lưu câu hỏi'}
                   </button>
                 </div>
               </form>
             )}
-
-            {/* Questions List scrollable */}
-            <div style={{ overflowY: 'auto', flex: 1, paddingRight: 4 }}>
-              {detailLoading ? (
-                <div style={{ textAlign: 'center', padding: 30, color: '#64748B' }}>Đang tải danh sách câu hỏi...</div>
-              ) : !quizDetails?.questions || quizDetails.questions.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: 30, color: '#64748B' }}>
-                  Chưa có câu hỏi nào trong bài này. Hãy bấm "+ Thêm câu hỏi" để bổ sung câu hỏi!
-                </div>
-              ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                  {quizDetails.questions.map((q, idx) => (
-                    <div
-                      key={q.id || idx}
-                      style={{
-                        background: '#F8FAFC',
-                        border: '1px solid #E2E8F0',
-                        borderRadius: 12,
-                        padding: '14px 18px',
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'flex-start',
-                        gap: 12
-                      }}
-                    >
-                      <div style={{ flex: 1 }}>
-                        <div style={{ fontWeight: 800, fontSize: '0.94rem', color: '#1E293B', marginBottom: 6 }}>
-                          Câu {idx + 1}: {q.content}
-                        </div>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, fontSize: '0.84rem', color: '#475569' }}>
-                          {q.options?.map((opt, oIdx) => (
-                            <div key={oIdx} style={{ display: 'flex', gap: 6 }}>
-                              <b style={{ color: '#4F46E5' }}>{['A', 'B', 'C', 'D'][oIdx]}.</b>
-                              <span>{opt}</span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                      <button
-                        onClick={() => handleDeleteQuestion(q.id)}
-                        title="Xóa câu hỏi này"
-                        style={{
-                          background: 'rgba(239, 68, 68, 0.1)',
-                          border: 'none',
-                          color: '#DC2626',
-                          padding: '4px 8px',
-                          borderRadius: 6,
-                          fontSize: '0.8rem',
-                          fontWeight: 700,
-                          cursor: 'pointer'
-                        }}
-                      >
-                        Xóa
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            <div style={{ borderTop: '1px solid #E2E8F0', paddingTop: 14, marginTop: 14, display: 'flex', justifyContent: 'flex-end' }}>
-              <button
-                onClick={() => { setManagingQuiz(null); setQuizDetails(null); setShowAddQuestion(false); }}
-                style={{
-                  background: '#F1F5F9',
-                  color: '#334155',
-                  border: '1px solid #CBD5E1',
-                  padding: '9px 18px',
-                  borderRadius: 10,
-                  fontWeight: 600,
-                  cursor: 'pointer'
-                }}
-              >
-                Đóng
-              </button>
-            </div>
           </div>
-        </div>
+        </>
       )}
     </div>
   );

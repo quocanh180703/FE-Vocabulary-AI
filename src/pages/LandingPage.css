@@ -33,6 +33,42 @@
   min-height: 100vh;
   box-sizing: border-box;
   -webkit-font-smoothing: antialiased;
+  animation: landingFadeIn 0.38s cubic-bezier(0.16, 1, 0.3, 1) both;
+  transition: opacity 0.22s cubic-bezier(0.16, 1, 0.3, 1), transform 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes landingFadeIn {
+  0% {
+    opacity: 0;
+    transform: translateY(14px) scale(0.997);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.landing.page-exiting {
+  opacity: 0 !important;
+  transform: translateY(-8px) scale(0.996) !important;
+  pointer-events: none;
+}
+
+.landing-route-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 3.5px;
+  width: 0%;
+  background: linear-gradient(90deg, #1565C0 0%, #359E7D 50%, #B57F1F 100%);
+  z-index: 99999;
+  pointer-events: none;
+  box-shadow: 0 0 10px rgba(21, 101, 192, 0.5);
+  transition: width 0.24s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.landing-route-bar.active {
+  width: 100%;
 }
 
 @media (max-width: 820px) {
@@ -51,6 +87,8 @@
 }
 
 .landing .sheet {
+  display: block !important;
+  min-height: auto !important;
   max-width: 1340px;
   margin: 0 auto;
   border-radius: 34px;

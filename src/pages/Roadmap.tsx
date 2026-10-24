@@ -11,6 +11,8 @@ import type {
 } from '../api';
 import { Mascot, Icon } from '../components/icons';
 import { useAuth } from '../auth/AuthContext';
+import { useUsage } from '../context/UsageContext';
+import { QuotaBadge } from '../components/QuotaBadge';
 
 interface SavedRoadmapData {
   analyzedAt: string;
@@ -99,6 +101,133 @@ const formatArea = (area?: string, idx: number = 0) => {
   return area;
 };
 
+const VI_ROADMAP_TRANSLATIONS: Record<string, string> = {
+  // Skill & Area names
+  'Spoken Production & Interaction': 'Kỹ năng Nói & Phản xạ Giao tiếp',
+  'Spoken Production': 'Kỹ năng Nói & Giao tiếp',
+  'Core Sentence Structure (A1)': 'Cấu trúc câu căn bản (A1)',
+  'Core Sentence Structure': 'Cấu trúc câu căn bản',
+  'Vocabulary Retention & Recall': 'Ghi nhớ & Mở rộng từ vựng',
+  'Grammar Accuracy': 'Độ chính xác ngữ pháp',
+  'Reading Comprehension': 'Đọc hiểu ngữ cảnh',
+  'Listening Comprehension': 'Kỹ năng nghe hiểu',
+  'Daily Study Habits': 'Thói quen học tập hàng ngày',
+  'Pronunciation & Phonetics': 'Phát âm & Ngữ âm',
+  'Oral Fluency': 'Độ trôi chảy khi nói',
+  'Speaking': 'Luyện nói & Phản xạ',
+  'Vocabulary': 'Từ vựng',
+  'Grammar': 'Ngữ pháp',
+  'Reading': 'Đọc hiểu',
+  'Listening': 'Luyện nghe',
+
+  // Descriptions & rationales from screenshot
+  'No speaking activities have been recorded at all, leaving oral communication completely undeveloped despite being a core language skill. This creates a lopsided profile where even basic pronunciation and conversational response are untested and likely near-zero.':
+    'Chưa có hoạt động luyện nói nào được ghi nhận. Kỹ năng giao tiếp và phát âm cơ bản chưa được rèn luyện, tạo nên sự chênh lệch lớn so với các kỹ năng khác.',
+  'Introduce 5-minute daily shadowing of slow, simple audio to build pronunciation familiarity without pressure':
+    'Dành 5 phút mỗi ngày shadowing (nhại theo) audio mẫu phát âm chậm và đơn giản để làm quen khẩu hình mà không bị áp lực.',
+  "Grammar sits at 22.1/100 over only 9 activities, indicating that fundamental structures such as verb 'to be', present simple, articles, and basic word order are not yet consolidated. Low activity count means limited exposure and practice.":
+    "Điểm ngữ pháp ở mức 22.1/100 qua 9 hoạt động, cho thấy các cấu trúc nền tảng như động từ 'to be', thì hiện tại đơn, mạo từ và trật tự từ cần được củng cố thêm thông qua luyện tập đều đặn.",
+  "Complete short 10-minute grammar drills focused on one structure per session (verb 'to be', present simple, articles)":
+    "Hoàn thành bài tập ngữ pháp ngắn 10 phút tập trung vào từng cấu trúc mỗi buổi học (động từ 'to be', hiện tại đơn, mạo từ).",
+  'Add one 5-minute speaking activity daily, starting with shadowing slow audio and recording a short self-introduction':
+    'Thêm 1 phiên luyện nói 5 phút mỗi ngày, bắt đầu bằng việc shadowing audio chậm và ghi âm đoạn giới thiệu bản thân ngắn.',
+  'Speaking is at 0.0/100 with zero activities and is the single largest gap; early, low-pressure oral practice prevents long-term fear and unlocks pronunciation and fluency gains.':
+    'Kỹ năng nói đang ở mức 0 điểm và là lỗ hổng lớn nhất; luyện nói nhẹ nhàng từ sớm giúp vượt qua tâm lý ngại nói và cải thiện phát âm vượt bậc.',
+  'Raise practice to at least 5 activities per week in fixed 15-minute daily sessions':
+    'Tăng tần suất học lên ít nhất 5 buổi mỗi tuần với các phiên cố định 15 phút mỗi ngày.',
+  'Current 2.1 activities/week and 10-minute sessions are too low to drive retention; consistency is the foundation for every other improvement.':
+    'Tần suất hiện tại 2.1 hoạt động/tuần và các phiên 10 phút chưa đủ để ghi nhớ lâu dài; sự đều đặn là nền tảng cho mọi tiến bộ.',
+  "Run 10-minute focused grammar drills on verb 'to be', present simple, and articles, with error-log review after 48 hours":
+    "Thực hành 10 phút bài tập ngữ pháp về động từ 'to be', hiện tại đơn và mạo từ, xem lại các lỗi sai sau 48 giờ.",
+  'Grammar at 22.1/100 over just 9 activities is a critical bottleneck; targeted spaced review of the highest-frequency A1 structures gives the fastest score gains.':
+    'Ngữ pháp ở mức 22.1/100 qua 9 hoạt động là rào cản lớn; ôn tập ngắt quãng các cấu trúc A1 phổ biến sẽ giúp bạn cải thiện điểm số nhanh nhất.',
+};
+
+const toVietnameseRoadmapText = (text?: string): string => {
+  if (!text) return '';
+  const trimmed = text.trim();
+  if (!trimmed) return '';
+
+  // 1. Direct dictionary lookup
+  if (VI_ROADMAP_TRANSLATIONS[trimmed]) {
+    return VI_ROADMAP_TRANSLATIONS[trimmed];
+  }
+
+  // 2. Already contains Vietnamese diacritics
+  if (/[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđĐ]/.test(trimmed)) {
+    return trimmed;
+  }
+
+  // 3. Check for partial matches in dictionary
+  for (const [en, vi] of Object.entries(VI_ROADMAP_TRANSLATIONS)) {
+    if (trimmed.toLowerCase().includes(en.toLowerCase()) || en.toLowerCase().includes(trimmed.toLowerCase())) {
+      if (en.length > 12) return vi;
+    }
+  }
+
+  // 4. Pattern matching for common AI recommendations
+  if (/no speaking activities/i.test(trimmed)) {
+    return 'Chưa có hoạt động luyện nói nào được ghi nhận. Kỹ năng giao tiếp và phát âm cơ bản cần được rèn luyện thêm.';
+  }
+  if (/grammar sits at/i.test(trimmed) || (/grammar/i.test(trimmed) && /activities/i.test(trimmed) && /consolidated/i.test(trimmed))) {
+    return 'Điểm ngữ pháp cần được củng cố thêm qua các bài luyện tập về thì hiện tại, mạo từ và cấu trúc câu căn bản.';
+  }
+  if (/shadowing/i.test(trimmed) && (/5-minute/i.test(trimmed) || /audio/i.test(trimmed))) {
+    return 'Dành 5 phút mỗi ngày shadowing (nhại theo) audio mẫu phát âm chậm để làm quen khẩu hình và tăng độ tự tin.';
+  }
+  if (/grammar drills/i.test(trimmed)) {
+    return 'Luyện tập ngữ pháp ngắn 10 phút tập trung vào các thì căn bản và trật tự từ mỗi ngày.';
+  }
+  if (/raise practice/i.test(trimmed) || (/activities per week/i.test(trimmed) && /sessions/i.test(trimmed))) {
+    return 'Tăng tần suất học lên ít nhất 5 buổi mỗi tuần với các phiên cố định 15 phút mỗi ngày để tạo thói quen vững chắc.';
+  }
+  if (/retention/i.test(trimmed) && /consistency/i.test(trimmed)) {
+    return 'Tần suất học đều đặn là nền tảng cốt lõi giúp kích hoạt trí nhớ dài hạn và ghi nhớ từ vựng lâu hơn.';
+  }
+
+  // Common phrase replacements
+  let translated = trimmed
+    .replace(/\bSpeaking is at\b/gi, 'Kỹ năng nói đang ở mức')
+    .replace(/\bGrammar is at\b/gi, 'Ngữ pháp đang ở mức')
+    .replace(/\bwith zero activities\b/gi, 'chưa có hoạt động nào')
+    .replace(/\bthe single largest gap\b/gi, 'lỗ hổng lớn nhất hiện tại')
+    .replace(/\bcritical bottleneck\b/gi, 'điểm nghẽn cần tháo gỡ')
+    .replace(/\bSpoken Production & Interaction\b/gi, 'Kỹ năng Nói & Phản xạ Giao tiếp')
+    .replace(/\bSpoken Production\b/gi, 'Kỹ năng Nói & Giao tiếp')
+    .replace(/\bCore Sentence Structure\b/gi, 'Cấu trúc câu căn bản');
+
+  return translated;
+};
+
+const toVietnameseSkillName = (name?: string): string => {
+  if (!name) return 'Kỹ năng';
+  const trimmed = name.trim();
+  if (VI_ROADMAP_TRANSLATIONS[trimmed]) return VI_ROADMAP_TRANSLATIONS[trimmed];
+  if (/[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđĐ]/.test(trimmed)) {
+    return trimmed;
+  }
+  const upper = trimmed.toUpperCase();
+  if (upper.includes('SPEAK') || upper.includes('ORAL') || upper.includes('PRONUNCIATION')) {
+    return 'Kỹ năng Nói & Phản xạ Giao tiếp';
+  }
+  if (upper.includes('SENTENCE') || upper.includes('GRAMMAR')) {
+    return upper.includes('A1') ? 'Cấu trúc câu căn bản (A1)' : 'Cấu trúc câu & Ngữ pháp';
+  }
+  if (upper.includes('VOCAB') || upper.includes('WORD')) {
+    return 'Ghi nhớ & Mở rộng từ vựng';
+  }
+  if (upper.includes('READ')) {
+    return 'Đọc hiểu & Ngữ cảnh';
+  }
+  if (upper.includes('LISTEN')) {
+    return 'Luyện nghe & Nhận diện âm';
+  }
+  if (upper.includes('HABIT') || upper.includes('FREQUENCY')) {
+    return 'Thói quen học tập hàng ngày';
+  }
+  return trimmed;
+};
+
 const formatImpact = (impact?: string) => {
   if (!impact) return 'Cao';
   const i = impact.trim().toUpperCase();
@@ -110,6 +239,7 @@ const formatImpact = (impact?: string) => {
 
 export default function Roadmap() {
   const { user } = useAuth();
+  const { decrementQuota, refreshUsage } = useUsage();
   const nav = useNavigate();
 
   // Storage key uniquely scoped to user
@@ -129,8 +259,9 @@ export default function Roadmap() {
   const [prediction, setPrediction] = useState<ProgressPrediction | null>(null);
   const [completedActs, setCompletedActs] = useState<Set<string | number>>(new Set());
 
-  // 1. Initial Load: Check localStorage for existing saved analysis
+  // 1. Initial Load: Check localStorage and backend cache for existing saved analysis (GET plan does not consume quota)
   useEffect(() => {
+    let isCurrent = true;
     try {
       const raw = localStorage.getItem(storageKey);
       if (raw) {
@@ -145,13 +276,38 @@ export default function Roadmap() {
           setAnalyzedAt(data.analyzedAt);
           setHasSaved(true);
         }
+      } else {
+        // If no localStorage, check if backend Redis has a cached plan (GET /plan does NOT consume quota)
+        personalizedApi.plan()
+          .then((res) => {
+            if (!isCurrent) return;
+            const cachedPlan = res?.data;
+            if (cachedPlan && cachedPlan.weeks && cachedPlan.weeks.length > 0) {
+              setPlan(cachedPlan);
+              setHasSaved(true);
+              setAnalyzedAt('Đã lưu gần đây');
+              personalizedApi.profile().then((pRes) => {
+                if (isCurrent && pRes?.data) setProfile(pRes.data);
+              }).catch(() => {});
+              personalizedApi.dailyPractice().then((dRes) => {
+                if (isCurrent && dRes?.data) setDaily(dRes.data);
+              }).catch(() => {});
+            }
+          })
+          .catch(() => {
+            // 404 NO_PLAN_YET: No plan exists yet, show empty/onboarding state
+            if (isCurrent) setHasSaved(false);
+          });
       }
     } catch (e) {
       console.warn('Lỗi đọc dữ liệu lộ trình đã lưu:', e);
     }
+    return () => {
+      isCurrent = false;
+    };
   }, [storageKey]);
 
-  // 2. Start AI Analysis handler (only runs when explicitly triggered by the user)
+  // 2. Start AI Analysis handler (only runs when explicitly triggered by the user via POST regenerate)
   const startAnalysis = async () => {
     setIsAnalyzing(true);
     setFeedbackMsg('');
@@ -173,10 +329,14 @@ export default function Roadmap() {
 
       await new Promise((r) => setTimeout(r, 700));
 
-      // Step 3: Generate 4-week learning plan
+      // Step 3: Generate 4-week learning plan via POST /plan/regenerate (consumes 1 ROADMAP quota)
       setAnalyzingStep(3);
-      const planRes = await personalizedApi.plan().catch(() => null);
+      const planRes = await personalizedApi.regeneratePlan();
       const newPlan = planRes?.data || null;
+      if (newPlan) {
+        decrementQuota('roadmap');
+        refreshUsage();
+      }
 
       await new Promise((r) => setTimeout(r, 400));
 
@@ -227,9 +387,13 @@ export default function Roadmap() {
 
       setFeedbackMsg('✨ Lộ trình AI đã được phân tích và lưu lại thành công!');
       setTimeout(() => setFeedbackMsg(''), 5000);
-    } catch (e) {
+    } catch (e: any) {
       console.error('Lỗi khi phân tích lộ trình:', e);
-      setFeedbackMsg('Đã thiết lập lộ trình dựa trên hồ sơ học tập gần nhất.');
+      if (e?.response?.status === 429) {
+        setFeedbackMsg('⚠️ Bạn đã dùng hết lượt tạo lộ trình miễn phí hôm nay.');
+      } else {
+        setFeedbackMsg('Đã xảy ra lỗi khi tạo lại lộ trình. Vui lòng thử lại sau.');
+      }
     } finally {
       setIsAnalyzing(false);
       setAnalyzingStep(0);
@@ -298,8 +462,11 @@ export default function Roadmap() {
         </div>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16 }}>
           <div>
-            <h1>Lộ trình học AI cá nhân hóa</h1>
-            <div className="sub">
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+              <h1 style={{ margin: 0 }}>Lộ trình học AI cá nhân hóa</h1>
+              <QuotaBadge featureKey="roadmap" labelSuffix="lượt tạo hôm nay" />
+            </div>
+            <div className="sub" style={{ marginTop: 4 }}>
               Hệ thống theo dõi năng lực theo thời gian thực và tự động tối ưu hóa lộ trình dành riêng cho bạn
             </div>
           </div>
@@ -308,26 +475,26 @@ export default function Roadmap() {
             <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
               <span
                 className="pill level"
-                style={{ fontSize: 14, padding: '6px 14px', fontWeight: 800, background: 'var(--primary)', color: '#fff' }}
+                style={{ fontSize: 13, padding: '5px 12px', fontWeight: 800, background: 'var(--primary)', color: '#fff' }}
                 title="Trình độ CEFR được AI đánh giá"
               >
                 Trình độ AI: {currentLevel}
               </span>
               <span
                 className="pill"
-                style={{ fontSize: 13, padding: '6px 12px', background: 'var(--bg-tag, #f1f5f9)', color: 'var(--text-sub)' }}
-                title="Thời điểm lưu kết quả phân tích gần nhất"
+                style={{ fontSize: 13, padding: '5px 12px', background: 'var(--tint, #EDF4FC)', color: 'var(--primary-dark, #0D47A1)', border: '1px solid var(--line, #E3EDF6)', fontWeight: 700 }}
+                title={`Lộ trình học tập được lưu trữ trong 7 ngày - xem hoàn toàn miễn phí${analyzedAt ? ` (Lưu lúc: ${analyzedAt})` : ''}`}
               >
-                🕒 Đã phân tích: {analyzedAt}
+                ✓ Kế hoạch tuần này {analyzedAt ? `· ${analyzedAt}` : '(Xem miễn phí)'}
               </span>
               <button
                 className="btn ghost sm"
                 onClick={startAnalysis}
                 disabled={isAnalyzing}
                 style={{ display: 'flex', alignItems: 'center', gap: 6 }}
-                title="Chạy lại phân tích AI mới nhất"
+                title="Tạo lại kế hoạch mới qua AI Gemini (tiêu tốn 1 lượt tạo lộ trình)"
               >
-                🔄 Cập nhật / Phân tích lại
+                🔄 {isAnalyzing ? 'Đang phân tích...' : 'Cập nhật / Tạo lại'}
               </button>
               <button
                 className="btn ghost sm"
@@ -483,6 +650,7 @@ export default function Roadmap() {
                   <button
                     className="btn primary"
                     onClick={startAnalysis}
+                    disabled={isAnalyzing}
                     style={{
                       fontSize: 16,
                       fontWeight: 800,
@@ -491,20 +659,22 @@ export default function Roadmap() {
                       background: 'linear-gradient(135deg, #38bdf8 0%, #0284c7 100%)',
                       color: '#0A2540',
                       border: 'none',
-                      cursor: 'pointer',
+                      cursor: isAnalyzing ? 'not-allowed' : 'pointer',
                       boxShadow: '0 8px 24px rgba(56, 189, 248, 0.45)',
                       display: 'inline-flex',
                       alignItems: 'center',
                       gap: 10,
                       transition: 'transform 0.2s ease',
+                      opacity: isAnalyzing ? 0.7 : 1,
                     }}
-                    onMouseEnter={(e) => (e.currentTarget.style.transform = 'translateY(-2px)')}
+                    onMouseEnter={(e) => { if (!isAnalyzing) e.currentTarget.style.transform = 'translateY(-2px)'; }}
                     onMouseLeave={(e) => (e.currentTarget.style.transform = 'translateY(0)')}
                   >
-                    <Icon n="zap" s={20} /> Bắt đầu phân tích ngay
+                    <Icon n="zap" s={20} /> {isAnalyzing ? 'Đang phân tích...' : 'Bắt đầu phân tích ngay'}
                   </button>
+                  <QuotaBadge featureKey="roadmap" labelSuffix="lượt tạo hôm nay" />
                   <span style={{ fontSize: 13, color: '#94a3b8' }}>
-                    ⚡ Phân tích tức thì · Kết quả được lưu lại tự động
+                    ⚡ Phân tích tức thì · Kết quả được lưu trữ tự động trong 7 ngày
                   </span>
                 </div>
               </div>
@@ -819,8 +989,9 @@ export default function Roadmap() {
                           },
                         ]
                     ).map((s: any, idx: number) => {
-                      const name = s.area || s.skill || s.category || 'Điểm mạnh';
+                      const name = toVietnameseSkillName(s.area || s.skill || s.category || 'Điểm mạnh');
                       const level = s.excellenceLevel || s.proficiencyLevel || 'XUẤT SẮC';
+                      const desc = toVietnameseRoadmapText(s.description || s.leverageStrategy);
                       return (
                         <div key={idx} style={{ padding: 14, background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 10 }}>
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -828,7 +999,7 @@ export default function Roadmap() {
                             <span className="pill green" style={{ fontSize: 11 }}>{formatExcellenceLevel(level)}</span>
                           </div>
                           <div className="sub mt8" style={{ fontSize: 13, color: '#14532d' }}>
-                            {s.description || s.leverageStrategy}
+                            {desc}
                           </div>
                         </div>
                       );
@@ -863,8 +1034,10 @@ export default function Roadmap() {
                           },
                         ]
                     ).map((w: any, idx: number) => {
-                      const name = w.area || w.skill || w.category || 'Lỗ hổng kiến thức';
-                      const rec = w.recommendation || (w.strategies && w.strategies.length > 0 ? w.strategies[0] : null);
+                      const name = toVietnameseSkillName(w.area || w.skill || w.category || 'Lỗ hổng kiến thức');
+                      const rawRec = w.recommendation || (w.strategies && w.strategies.length > 0 ? w.strategies[0] : null);
+                      const rec = toVietnameseRoadmapText(rawRec);
+                      const desc = toVietnameseRoadmapText(w.description);
                       return (
                         <div key={idx} style={{ padding: 14, background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 10 }}>
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -872,7 +1045,7 @@ export default function Roadmap() {
                             <span className="pill warn" style={{ fontSize: 11 }}>{formatSeverity(w.severity)}</span>
                           </div>
                           <div className="sub mt8" style={{ fontSize: 13, color: '#7f1d1d' }}>
-                            {w.description}
+                            {desc}
                           </div>
                           {rec && (
                             <div style={{ marginTop: 8, fontSize: 12, color: '#991b1b', fontStyle: 'italic', background: 'rgba(255,255,255,0.6)', padding: '6px 10px', borderRadius: 6 }}>
@@ -911,12 +1084,13 @@ export default function Roadmap() {
                           link = '/review';
                         }
                         const impactStr = formatImpact(act.expectedImpact);
-                        const desc = act.rationale
-                          ? `Tác động: ${impactStr}. ${act.rationale}`
+                        const rationaleVi = toVietnameseRoadmapText(act.rationale);
+                        const desc = rationaleVi
+                          ? `Tác động: ${impactStr}. ${rationaleVi}`
                           : `Tác động: ${impactStr}`;
 
                         return {
-                          title: act.action || `Hành động ${i + 1}`,
+                          title: toVietnameseRoadmapText(act.action) || `Hành động ${i + 1}`,
                           area,
                           desc,
                           actionText,

@@ -2,9 +2,12 @@ import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { aiApi, errMsg } from '../api';
 import type { Conversation, ChatMsg } from '../api';
-import { Icon, Mascot } from '../components/icons';
+import { Icon } from '../components/icons';
 import { AutocompleteSearch } from '../components/AutocompleteSearch';
 import { messageBubbleVariant } from '../motion';
+import viAvatar from '../assets/vi-3d.webp';
+import { QuotaBadge } from '../components/QuotaBadge';
+import { useUsage } from '../context/UsageContext';
 
 // ---------------- Inline Markdown Parser & Formatter ----------------
 function renderInlineMarkdown(text: string): React.ReactNode {
@@ -28,7 +31,7 @@ function renderInlineMarkdown(text: string): React.ReactNode {
             borderRadius: 4,
             fontFamily: 'monospace',
             fontSize: '0.9em',
-            color: '#be123c',
+            color: 'var(--red-dark)',
           }}
         >
           {token.slice(1, -1)}
@@ -42,7 +45,7 @@ function renderInlineMarkdown(text: string): React.ReactNode {
       );
     } else if (token.startsWith('**') && token.endsWith('**')) {
       parts.push(
-        <strong key={match.index} style={{ fontWeight: 700, color: 'var(--ink, #0f172a)' }}>
+        <strong key={match.index} style={{ fontWeight: 800, color: 'var(--ink)' }}>
           {token.slice(2, -2)}
         </strong>
       );
@@ -104,7 +107,7 @@ function ChatMarkdownView({ content }: { content: string }) {
     if (/^---+$/.test(line) || /^___+$/.test(line)) {
       flushList();
       elements.push(
-        <hr key={`hr-${i}`} style={{ border: 'none', borderTop: '1px solid #e2e8f0', margin: '12px 0' }} />
+        <hr key={`hr-${i}`} style={{ border: 'none', borderTop: '1px solid var(--line)', margin: '12px 0' }} />
       );
       return;
     }
@@ -121,7 +124,7 @@ function ChatMarkdownView({ content }: { content: string }) {
           style={{
             fontWeight: 800,
             fontSize,
-            color: 'var(--ink, #0f172a)',
+            color: 'var(--ink)',
             marginTop: elements.length === 0 ? 0 : 10,
             marginBottom: 4,
           }}
@@ -154,7 +157,7 @@ function ChatMarkdownView({ content }: { content: string }) {
 
     flushList();
     elements.push(
-      <p key={`p-${i}`} style={{ margin: '0 0 8px 0', lineHeight: 1.65, fontWeight: 400 }}>
+      <p key={`p-${i}`} style={{ margin: '0 0 8px 0', lineHeight: 1.65 }}>
         {renderInlineMarkdown(line)}
       </p>
     );
@@ -162,7 +165,7 @@ function ChatMarkdownView({ content }: { content: string }) {
 
   flushList();
 
-  return <div className="chat-markdown" style={{ fontSize: 14.5, fontWeight: 400 }}>{elements}</div>;
+  return <div className="chat-markdown" style={{ fontSize: 14.5 }}>{elements}</div>;
 }
 
 // ---------------- Suggested Prompts ----------------
@@ -174,6 +177,7 @@ const STARTER_PROMPTS = [
 ];
 
 export default function Chat() {
+  const { decrementQuota } = useUsage();
   const [convs, setConvs] = useState<Conversation[]>([]);
   const [cur, setCur] = useState<number | null>(null);
   const [msgs, setMsgs] = useState<ChatMsg[]>([]);
@@ -205,7 +209,12 @@ export default function Chat() {
       .listConv()
       .then(({ data }) => {
         if (!mounted) return;
-        const list: Conversation[] = data?.content || [];
+        const list: Conversation[] = (data?.content || []).filter(
+          (c: Conversation) =>
+            c.type === 'GENERAL' &&
+            !c.title?.startsWith('Giải thích:') &&
+            !c.title?.startsWith('Giải thích câu:')
+        );
         setConvs(list);
         if (list[0]) openConv(list[0].id);
       })
@@ -328,6 +337,7 @@ export default function Chat() {
     try {
       const { data } = await aiApi.sendMsg(cid!, messageToSend);
       setMsgs((m) => [...m, data]);
+      decrementQuota('chat');
     } catch (e) {
       setErr(errMsg(e, 'Vi chưa trả lời được, hãy thử lại nhé.'));
     } finally {
@@ -352,71 +362,56 @@ export default function Chat() {
   const isCurPinned = cur ? pinnedIds.includes(cur) : false;
 
   return (
-    <div className="content">
+    <div className="content" style={{ maxWidth: 1180 }}>
       {/* Page Header */}
       <div className="pagehead">
-        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '4px 12px', background: 'rgba(79, 70, 229, 0.08)', borderRadius: 99, color: 'var(--primary)', fontSize: 13, fontWeight: 800, marginBottom: 8 }}>
-          <Icon n="spark" s={14} /> AI English Tutor & Chat Companion
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
-          <div>
-            <h1>Trò chuyện với Vi</h1>
-            <div className="sub">Hỏi ngữ pháp, từ vựng, cách diễn đạt — Vi phản hồi thông minh, giải thích cặn kẽ 24/7</div>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: 'var(--muted)', background: '#FFFFFF', padding: '6px 14px', borderRadius: 99, border: '1px solid #E2E8F0', boxShadow: '0 2px 6px rgba(15, 23, 42, 0.02)' }}>
-            <span>🌐</span>
-            <span>Hỏi tiếng Việt → Trả lời tiếng Việt · Ask English → Reply English</span>
-          </div>
-        </div>
+        <h1>Trò chuyện với Vi</h1>
+        <div className="sub">Hỏi nghĩa từ, luyện viết câu, giải thích ngữ pháp — Vi trả lời ngay</div>
       </div>
 
-      <div className="cols2" style={{ gridTemplateColumns: '320px 1fr', alignItems: 'start', gap: 18 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '300px 1fr', gap: 18, alignItems: 'start' }}>
         {/* Left Sidebar: Conversations list */}
-        <div className="card" style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 12, maxHeight: 680, borderRadius: 20, border: '1px solid #E2E8F0', boxShadow: '0 4px 16px rgba(15, 23, 42, 0.03)' }}>
+        <div className="card" style={{ padding: 14 }}>
           <button
+            type="button"
             className="btn block"
-            style={{
-              minHeight: 44,
-              fontWeight: 800,
-              borderRadius: 12,
-              background: 'linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%)',
-              color: '#fff',
-              boxShadow: '0 4px 12px rgba(79, 70, 229, 0.25)',
-            }}
+            style={{ minHeight: 48 }}
             onClick={newConv}
           >
-            <Icon n="pen" s={18} /> Đoạn chat mới
+            <Icon n="pen" s={18} /> Cuộc trò chuyện mới
           </button>
 
           {/* Search bar with autocomplete */}
-          <AutocompleteSearch
-            value={search}
-            onChange={setSearch}
-            onSearch={(query, item) => {
-              setSearch(query);
-              if (item?.id) {
-                setCur(Number(item.id));
-              }
-            }}
-            placeholder="Tìm đoạn chat..."
-            type="custom"
-            customItems={convs.map((c) => ({
-              id: c.id,
-              title: c.title,
-              subtitle: new Date(c.createdAt).toLocaleDateString('vi-VN'),
-              badge: pinnedIds.includes(c.id) ? 'Đã ghim' : undefined,
-              raw: c,
-            }))}
-            limit={6}
-            inputStyle={{ height: 40, fontSize: 13, borderRadius: 10, paddingLeft: 38 }}
-          />
+          <div style={{ marginTop: 10 }}>
+            <AutocompleteSearch
+              value={search}
+              onChange={setSearch}
+              onSearch={(query, item) => {
+                setSearch(query);
+                if (item?.id) {
+                  setCur(Number(item.id));
+                }
+              }}
+              placeholder="Tìm đoạn chat..."
+              type="custom"
+              customItems={convs.map((c) => ({
+                id: c.id,
+                title: c.title,
+                subtitle: new Date(c.createdAt).toLocaleDateString('vi-VN'),
+                badge: pinnedIds.includes(c.id) ? 'Đã ghim' : undefined,
+                raw: c,
+              }))}
+              limit={6}
+              inputStyle={{ height: 40, fontSize: 13, borderRadius: 12, paddingLeft: 38 }}
+            />
+          </div>
 
           {/* Scrollable Conversation List */}
-          <div style={{ overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: 6, paddingRight: 2 }}>
+          <div className="conv mt8" style={{ maxHeight: 520, overflowY: 'auto' }}>
             {/* Pinned Section */}
             {pinnedList.length > 0 && (
               <div style={{ marginBottom: 6 }}>
-                <div style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: 0.8, color: '#b45309', padding: '4px 8px 6px', display: 'flex', alignItems: 'center', gap: 4 }}>
+                <div style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: 0.8, color: 'var(--yellow-dark)', padding: '4px 8px 6px', display: 'flex', alignItems: 'center', gap: 4 }}>
                   <span>📌</span> Đã ghim ({pinnedList.length})
                 </div>
                 {pinnedList.map((c) => renderConvItem(c, true))}
@@ -434,7 +429,7 @@ export default function Chat() {
             </div>
 
             {filteredConvs.length === 0 && (
-              <div className="empty" style={{ padding: 24, fontSize: 13 }}>
+              <div className="center" style={{ padding: 24, fontSize: 13, color: 'var(--muted)' }}>
                 {search ? 'Không tìm thấy đoạn chat nào.' : 'Chưa có đoạn chat nào.'}
               </div>
             )}
@@ -442,21 +437,25 @@ export default function Chat() {
         </div>
 
         {/* Right Chat Panel */}
-        <div className="card" style={{ minHeight: 620, display: 'flex', flexDirection: 'column', padding: 0, overflow: 'hidden', borderRadius: 20, border: '1px solid #E2E8F0', boxShadow: '0 4px 16px rgba(15, 23, 42, 0.03)' }}>
+        <div className="card" style={{ padding: 22, display: 'flex', flexDirection: 'column', minHeight: 620 }}>
           {/* Chat Window Header */}
           <div
             style={{
-              padding: '14px 20px',
-              borderBottom: '1px solid #E2E8F0',
+              paddingBottom: 14,
+              borderBottom: '1px solid var(--line)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
-              background: 'linear-gradient(180deg, #FFFFFF 0%, #F8FAFC 100%)',
+              gap: 12,
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12, flex: 1, minWidth: 0 }}>
-              <div style={{ position: 'relative' }}>
-                <Mascot s={36} />
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0, flex: 1 }}>
+              <div style={{ position: 'relative', flexShrink: 0 }}>
+                <img
+                  src={viAvatar}
+                  alt="Vi"
+                  style={{ width: 42, height: 42, borderRadius: '50%', objectFit: 'cover' }}
+                />
                 <span
                   style={{
                     position: 'absolute',
@@ -465,7 +464,7 @@ export default function Chat() {
                     width: 10,
                     height: 10,
                     borderRadius: '50%',
-                    background: '#22C55E',
+                    background: 'var(--green)',
                     border: '2px solid #fff',
                   }}
                   title="Vi đang online"
@@ -478,73 +477,82 @@ export default function Chat() {
                   </b>
                   {isCurPinned && <span title="Đoạn chat đã được ghim">📌</span>}
                 </div>
-                <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 1 }}>
-                  Trợ lý AI tiếng Anh · Phản hồi ngắn gọn, rõ ràng
+                <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 2 }}>
+                  Trợ lý AI tiếng Anh · Phản hồi thông minh 24/7
                 </div>
               </div>
             </div>
 
-            {curConv && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+              <QuotaBadge featureKey="chat" labelSuffix="lượt hôm nay" />
+              {curConv && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                 <button
-                  className={'conv-btn' + (isCurPinned ? ' pinned' : '')}
+                  type="button"
+                  className="btn ghost sm"
                   onClick={() => cur && togglePin(cur)}
-                  title={isCurPinned ? 'Bỏ ghim đoạn chat' : 'Ghim đoạn chat lên đầu'}
-                  style={{ padding: '6px 10px', fontSize: 13, border: '1px solid #e2e8f0', borderRadius: 6 }}
+                  title={isCurPinned ? 'Bỏ ghim' : 'Ghim'}
+                  style={{ padding: '6px 10px', fontSize: 12.5 }}
                 >
-                  <Icon n="pin" s={15} />
-                  <span style={{ marginLeft: 4 }}>{isCurPinned ? 'Đã ghim' : 'Ghim'}</span>
+                  <Icon n="pin" s={14} />
+                  <span>{isCurPinned ? 'Đã ghim' : 'Ghim'}</span>
                 </button>
                 <button
-                  className="conv-btn"
+                  type="button"
+                  className="btn ghost sm"
                   onClick={() => curConv && startRename(curConv)}
-                  title="Đặt tên / Đổi tên đoạn chat"
-                  style={{ padding: '6px 10px', fontSize: 13, border: '1px solid #e2e8f0', borderRadius: 6 }}
+                  title="Đổi tên"
+                  style={{ padding: '6px 10px', fontSize: 12.5 }}
                 >
-                  <Icon n="edit" s={15} />
-                  <span style={{ marginLeft: 4 }}>Đổi tên</span>
+                  <Icon n="edit" s={14} />
+                  <span>Đổi tên</span>
                 </button>
                 <button
-                  className="conv-btn danger"
+                  type="button"
+                  className="btn ghost sm"
                   onClick={() => cur && deleteConv(cur)}
-                  title="Xóa đoạn chat này"
-                  style={{ padding: '6px 10px', fontSize: 13, border: '1px solid #fee2e2', borderRadius: 6 }}
+                  title="Xóa"
+                  style={{ padding: '6px 10px', color: 'var(--red-dark)', borderColor: 'rgba(229,72,77,0.3)' }}
                 >
-                  <Icon n="trash" s={15} />
+                  <Icon n="trash" s={14} />
                 </button>
               </div>
             )}
+            </div>
           </div>
 
-          {err && <div className="error" style={{ margin: '8px 16px' }}>{err}</div>}
+          {err && <div className="error mt8">{err}</div>}
 
           {/* Messages Scroll Area */}
-          <div className="chat" style={{ flex: 1, overflowY: 'auto', maxHeight: 500, padding: 20 }}>
+          <div className="chatwin" style={{ flex: 1, overflowY: 'auto', maxHeight: 460, padding: '16px 4px' }}>
             {msgs.length === 0 && (
-              <div className="center" style={{ padding: '40px 20px', maxWidth: 520, margin: '0 auto' }}>
-                <Mascot s={68} />
-                <h3 style={{ marginTop: 12, marginBottom: 6 }}>Chào bạn! Vi có thể giúp gì cho bạn?</h3>
+              <div className="center" style={{ padding: '40px 20px', maxWidth: 480, margin: '0 auto' }}>
+                <img src={viAvatar} alt="Vi" style={{ width: 72, height: 72, objectFit: 'contain' }} />
+                <h3 style={{ marginTop: 14, marginBottom: 6 }}>Chào bạn! Vi có thể giúp gì cho bạn?</h3>
                 <div className="sub" style={{ fontSize: 13.5, lineHeight: 1.5 }}>
-                  Vi sẵn sàng giải thích từ vựng, sửa bài ngữ pháp, hoặc trò chuyện bằng tiếng Anh và tiếng Việt.
+                  Hỏi mình nghĩa từ, sửa câu, gợi ý từ vựng theo chủ đề hoặc giải thích cấu trúc ngữ pháp nhé!
                 </div>
 
                 {/* Prompt suggestion chips */}
-                <div style={{ marginTop: 20, display: 'flex', flexDirection: 'column', gap: 8, textAlign: 'left' }}>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                <div style={{ marginTop: 20, display: 'flex', flexDirection: 'column', gap: 8, width: '100%', textAlign: 'left' }}>
+                  <div style={{ fontSize: 11.5, fontWeight: 800, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: 0.5 }}>
                     Gợi ý câu hỏi nhanh:
                   </div>
                   {STARTER_PROMPTS.map((prompt, idx) => (
                     <button
                       key={idx}
-                      className="btn ghost sm"
+                      type="button"
+                      className="taskrow"
                       style={{
-                        justifyContent: 'flex-start',
+                        cursor: 'pointer',
+                        border: '1px solid var(--line)',
+                        background: '#fff',
                         textAlign: 'left',
                         padding: '10px 14px',
-                        borderRadius: 10,
                         fontSize: 13.5,
-                        borderColor: '#e2e8f0',
+                        fontWeight: 700,
                         color: 'var(--ink)',
+                        width: '100%',
                       }}
                       onClick={() => send(prompt)}
                     >
@@ -570,11 +578,13 @@ export default function Chat() {
                     gap: 4,
                   }}
                 >
-                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, maxWidth: '88%' }}>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, maxWidth: '85%' }}>
                     {!isMe && (
-                      <div style={{ marginTop: 4, flexShrink: 0 }}>
-                        <Mascot s={28} />
-                      </div>
+                      <img
+                        src={viAvatar}
+                        alt="Vi"
+                        style={{ width: 32, height: 32, borderRadius: '50%', objectFit: 'cover', flexShrink: 0, marginTop: 4 }}
+                      />
                     )}
                     <div className={'msg ' + (isMe ? 'me' : 'ai')}>
                       {isMe ? (
@@ -587,22 +597,34 @@ export default function Chat() {
 
                   {/* Actions under AI message: Copy button */}
                   {!isMe && (
-                    <div style={{ marginLeft: 36, display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <div style={{ marginLeft: 40, display: 'flex', alignItems: 'center', gap: 10 }}>
                       <button
+                        type="button"
                         onClick={() => copyToClipboard(m.id, m.content)}
-                        className="conv-btn"
-                        style={{ fontSize: 11, padding: '2px 8px', borderRadius: 4, color: 'var(--muted)' }}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          cursor: 'pointer',
+                          fontSize: 11.5,
+                          padding: '2px 8px',
+                          borderRadius: 6,
+                          color: 'var(--muted)',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 4,
+                          fontWeight: 700,
+                        }}
                         title="Sao chép câu trả lời"
                       >
                         {copiedId === m.id ? (
                           <>
                             <Icon n="check" s={12} />
-                            <span style={{ marginLeft: 4, color: '#16a34a', fontWeight: 700 }}>Đã sao chép</span>
+                            <span style={{ color: 'var(--green-dark)' }}>Đã sao chép</span>
                           </>
                         ) : (
                           <>
                             <Icon n="copy" s={12} />
-                            <span style={{ marginLeft: 4 }}>Sao chép</span>
+                            <span>Sao chép</span>
                           </>
                         )}
                       </button>
@@ -621,23 +643,16 @@ export default function Chat() {
                   transition={{ duration: 0.2 }}
                   style={{ display: 'flex', alignItems: 'center', gap: 10 }}
                 >
-                  <Mascot s={28} />
-                  <div
-                    className="msg ai"
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 10,
-                      color: 'var(--muted)',
-                      padding: '10px 14px',
-                    }}
-                  >
-                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                      <span className="chat-typing-dot" />
-                      <span className="chat-typing-dot" />
-                      <span className="chat-typing-dot" />
-                    </div>
-                    <span style={{ fontSize: 13, fontStyle: 'italic' }}>Vi đang suy nghĩ...</span>
+                  <img
+                    src={viAvatar}
+                    alt="Vi"
+                    style={{ width: 32, height: 32, borderRadius: '50%', objectFit: 'cover' }}
+                  />
+                  <div className="msg ai" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span className="copilot-dot" />
+                    <span className="copilot-dot" />
+                    <span className="copilot-dot" />
+                    <span style={{ fontSize: 13, color: 'var(--muted)', marginLeft: 4 }}>Vi đang suy nghĩ...</span>
                   </div>
                 </motion.div>
               )}
@@ -646,26 +661,28 @@ export default function Chat() {
           </div>
 
           {/* Chatbar / Input Box */}
-          <div style={{ padding: '14px 18px', borderTop: '1px solid var(--line)', background: '#fff' }}>
-            <div className="chatbar">
-              <input
-                className="input"
-                style={{ fontSize: 14.5, borderRadius: 10 }}
-                value={text}
-                onChange={(e) => setText(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    send();
-                  }
-                }}
-                placeholder="Hỏi Vi bằng tiếng Việt hoặc tiếng Anh... (Enter để gửi)"
-                disabled={busy}
-              />
-              <button className="btn" onClick={() => send()} disabled={busy || !text.trim()} aria-label="Gửi tin nhắn">
-                <Icon n="send" s={20} />
-              </button>
-            </div>
+          <div className="chatbar mt16">
+            <input
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  send();
+                }
+              }}
+              placeholder="Nhắn cho Vi… (Enter để gửi)"
+              disabled={busy}
+            />
+            <button
+              type="button"
+              className="sendbtn"
+              onClick={() => send()}
+              disabled={busy || !text.trim()}
+              aria-label="Gửi tin nhắn"
+            >
+              <Icon n="send" s={20} />
+            </button>
           </div>
         </div>
       </div>
@@ -686,14 +703,14 @@ export default function Chat() {
             alignItems: 'center',
             gap: 4,
             padding: '6px 8px',
-            background: '#f1f5f9',
-            borderRadius: 8,
+            background: 'var(--tint)',
+            borderRadius: 12,
           }}
         >
           <input
             ref={editInputRef}
-            className="input sm"
-            style={{ fontSize: 13, flex: 1, padding: '4px 8px' }}
+            className="input"
+            style={{ fontSize: 13, flex: 1, padding: '4px 8px', minHeight: 32 }}
             value={editTitle}
             onChange={(e) => setEditTitle(e.target.value)}
             onKeyDown={(e) => {
@@ -702,74 +719,50 @@ export default function Chat() {
             }}
           />
           <button
-            className="conv-btn"
-            style={{ color: '#16a34a', padding: 4 }}
+            type="button"
+            className="btn ghost sm"
+            style={{ color: 'var(--green-dark)', padding: '4px 8px' }}
             onClick={() => saveRename(c.id)}
-            title="Lưu tên mới (Enter)"
+            title="Lưu (Enter)"
           >
-            <Icon n="check" s={16} />
+            <Icon n="check" s={14} />
           </button>
           <button
-            className="conv-btn"
-            style={{ color: 'var(--muted)', padding: 4 }}
+            type="button"
+            className="btn ghost sm"
+            style={{ color: 'var(--muted)', padding: '4px 8px' }}
             onClick={() => setEditingId(null)}
             title="Hủy (Esc)"
           >
-            <Icon n="x" s={16} />
+            <Icon n="x" s={14} />
           </button>
         </div>
       );
     }
 
     return (
-      <div
+      <button
         key={c.id}
-        className={'conv-item' + (isSelected ? ' on' : '')}
+        type="button"
+        className={'convitem' + (isSelected ? ' on' : '')}
         onClick={() => openConv(c.id)}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0, flex: 1 }}>
-          <span style={{ color: isPinned ? '#d97706' : isSelected ? 'var(--primary)' : 'var(--muted)', flexShrink: 0 }}>
-            {isPinned ? '📌' : <Icon n="msg" s={16} />}
-          </span>
-          <span
-            style={{
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
-              fontSize: 13.5,
-              color: 'inherit',
-            }}
-            title={c.title}
-          >
+        <span className="wchk" style={{ flexShrink: 0 }}>
+          {isPinned ? (
+            <span style={{ fontSize: 12 }}>📌</span>
+          ) : (
+            <Icon n="spark" s={14} />
+          )}
+        </span>
+        <span style={{ flex: 1, minWidth: 0 }}>
+          <div className="ct" style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
             {c.title}
-          </span>
-        </div>
-
-        {/* Hover / Active Action Buttons */}
-        <div className="conv-actions">
-          <button
-            className={'conv-btn' + (isPinned ? ' pinned' : '')}
-            onClick={(e) => togglePin(c.id, e)}
-            title={isPinned ? 'Bỏ ghim' : 'Ghim lên đầu'}
-          >
-            <Icon n="pin" s={14} />
-          </button>
-          <button
-            className="conv-btn"
-            onClick={(e) => startRename(c, e)}
-            title="Đặt lại tên cho đoạn chat"
-          >
-            <Icon n="edit" s={14} />
-          </button>
-          <button
-            className="conv-btn danger"
-            onClick={(e) => deleteConv(c.id, e)}
-            title="Xóa đoạn chat"
-          >
-            <Icon n="trash" s={14} />
-          </button>
-        </div>
-      </div>
+          </div>
+          <div className="cs">
+            {new Date(c.createdAt).toLocaleDateString('vi-VN')}
+          </div>
+        </span>
+      </button>
     );
   }
 }

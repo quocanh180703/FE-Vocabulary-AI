@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
-import { authApi, paymentApi } from '../api';
+import { authApi, paymentApi, userApi } from '../api';
 import type { User, SubscriptionStatus } from '../api';
 
 interface Ctx {
@@ -42,14 +42,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       localStorage.removeItem('vocab_user');
     }
     if (isValidToken) {
-      import('../api').then(({ userApi }) => {
-        userApi.me().then(({ data }) => {
-          if (data) {
-            setUser(data);
-            localStorage.setItem('vocab_user', JSON.stringify(data));
-          }
-        }).catch(() => {});
-      });
+      userApi.me().then(({ data }) => {
+        if (data) {
+          setUser(data);
+          localStorage.setItem('vocab_user', JSON.stringify(data));
+        }
+      }).catch(() => {});
       refreshSubscription();
     }
     setLoading(false);
@@ -65,6 +63,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const login = (u: User, access: string, refresh: string) => {
+    localStorage.removeItem('vocab_favs');
+    localStorage.removeItem('vocab_fav_items');
     if (u) {
       localStorage.setItem('vocab_user', JSON.stringify(u));
       setUser(u);
@@ -77,6 +77,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       localStorage.setItem('vocab_refresh', refresh);
       localStorage.setItem('refresh_token', refresh);
     }
+    try {
+      window.dispatchEvent(new Event('vocab_favorites_changed'));
+    } catch {}
     refreshSubscription();
   };
   const logout = () => {
@@ -86,8 +89,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem('access_token');
     localStorage.removeItem('vocab_refresh');
     localStorage.removeItem('refresh_token');
+    localStorage.removeItem('vocab_favs');
+    localStorage.removeItem('vocab_fav_items');
     setUser(null);
     setSubscription(null);
+    try {
+      window.dispatchEvent(new Event('vocab_favorites_changed'));
+    } catch {}
     // Demo mode dùng HashRouter → redirect bằng hash để không cần SPA fallback.
     window.location.href = import.meta.env.VITE_DEMO === '1' ? '/#/login' : '/login';
   };

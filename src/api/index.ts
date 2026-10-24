@@ -2,7 +2,7 @@ import { api } from './client';
 export { api, errMsg } from './client';
 
 /* ---------- types ---------- */
-export interface User { id: number; email: string; username: string; fullName?: string; role: 'ADMIN' | 'STUDENT'; status: string; avatarUrl?: string; createdAt?: string }
+export interface User { id: number; email: string; username: string; fullName?: string; role: 'ADMIN' | 'STUDENT'; status: string; avatarUrl?: string; emailRemindersEnabled?: boolean; createdAt?: string }
 export interface AuthResp {
   accessToken?: string;
   access_token?: string;
@@ -49,11 +49,20 @@ export const daysOverdue = (it: ProgressItem): number => {
   const d = Math.ceil((Date.now() - new Date(it.nextReviewAt).getTime()) / 86400000);
   return d > 0 ? d : 0;
 };
-export interface Quiz { id: number; title: string; level: string; questionCount: number; timeLimit: number; category?: string; status: string }
-export interface Question { id: number; content: string; options: string[] }
+export interface Quiz { id: number; title: string; description?: string; level: string; questionCount: number; timeLimit: number; category?: string; status: string }
+export interface Question { id: number; content: string; options: string[]; correctAnswer?: number; explanation?: string }
 export interface QuizDetail extends Quiz { totalQuestions: number; questions: Question[] }
 export interface Attempt { attemptId: number; quizId: number; startedAt: string; expiresAt: string }
 export interface QuizResult { attemptId: number; score: number; totalQuestions: number; correctAnswers: number; feedback: string }
+export interface QuizAttemptAnswerDetail {
+  questionId: number;
+  content: string;
+  options: string[];
+  selectedAnswer: number;
+  correctAnswer: number;
+  isCorrect: boolean;
+  explanation?: string;
+}
 export interface Explain { wordId: number | string; word: string; meaning: string; examples: string[]; synonyms: string[]; usageTips: string; tokensUsed: number; source: string }
 export interface GrammarErr { errorType: string; message: string; suggestion: string }
 export interface GrammarResp { originalText: string; correctedText: string; score: number; errors: GrammarErr[]; tokensUsed: number }
@@ -193,6 +202,12 @@ export const authApi = {
     const rt = localStorage.getItem('vocab_refresh');
     return api.post('/auth/logout', rt ? { refreshToken: rt } : {}).catch(() => {});
   },
+  forgotPasswordSendOtp: (d: { email: string }) =>
+    api.post<{ message: string; email: string; expiresIn: number; resetToken: string }>('/auth/forgot-password/send-otp', d),
+  forgotPasswordVerifyOtp: (d: { email: string; otp: string; resetToken: string }) =>
+    api.post<{ message: string; verificationToken: string; instruction: string }>('/auth/forgot-password/verify-otp', d),
+  forgotPasswordReset: (d: { email: string; verificationToken: string; newPassword: string }) =>
+    api.post<AuthResp>('/auth/forgot-password/reset', d),
 };
 
 const KNOWN_CEFR_FALLBACKS: Record<string, Word> = {
@@ -278,6 +293,27 @@ const KNOWN_CEFR_FALLBACKS: Record<string, Word> = {
 
 const WORD_CACHE = new Map<string, Word>();
 
+// Helper to isolate favorite words storage per user in localStorage
+export const getFavStorageKeys = () => {
+  try {
+    const raw = localStorage.getItem('vocab_user');
+    if (raw) {
+      const u = JSON.parse(raw);
+      if (u && (u.id || u.username)) {
+        const uid = String(u.id || u.username);
+        return {
+          idsKey: `vocab_favs_${uid}`,
+          itemsKey: `vocab_fav_items_${uid}`,
+        };
+      }
+    }
+  } catch {}
+  return {
+    idsKey: 'vocab_favs_guest',
+    itemsKey: 'vocab_fav_items_guest',
+  };
+};
+
 export const wordApi = {
   list: (p: { page?: number; size?: number; level?: string; category?: string; search?: string }) => {
     const params: Record<string, any> = {
@@ -357,9 +393,10 @@ export const wordApi = {
     const cached = WORD_CACHE.get(idStr) || WORD_CACHE.get(idStr.toLowerCase());
     if (cached) return { data: cached };
 
-    // 2. Check local cached favorite items
+    // 2. Check local cached favorite items (scoped to current user)
     try {
-      const items: Word[] = JSON.parse(localStorage.getItem('vocab_fav_items') || '[]');
+      const { itemsKey } = getFavStorageKeys();
+      const items: Word[] = JSON.parse(localStorage.getItem(itemsKey) || '[]');
       const found = items.find((x) => String(x.id) === idStr || (x.word && x.word.toLowerCase() === idStr.toLowerCase()));
       if (found) {
         const norm = normalizeWord(found);
@@ -423,15 +460,18 @@ export const wordApi = {
     throw new Error('Word not found');
   },
   favorite: async (id: number | string, wordObj?: Word) => {
+    const { idsKey, itemsKey } = getFavStorageKeys();
+    const idStr = String(id);
+    let updatedIds: string[] = [];
     try {
-      const idStr = String(id);
-      const local: string[] = JSON.parse(localStorage.getItem('vocab_favs') || '[]');
+      const local: string[] = JSON.parse(localStorage.getItem(idsKey) || '[]');
       if (!local.includes(idStr)) {
         local.push(idStr);
-        localStorage.setItem('vocab_favs', JSON.stringify(local));
       }
+      updatedIds = local;
+      localStorage.setItem(idsKey, JSON.stringify(local));
 
-      const items: Word[] = JSON.parse(localStorage.getItem('vocab_fav_items') || '[]');
+      const items: Word[] = JSON.parse(localStorage.getItem(itemsKey) || '[]');
       const targetObj = wordObj || KNOWN_CEFR_FALLBACKS[idStr];
       if (targetObj) {
         const idx = items.findIndex((x) => String(x.id) === idStr);
@@ -440,96 +480,130 @@ export const wordApi = {
         } else {
           items[idx] = targetObj;
         }
-        localStorage.setItem('vocab_fav_items', JSON.stringify(items));
+        localStorage.setItem(itemsKey, JSON.stringify(items));
       }
       try {
-        window.dispatchEvent(new Event('vocab_favorites_changed'));
+        window.dispatchEvent(
+          new CustomEvent('vocab_favorites_changed', {
+            detail: { count: updatedIds.length, ids: updatedIds, added: idStr },
+          })
+        );
       } catch {}
     } catch { /* ignore */ }
     return api.post(`/words/${id}/favorite`).catch(() => ({ data: {} }));
   },
   unfavorite: async (id: number | string) => {
+    const { idsKey, itemsKey } = getFavStorageKeys();
+    const idStr = String(id);
+    let updatedIds: string[] = [];
     try {
-      const idStr = String(id);
-      const local: string[] = JSON.parse(localStorage.getItem('vocab_favs') || '[]');
-      const filtered = local.filter((x: string) => x !== idStr);
-      localStorage.setItem('vocab_favs', JSON.stringify(filtered));
+      const local: string[] = JSON.parse(localStorage.getItem(idsKey) || '[]');
+      updatedIds = local.filter((x: string) => x !== idStr);
+      localStorage.setItem(idsKey, JSON.stringify(updatedIds));
 
-      const items: Word[] = JSON.parse(localStorage.getItem('vocab_fav_items') || '[]');
+      const items: Word[] = JSON.parse(localStorage.getItem(itemsKey) || '[]');
       const filteredItems = items.filter((x) => String(x.id) !== idStr);
-      localStorage.setItem('vocab_fav_items', JSON.stringify(filteredItems));
+      localStorage.setItem(itemsKey, JSON.stringify(filteredItems));
       try {
-        window.dispatchEvent(new Event('vocab_favorites_changed'));
+        window.dispatchEvent(
+          new CustomEvent('vocab_favorites_changed', {
+            detail: { count: updatedIds.length, ids: updatedIds, removed: idStr },
+          })
+        );
       } catch {}
     } catch { /* ignore */ }
     return api.delete(`/words/${id}/favorite`).catch(() => ({ data: {} }));
   },
   favorites: async (page = 0, size = 100) => {
+    // Purge legacy unscoped global storage
+    try {
+      localStorage.removeItem('vocab_favs');
+      localStorage.removeItem('vocab_fav_items');
+    } catch {}
+
+    const { idsKey, itemsKey } = getFavStorageKeys();
     let beItems: Word[] = [];
+    let beSuccess = false;
     const t = localStorage.getItem('vocab_access');
     const hasToken = Boolean(t && t !== 'undefined' && t !== 'null');
+
     if (hasToken) {
       try {
         const res = await api.get<any>('/words/favorites', { params: { page, size } });
         const rawList = Array.isArray(res.data?.content) ? res.data.content : (Array.isArray(res.data) ? res.data : []);
         beItems = rawList.map((item: any) => normalizeWord(item.word || item));
+        beSuccess = true;
       } catch {
-        // Unauthenticated hoặc chưa có favorite trên BE
+        // Backend offline or error
       }
     }
 
-    // Get cached items in localStorage
+    if (beSuccess) {
+      // Backend is authoritative for the currently authenticated user
+      const beIds = beItems.map((w) => String(w.id));
+      try {
+        localStorage.setItem(idsKey, JSON.stringify(beIds));
+        localStorage.setItem(itemsKey, JSON.stringify(beItems));
+      } catch {}
+
+      return {
+        data: {
+          content: beItems,
+          localIds: beIds,
+          pageable: { pageNumber: page, pageSize: size, totalElements: beItems.length, totalPages: Math.ceil(beItems.length / size) || 1 },
+          totalElements: beItems.length,
+          totalPages: Math.ceil(beItems.length / size) || 1,
+        },
+      };
+    }
+
+    // Fallback if offline: strictly use this specific user's cache
     let cachedItems: Word[] = [];
     try {
-      cachedItems = JSON.parse(localStorage.getItem('vocab_fav_items') || '[]');
+      cachedItems = JSON.parse(localStorage.getItem(itemsKey) || '[]');
     } catch {}
 
     let localIds: string[] = [];
     try {
-      localIds = JSON.parse(localStorage.getItem('vocab_favs') || '[]');
+      localIds = JSON.parse(localStorage.getItem(idsKey) || '[]');
     } catch {}
 
-    // Merge beItems, cachedItems, and KNOWN_CEFR_FALLBACKS for localIds
     const itemMap = new Map<string, Word>();
-    beItems.forEach((w) => itemMap.set(String(w.id), w));
     cachedItems.forEach((w) => itemMap.set(String(w.id), w));
-
-    // For any localId not yet in itemMap, resolve from KNOWN_CEFR_FALLBACKS
     localIds.forEach((id) => {
       if (!itemMap.has(id) && KNOWN_CEFR_FALLBACKS[id]) {
         itemMap.set(id, KNOWN_CEFR_FALLBACKS[id]);
       }
     });
 
-    // If there are still missing localIds, try to fetch them asynchronously
-    const remainingMissing = localIds.filter((id) => !itemMap.has(id));
-    if (remainingMissing.length > 0) {
-      try {
-        const fetched = await Promise.all(
-          remainingMissing.slice(0, 20).map((id) => wordApi.get(id).then((r) => r.data).catch(() => null))
-        );
-        fetched.forEach((w) => {
-          if (w) itemMap.set(String(w.id), w);
-        });
-      } catch {}
-    }
-
     const mergedContent = Array.from(itemMap.values());
-
-    // Sync back to vocab_fav_items cache
-    try {
-      localStorage.setItem('vocab_fav_items', JSON.stringify(mergedContent));
-    } catch {}
-
+    const validIds = Array.from(new Set([...mergedContent.map((w) => String(w.id)), ...localIds]));
     return {
       data: {
         content: mergedContent,
-        localIds,
+        localIds: validIds,
         pageable: { pageNumber: page, pageSize: size, totalElements: mergedContent.length, totalPages: 1 },
         totalElements: mergedContent.length,
         totalPages: 1,
       },
     };
+  },
+  isFavorite: (id: number | string): boolean => {
+    const { idsKey } = getFavStorageKeys();
+    try {
+      const local: string[] = JSON.parse(localStorage.getItem(idsKey) || '[]');
+      return local.includes(String(id));
+    } catch {
+      return false;
+    }
+  },
+  getFavoriteIds: (): string[] => {
+    const { idsKey } = getFavStorageKeys();
+    try {
+      return JSON.parse(localStorage.getItem(idsKey) || '[]');
+    } catch {
+      return [];
+    }
   },
 };
 
@@ -578,7 +652,7 @@ export const learnApi = {
 /* ---------- quiz ---------- */
 export const quizApi = {
   list: (p: { page?: number; size?: number; level?: string }) => {
-    const params: Record<string, any> = { page: p.page ?? 0, size: p.size ?? 50 };
+    const params: Record<string, any> = { page: p.page ?? 0, size: p.size ?? 500 };
     return api.get<any>('/quizzes', { params }).then((res) => {
       const pageData = res.data || {};
       const raw = Array.isArray(pageData.content) ? pageData.content : (Array.isArray(pageData) ? pageData : []);
@@ -606,6 +680,7 @@ export const quizApi = {
       const detail: QuizDetail = {
         id: quizObj.id,
         title: quizObj.title,
+        description: quizObj.description,
         level: quizObj.level || 'B1',
         timeLimit: quizObj.timeLimit || 15,
         questionCount: questionsList.length || quizObj.questionCount || 5,
@@ -649,6 +724,36 @@ export const quizApi = {
       };
       return { ...res, data: result };
     }),
+  getAttemptDetails: (attemptId: number) =>
+    api.get<any>(`/quizzes/attempts/${attemptId}`).then((res) => {
+      const d = res.data?.data || res.data || {};
+      const rawAnswers = Array.isArray(d.answers)
+        ? d.answers
+        : Array.isArray(res.data?.answers)
+        ? res.data.answers
+        : [];
+      const answers: QuizAttemptAnswerDetail[] = rawAnswers.map((a: any) => ({
+        questionId: a.questionId,
+        content: a.content,
+        options: Array.isArray(a.options) ? a.options : [],
+        selectedAnswer: a.selectedAnswer,
+        correctAnswer: a.correctAnswer,
+        isCorrect:
+          a.isCorrect !== undefined
+            ? Boolean(a.isCorrect)
+            : a.correct !== undefined
+            ? Boolean(a.correct)
+            : Number(a.selectedAnswer) === Number(a.correctAnswer),
+        explanation: a.explanation,
+      }));
+      return {
+        ...res,
+        data: {
+          attempt: d.attempt || res.data?.attempt,
+          answers,
+        },
+      };
+    }),
 };
 
 /* ---------- ai ---------- */
@@ -672,6 +777,12 @@ export const aiApi = {
       const convId = convRes.data.id;
       const msgRes = await api.post<any>(`/api/v1/ai/conversations/${convId}/messages`, { content: prompt });
       const reply = msgRes.data?.content || msgRes.data?.message || '';
+
+      // Tự động xóa đoạn chat tạm ngay sau khi nhận câu trả lời để không lưu vào mục "Trò chuyện với Vi"
+      if (convId) {
+        api.delete(`/api/v1/ai/conversations/${convId}`).catch(() => {});
+      }
+
       return {
         data: {
           wordId,
@@ -738,12 +849,81 @@ export const aiApi = {
         } as Hint,
       };
     }),
+  explainQuizQuestion: async (params: {
+    questionContent: string;
+    options: string[];
+    selectedAnswerIndex: number;
+    correctAnswerIndex: number;
+    presetExplanation?: string;
+  }) => {
+    const { questionContent, options, selectedAnswerIndex, correctAnswerIndex, presetExplanation } = params;
+    const selectedText = options[selectedAnswerIndex] ?? 'Chưa chọn';
+    const correctText = options[correctAnswerIndex] ?? '';
+
+    const prompt = `Bạn là trợ lý học tiếng Anh thông minh Vi AI. Người học vừa làm bài trắc nghiệm tiếng Anh và cần phân tích chi tiết cho câu hỏi sau:
+
+Câu hỏi: "${questionContent}"
+Các lựa chọn: ${options.map((opt, i) => `${['A', 'B', 'C', 'D'][i]}. ${opt}`).join(', ')}
+- Người học đã chọn: "${selectedText}" ${selectedAnswerIndex === correctAnswerIndex ? '(Đúng)' : '(Chưa chính xác)'}
+- Đáp án đúng: "${correctText}"
+${presetExplanation ? `Giải thích ngữ pháp gốc: ${presetExplanation}` : ''}
+
+Hãy phân tích ngắn gọn, súc tích và dễ nhớ bằng tiếng Việt theo 3 ý rõ ràng:
+1. 💡 Vì sao "${correctText}" là đáp án đúng? (Phân tích ngữ pháp, ngữ cảnh hoặc collocation).
+2. ⚠️ Vì sao "${selectedText}" lại chưa chính xác? (Giải thích bẫy ngữ pháp hoặc lỗi sai thường gặp).
+3. 🎯 Mẹo ghi nhớ: 1 mẹo nhỏ hoặc ví dụ thực tế giúp người học không lặp lại lỗi này.`;
+
+    try {
+      const convRes = await api.post<any>('/api/v1/ai/conversations', {
+        type: 'GRAMMAR',
+        title: `Giải thích câu: ${correctText}`,
+      });
+      const convId = convRes.data.id;
+      const msgRes = await api.post<any>(`/api/v1/ai/conversations/${convId}/messages`, { content: prompt });
+      const reply = msgRes.data?.content || msgRes.data?.message || '';
+
+      // Tự động xóa đoạn chat tạm ngay sau khi nhận câu trả lời để không lưu vào mục "Trò chuyện với Vi"
+      if (convId) {
+        api.delete(`/api/v1/ai/conversations/${convId}`).catch(() => {});
+      }
+
+      if (reply) return { explanation: reply };
+    } catch {
+      // Fallback below
+    }
+
+    return {
+      explanation: `💡 **Vì sao "${correctText}" là đáp án đúng?**\n${presetExplanation || `Trong ngữ cảnh này, "${correctText}" là từ chính xác nhất về quy tắc ngữ pháp hoặc kết hợp từ (collocation).`}\n\n⚠️ **Vì sao chọn "${selectedText}" chưa chính xác?**\nPhương án "${selectedText}" không thỏa mãn cấu trúc ngữ pháp hoặc từ loại cần điền trong câu này.\n\n🎯 **Mẹo ghi nhớ:** Hãy quan sát các từ đứng liền trước và liền sau chỗ trống để xác định đúng loại từ hoặc giới từ đi kèm.`
+    };
+  },
   createConv: (type: string, title: string) =>
     api.post<any>('/api/v1/ai/conversations', { type, title }).then((res) => ({ ...res, data: res.data })),
   listConv: () =>
     api.get<any>('/api/v1/ai/conversations', { params: { page: 0, size: 50 } }).then((res) => {
-      const pageData = res.data || {};
-      const content = Array.isArray(pageData.content) ? pageData.content : (Array.isArray(pageData) ? pageData : []);
+      const pageData = res.data?.data || res.data || {};
+      const rawList: any[] = Array.isArray(pageData.content)
+        ? pageData.content
+        : Array.isArray(pageData)
+        ? pageData
+        : [];
+
+      // Chỉ giữ lại các cuộc trò chuyện được tạo trực tiếp từ trang Chat (GENERAL),
+      // loại bỏ và dọn dẹp các đoạn giải thích phát sinh từ nút click AI
+      const content = rawList.filter((c: any) => {
+        if (!c) return false;
+        const isExplanation =
+          c.type !== 'GENERAL' ||
+          (typeof c.title === 'string' &&
+            (c.title.startsWith('Giải thích:') || c.title.startsWith('Giải thích câu:')));
+        if (isExplanation) {
+          if (c.id) {
+            api.delete(`/api/v1/ai/conversations/${c.id}`).catch(() => {});
+          }
+          return false;
+        }
+        return true;
+      });
+
       return { ...res, data: { ...pageData, content } };
     }),
   updateConvTitle: (convId: number, title: string) =>
@@ -833,6 +1013,8 @@ export const userApi = {
     api.delete<any>('/users/me/avatar').then((res) => ({ ...res, data: (res.data?.data || res.data) as User })),
   changePassword: (data: { oldPassword: string; newPassword: string; confirmPassword: string }) =>
     api.put<any>('/users/me/password', data).then((res) => ({ ...res, data: res.data })),
+  updatePreferences: (preferences: { emailRemindersEnabled: boolean }) =>
+    api.patch<any>('/users/me/preferences', preferences).then((res) => ({ ...res, data: (res.data?.data || res.data) as User })),
 };
 
 /* ---------- personalized learning ---------- */
@@ -980,6 +1162,11 @@ export const personalizedApi = {
       ...res,
       data: (res.data?.data || res.data?.plan || res.data) as LearningPlan,
     })),
+  regeneratePlan: () =>
+    api.post<any>('/ai/personalized/plan/regenerate').then((res) => ({
+      ...res,
+      data: (res.data?.data || res.data?.plan || res.data) as LearningPlan,
+    })),
   dailyPractice: () =>
     api.get<any>('/ai/personalized/daily-practice').then((res) => ({
       ...res,
@@ -1036,6 +1223,7 @@ export interface AdminStudent {
   status: 'ACTIVE' | 'INACTIVE' | 'BANNED';
   hasActiveSubscription: boolean;
   totalSessions: number;
+  wordsLearned?: number;
   createdAt: string;
   lastLoginAt?: string;
 }
@@ -1231,6 +1419,25 @@ export interface SubscriptionStatus {
   endDate?: string;
 }
 
+export interface FeatureQuota {
+  limit: number | null;
+  used: number;
+  remaining: number | null;
+}
+
+export interface SubscriptionUsageResponse {
+  isVip: boolean;
+  isFreeUsageAtLeastHalf?: boolean;
+  resetAt: string;
+  features: {
+    chat: FeatureQuota;
+    speaking: FeatureQuota;
+    grammar: FeatureQuota;
+    explain: FeatureQuota;
+    roadmap: FeatureQuota;
+  };
+}
+
 export const paymentApi = {
   getPackages: () =>
     api.get<any>('/payments/packages').then((res) => {
@@ -1251,6 +1458,11 @@ export const paymentApi = {
         ...res,
         data: d as SubscriptionStatus | null,
       };
+    }),
+  getUsage: () =>
+    api.get<any>('/subscription/usage').then((res) => {
+      const d = res.data?.data || res.data;
+      return d as SubscriptionUsageResponse;
     }),
 };
 

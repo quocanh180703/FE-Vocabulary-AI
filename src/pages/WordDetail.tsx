@@ -4,10 +4,14 @@ import { wordApi, aiApi, learnApi, errMsg, formatPartOfSpeech, analyzeWordRelati
 import type { Word, Explain } from '../api';
 import { Icon } from '../components/icons';
 import { AiExplanationBox } from '../components/AiExplanationBox';
+import { useUsage } from '../context/UsageContext';
+import { QuotaBadge } from '../components/QuotaBadge';
+import viAvatar from '../assets/vi-3d.webp';
 
 export default function WordDetail() {
   const { id } = useParams();
   const nav = useNavigate();
+  const { decrementQuota } = useUsage();
   const [word, setWord] = useState<Word | null>(null);
   const [ex, setEx] = useState<Explain | null>(null);
   const [loadingEx, setLoadingEx] = useState(false);
@@ -20,10 +24,17 @@ export default function WordDetail() {
     let isCurrent = true;
     setErr('');
     setActionErr('');
-    try {
-      const local: string[] = JSON.parse(localStorage.getItem('vocab_favs') || '[]');
-      setIsFav(local.includes(String(id)));
-    } catch {}
+    setIsFav(wordApi.isFavorite(id));
+    wordApi.favorites(0, 100)
+      .then(({ data }) => {
+        if (!isCurrent) return;
+        const ids = new Set<string>([
+          ...data.content.map((w) => String(w.id)),
+          ...(data.localIds || []).map(String),
+        ]);
+        setIsFav(ids.has(String(id)));
+      })
+      .catch(() => {});
     wordApi.get(id)
       .then(({ data }) => {
         if (!isCurrent) return;
@@ -82,6 +93,7 @@ export default function WordDetail() {
         vietnameseMeaning: word.vietnameseMeaning || word.meaning,
       });
       setEx(data);
+      decrementQuota('explain');
     } catch (e) {
       setActionErr(errMsg(e, 'AI đang bận, thử lại sau nhé.'));
     } finally {
@@ -103,10 +115,12 @@ export default function WordDetail() {
   if (!word && !err) return <div className="content"><div className="loading">Đang tải chi tiết từ vựng...</div></div>;
 
   return (
-    <div className="content narrow">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', marginBottom: 12 }}>
+    <div className="content" style={{ maxWidth: 1180 }}>
+      {/* Back button & Action Row */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', marginBottom: 16 }}>
         <button
           onClick={() => nav(-1)}
+          className="sub"
           style={{
             display: 'inline-flex',
             alignItems: 'center',
@@ -114,40 +128,23 @@ export default function WordDetail() {
             background: 'none',
             border: 'none',
             color: 'var(--primary)',
-            fontSize: 14.5,
+            fontSize: 15,
             fontWeight: 800,
             cursor: 'pointer',
-            padding: '6px 12px',
-            borderRadius: 8,
-            transition: 'background 0.15s ease',
+            padding: '4px 8px',
           }}
         >
-          ← Quay lại danh sách
+          ← Quay lại danh sách từ
         </button>
 
         {word && (
           <button
             onClick={toggleFav}
-            className={'heart' + (isFav ? ' on' : '')}
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 8,
-              background: isFav ? '#FEE2E2' : '#FFFFFF',
-              color: isFav ? '#DC2626' : 'var(--muted)',
-              border: `1.5px solid ${isFav ? '#FCA5A5' : 'var(--line)'}`,
-              borderRadius: 99,
-              padding: '7px 16px',
-              fontSize: 13.5,
-              fontWeight: 800,
-              cursor: 'pointer',
-              transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
-              boxShadow: isFav ? '0 2px 8px rgba(239, 68, 68, 0.15)' : 'var(--shadow-sm)',
-            }}
+            className={'heartbtn' + (isFav ? ' on' : '')}
+            style={{ width: 44, height: 44, borderRadius: '50%' }}
             title={isFav ? 'Bỏ lưu yêu thích' : 'Lưu vào từ yêu thích'}
           >
-            <Icon n="heart" s={18} />
-            <span>{isFav ? 'Đã lưu yêu thích' : 'Lưu yêu thích'}</span>
+            <svg viewBox="0 0 24 24" className="ic"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
           </button>
         )}
       </div>
@@ -157,176 +154,120 @@ export default function WordDetail() {
 
       {word && (
         <>
-          <div
-            className="card center"
-            style={{
-              padding: '40px 32px',
-              borderRadius: 20,
-              background: 'linear-gradient(180deg, #FFFFFF 0%, #FAFAFC 100%)',
-              border: '1px solid var(--line)',
-              boxShadow: '0 8px 24px rgba(15, 23, 42, 0.05)',
-            }}
-          >
-            <div style={{ display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap' }}>
-              <span className="pill level" style={{ fontSize: 13, padding: '4px 12px' }}>
-                Cấp độ {word.level}
-              </span>
-              {word.partOfSpeech && (
-                <span className="pill" style={{ background: '#EEF2FF', color: 'var(--primary)', border: '1px solid #C7D2FE', fontSize: 13, padding: '4px 12px' }}>
-                  {formatPartOfSpeech(word.partOfSpeech)} ({word.partOfSpeech.toLowerCase()})
-                </span>
-              )}
-              {word.category && (
-                <span className="pill" style={{ background: '#F1F5F9', color: 'var(--ink)', fontSize: 13, padding: '4px 12px' }}>
-                  📁 {word.category.name}
-                </span>
-              )}
+          {/* Word Hero Card matching word.html */}
+          <div className="wordhero" style={{ position: 'relative' }}>
+            <span className="pill level" style={{ position: 'absolute', top: 22, right: 26 }}>
+              {word.level || 'A1'}{word.category ? ` · ${word.category.name}` : ''}
+            </span>
+            <div className="big">{word.word}</div>
+            <div style={{ fontSize: 18, color: 'var(--muted)', fontWeight: 700, marginTop: 4, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+              <span>{word.pronunciation || ''}{word.partOfSpeech ? ` · ${formatPartOfSpeech(word.partOfSpeech)}` : ''}</span>
+              <button className="speakbtn" onClick={playAudio} title="Nghe phát âm chuẩn">
+                <svg viewBox="0 0 24 24" className="ic"><path d="M11 5 6 9H2v6h4l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.4 5.6a9 9 0 0 1 0 12.8"/></svg>
+              </button>
             </div>
-
-            <div style={{ fontSize: 48, fontWeight: 900, margin: '18px 0 4px', letterSpacing: '-0.5px', color: 'var(--ink)' }}>
-              {word.word}
+            <div style={{ fontSize: 24, fontWeight: 900, color: 'var(--primary-dark)', marginTop: 12 }}>
+              {word.meaning || word.vietnameseMeaning}
             </div>
-
-            {word.pronunciation && (
-              <div className="sub" style={{ fontSize: 18, color: 'var(--muted)', fontWeight: 600 }}>
-                {word.pronunciation}
-              </div>
-            )}
-
-            <button
-              className="btn ghost"
-              style={{
-                width: 54,
-                height: 54,
-                minHeight: 54,
-                padding: 0,
-                margin: '18px auto 0',
-                borderRadius: '50%',
-                background: 'rgba(79, 70, 229, 0.08)',
-                color: 'var(--primary)',
-                border: '1.5px solid #C7D2FE',
-                boxShadow: '0 4px 14px rgba(79, 70, 229, 0.12)',
-              }}
-              onClick={playAudio}
-              aria-label="nghe phát âm"
-              title="Bấm để nghe phát âm chuẩn"
-            >
-              <Icon n="vol" s={24} />
-            </button>
-
-            {/* Vietnamese Meaning Box */}
-            <div
-              style={{
-                marginTop: 24,
-                background: 'linear-gradient(135deg, #ECFDF5 0%, #F0FDF4 100%)',
-                border: '1.5px solid #A7F3D0',
-                padding: '16px 24px',
-                borderRadius: 14,
-                boxShadow: '0 4px 14px rgba(16, 185, 129, 0.08)',
-                maxWidth: 540,
-                width: '100%',
-                margin: '24px auto 0',
-              }}
-            >
-              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11.5, fontWeight: 800, color: '#047857', background: '#D1FAE5', padding: '3px 10px', borderRadius: 99, border: '1px solid #A7F3D0' }}>
-                🇻🇳 NGHĨA TIẾNG VIỆT
-              </div>
-              <div style={{ fontSize: 26, fontWeight: 900, marginTop: 8, color: '#065F46', lineHeight: 1.35 }}>
-                {word.meaning || word.vietnameseMeaning}
-              </div>
-            </div>
-
-            {(() => {
-              const rel = analyzeWordRelations(word.word, word.partOfSpeech);
-              return (
-                <>
-                  {rel.warningNote && (
-                    <div style={{ marginTop: 16, width: '100%', maxWidth: 540, margin: '16px auto 0', background: '#FFFBEB', border: '1.5px solid #FCD34D', borderRadius: 14, padding: '14px 18px', textAlign: 'left', fontSize: 13, color: '#92400E', boxShadow: '0 2px 10px rgba(245, 158, 11, 0.08)' }}>
-                      <div style={{ fontWeight: 800, display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
-                        <span>🔍</span>
-                        <span>Phân biệt Trạng từ & Từ gốc (Tránh nhầm lẫn):</span>
-                      </div>
-                      <div style={{ lineHeight: 1.5 }}>{rel.warningNote}</div>
-                      {rel.exampleNote && (
-                        <div style={{ marginTop: 6, fontStyle: 'italic', color: '#B45309', fontSize: 12.5 }}>
-                          👉 {rel.exampleNote}
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  {!rel.warningNote && rel.isAdverb && rel.rootWord && (
-                    <div style={{ marginTop: 14, display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 12.5, background: '#F5F3FF', border: '1px solid #DDD6FE', color: '#6D28D9', padding: '6px 14px', borderRadius: 99 }}>
-                      <span>💡 Tính từ gốc tương ứng:</span>
-                      <b style={{ textDecoration: 'underline' }}>{rel.rootWord}</b>
-                    </div>
-                  )}
-
-                  {!rel.warningNote && rel.isAdjective && rel.correspondingAdverb && (
-                    <div style={{ marginTop: 14, display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 12.5, background: '#EFF6FF', border: '1px solid #BFDBFE', color: '#1D4ED8', padding: '6px 14px', borderRadius: 99 }}>
-                      <span>⚡ Trạng từ tương ứng:</span>
-                      <b style={{ textDecoration: 'underline' }}>{rel.correspondingAdverb}</b>
-                    </div>
-                  )}
-                </>
-              );
-            })()}
-
-            {word.definition && word.definition !== word.meaning && (
-              <div
-                style={{
-                  fontSize: 14.5,
-                  maxWidth: 540,
-                  margin: '16px auto 0',
-                  color: 'var(--muted)',
-                  lineHeight: 1.6,
-                  background: '#F8FAFC',
-                  padding: '10px 16px',
-                  borderRadius: 10,
-                  border: '1px solid var(--line)',
-                  textAlign: 'left',
-                }}
-              >
-                <b style={{ color: 'var(--ink)' }}>English Definition: </b>
-                {word.definition}
-              </div>
-            )}
-
             {word.example && (
-              <div
-                style={{
-                  fontSize: 14.5,
-                  fontStyle: 'italic',
-                  color: 'var(--ink)',
-                  background: 'rgba(79, 70, 229, 0.04)',
-                  padding: '12px 18px',
-                  borderRadius: 10,
-                  maxWidth: 540,
-                  margin: '14px auto 0',
-                  borderLeft: '3px solid var(--primary)',
-                  textAlign: 'left',
-                  lineHeight: 1.5,
-                }}
-              >
-                "{word.example}"
+              <div className="ex" style={{ display: 'inline-block', fontStyle: 'italic', color: '#3D5875', fontWeight: 700, fontSize: 16, background: '#F4F9FD', borderRadius: 16, padding: '12px 20px', marginTop: 14 }}>
+                “{word.example}”
               </div>
             )}
           </div>
 
-          <div className="btn-row" style={{ marginTop: 16 }}>
-            <button className="btn" onClick={explain} disabled={loadingEx} style={{ flex: 1 }}>
-              <Icon n="spark" s={20} />{loadingEx ? 'Vi đang phân tích chuyên sâu...' : 'AI giải thích chi tiết'}
-            </button>
-            <button className="btn green" onClick={startLearn} style={{ flex: 1 }}>
-              <Icon n="bulb" s={20} /> Học từ này (Thêm vào SRS)
-            </button>
-          </div>
+          {/* 2 Columns */}
+          <div className="cols2" style={{ marginTop: 24 }}>
+            {/* Left Column Stack */}
+            <div className="colstack">
+              <div className="card">
+                <h2><span className="dot"></span>Nghĩa &amp; cách dùng</h2>
+                {word.definition ? (
+                  <p className="mt8" style={{ fontWeight: 700, lineHeight: 1.65, color: '#33475C' }}>
+                    {word.definition}
+                  </p>
+                ) : (
+                  <p className="mt8" style={{ fontWeight: 700, lineHeight: 1.65, color: '#33475C' }}>
+                    {word.meaning || word.vietnameseMeaning}
+                  </p>
+                )}
+                {word.example && (
+                  <p className="mt8" style={{ fontWeight: 700, lineHeight: 1.65, color: '#33475C', fontStyle: 'italic' }}>
+                    “{word.example}”
+                  </p>
+                )}
 
-          {ex && (
-            <div style={{ marginTop: 20 }}>
-              <AiExplanationBox explanation={ex.meaning} />
+                {(() => {
+                  const rel = analyzeWordRelations(word.word, word.partOfSpeech);
+                  return rel.warningNote ? (
+                    <div style={{ marginTop: 14, background: 'var(--yellow-bg)', border: '1px solid #FCD34D', borderRadius: 12, padding: '12px 16px', fontSize: 13, color: '#92400E' }}>
+                      <div style={{ fontWeight: 800, marginBottom: 4 }}>💡 Ghi chú phân biệt ngữ pháp:</div>
+                      <div>{rel.warningNote}</div>
+                    </div>
+                  ) : null;
+                })()}
+              </div>
+
+              {/* Coach Vi Card */}
+              <div className="card">
+                <div className="coach">
+                  <img src={viAvatar} alt="Vi" style={{ width: 54, height: 54, borderRadius: '50%', objectFit: 'cover' }} />
+                  <div className="bubble">
+                    <b>Vi giải thích:</b> Từ “<b>{word.word}</b>” thuộc cấp độ <b>{word.level || 'chuẩn'}</b>. Bạn có thể nhấn “AI giải thích thêm” để phân tích ngữ cảnh bài thi IELTS/TOEIC và các collocations thường gặp!
+                  </div>
+                </div>
+                <div className="btn-row mt16" style={{ alignItems: 'flex-start' }}>
+                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    <button className="btn" onClick={explain} disabled={loadingEx} style={{ width: '100%' }}>
+                      <Icon n="spark" s={18} /> {loadingEx ? 'Vi đang phân tích...' : 'AI giải thích thêm'}
+                    </button>
+                    <QuotaBadge featureKey="explain" labelSuffix="lượt hôm nay" showOnlyWhenLow={true} />
+                  </div>
+                  <button className="btn green" onClick={startLearn} style={{ flex: 1 }}>
+                    <Icon n="bulb" s={18} /> Bắt đầu học từ này
+                  </button>
+                </div>
+              </div>
+
+              {ex && (
+                <div style={{ marginTop: 12 }}>
+                  <AiExplanationBox explanation={ex.meaning} />
+                </div>
+              )}
             </div>
-          )}
+
+            {/* Right Column Stack */}
+            <div className="colstack">
+              <div className="card">
+                <h2><span className="dot g"></span>Từ liên quan &amp; Ngữ cảnh</h2>
+                <div className="sub mt8" style={{ marginBottom: 7 }}>Loại từ</div>
+                <div className="chiprow">
+                  <span className="relchip">{formatPartOfSpeech(word.partOfSpeech || 'noun')}</span>
+                  {word.category && <span className="relchip">{word.category.name}</span>}
+                  <span className="relchip">CEFR {word.level || 'A1'}</span>
+                </div>
+                <div className="sub mt16" style={{ marginBottom: 7 }}>Trạng thái từ vựng</div>
+                <div className="chiprow">
+                  <span className="relchip" style={{ background: isFav ? 'var(--red-bg)' : undefined, color: isFav ? 'var(--red-dark)' : undefined }}>
+                    {isFav ? 'Đã lưu yêu thích ♥' : 'Chưa lưu yêu thích'}
+                  </span>
+                  <span className="relchip" style={{ background: 'var(--green-bg)', color: 'var(--green-dark)' }}>
+                    Chuẩn Oxford 3000
+                  </span>
+                </div>
+              </div>
+
+              <div className="card">
+                <h2><span className="dot a"></span>Trạng thái học của bạn</h2>
+                <div className="mt8">
+                  <div className="kv"><span>Trạng thái</span>Đang ôn theo SRS</div>
+                  <div className="kv"><span>Cấp độ</span>CEFR {word.level || 'A1'}</div>
+                  <div className="kv"><span>Lần ôn tiếp theo</span>Hôm nay</div>
+                  <div className="kv"><span>Yêu thích</span>{isFav ? 'Đã lưu ♥' : 'Chưa lưu'}</div>
+                </div>
+              </div>
+            </div>
+          </div>
         </>
       )}
     </div>

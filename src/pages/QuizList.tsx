@@ -1,17 +1,24 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { motion, AnimatePresence } from 'motion/react';
 import { quizApi, personalizedApi, errMsg } from '../api';
 import type { Quiz } from '../api';
-import { Icon, Mascot } from '../components/icons';
+import { Mascot } from '../components/icons';
 import { useAuth } from '../auth/AuthContext';
 
 const LEVELS = ['Tất cả', '🎯 Đề xuất cho bạn', 'A1', 'A2', 'B1', 'B2', 'C1'];
+const PAGE_SIZE = 10;
 
 export default function QuizList() {
   const { user } = useAuth();
-  const [quizzes, setQuizzes] = useState<Quiz[]>([]);
+  const [allQuizzes, setAllQuizzes] = useState<Quiz[]>([]);
   const [level, setLevel] = useState('Tất cả');
+  const [page, setPage] = useState(0);
   const [weakTopics, setWeakTopics] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [err, setErr] = useState('');
+  const nav = useNavigate();
+  const listRef = useRef<HTMLDivElement>(null);
 
   // Storage key for roadmap data
   const storageKey = `vocab_ai_roadmap_${user?.id || user?.username || 'default'}`;
@@ -27,8 +34,6 @@ export default function QuizList() {
   };
 
   const [recommendedLevel, setRecommendedLevel] = useState<string>(getInitialLevel);
-  const [err, setErr] = useState('');
-  const nav = useNavigate();
 
   useEffect(() => {
     personalizedApi.weakTopics()
@@ -52,21 +57,20 @@ export default function QuizList() {
   }, [storageKey]);
 
   useEffect(() => {
-    const isRecommendedFilter = level === '🎯 Đề xuất cho bạn';
+    setLoading(true);
     quizApi.list({
       page: 0,
-      size: 50,
-      level: (!isRecommendedFilter && level !== 'Tất cả') ? level : undefined,
+      size: 500,
     })
       .then(({ data }) => {
-        let list = data.content;
-        if (isRecommendedFilter) {
-          list = list.filter((q: Quiz) => isQuizRecommended(q));
-        }
-        setQuizzes(list);
+        setAllQuizzes(data.content || []);
+        setLoading(false);
       })
-      .catch((e) => setErr(errMsg(e)));
-  }, [level, weakTopics, recommendedLevel]);
+      .catch((e) => {
+        setErr(errMsg(e));
+        setLoading(false);
+      });
+  }, []);
 
   const isQuizRecommended = (qz: Quiz) => {
     const titleLower = (qz.title || '').toLowerCase();
@@ -75,18 +79,58 @@ export default function QuizList() {
       const wl = w.toLowerCase();
       return titleLower.includes(wl) || catLower.includes(wl);
     });
-    const matchesLevel = qz.level === recommendedLevel;
+    const matchesLevel = (qz.level || '').toUpperCase() === (recommendedLevel || '').toUpperCase();
     return matchesWeakTopic || matchesLevel;
   };
 
+  const handleLevelChange = (newLvl: string) => {
+    if (newLvl === level) return;
+    setLevel(newLvl);
+    setPage(0);
+  };
+
+  const changePage = (newPage: number) => {
+    if (newPage === page) return;
+    setPage(newPage);
+    listRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
+  const filteredQuizzes = useMemo(() => {
+    if (level === '🎯 Đề xuất cho bạn') {
+      return allQuizzes.filter((q) => isQuizRecommended(q));
+    }
+    if (level !== 'Tất cả') {
+      const targetLvl = level.toUpperCase();
+      return allQuizzes.filter((q) => (q.level || '').toUpperCase() === targetLvl);
+    }
+    return allQuizzes;
+  }, [allQuizzes, level, weakTopics, recommendedLevel]);
+
+  const totalElements = filteredQuizzes.length;
+  const totalPages = Math.ceil(totalElements / PAGE_SIZE) || 1;
+
+  useEffect(() => {
+    if (page >= totalPages && totalPages > 0) {
+      setPage(0);
+    }
+  }, [totalPages, page]);
+
+  const paginatedQuizzes = useMemo(() => {
+    const start = page * PAGE_SIZE;
+    return filteredQuizzes.slice(start, start + PAGE_SIZE);
+  }, [filteredQuizzes, page]);
+
+  const getTabCount = (l: string) => {
+    if (l === 'Tất cả') return allQuizzes.length;
+    if (l === '🎯 Đề xuất cho bạn') return allQuizzes.filter(isQuizRecommended).length;
+    return allQuizzes.filter((q) => (q.level || '').toUpperCase() === l.toUpperCase()).length;
+  };
+
   return (
-    <div className="content">
+    <div className="content" style={{ maxWidth: 1180 }}>
       <div className="pagehead">
-        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '4px 12px', background: 'rgba(79, 70, 229, 0.08)', borderRadius: 99, color: 'var(--primary)', fontSize: 13, fontWeight: 800, marginBottom: 8 }}>
-          <Icon n="zap" s={14} /> Kiểm tra & Đánh giá năng lực
-        </div>
         <h1>Quiz luyện tập tính giờ</h1>
-        <div className="sub">Đề thi bấm giờ chuẩn CEFR — Chọn đáp án chính xác và nhận phản hồi chi tiết từ hệ thống</div>
+        <div className="sub">Chọn một bài để luyện — điểm được tính khi bạn nộp bài</div>
       </div>
 
       {weakTopics.length > 0 && (
@@ -114,7 +158,7 @@ export default function QuizList() {
           </div>
           <button
             className="btn ghost sm"
-            onClick={() => setLevel('🎯 Đề xuất cho bạn')}
+            onClick={() => handleLevelChange('🎯 Đề xuất cho bạn')}
             style={{ borderColor: '#C7D2FE', color: 'var(--primary)', background: '#FFFFFF', minHeight: 38, fontSize: 13.5, fontWeight: 800 }}
           >
             Lọc bài AI khuyên làm
@@ -122,85 +166,185 @@ export default function QuizList() {
         </div>
       )}
 
-      <div className="chips" style={{ marginBottom: 20 }}>
-        {LEVELS.map((l) => (
-          <button key={l} className={'chip' + (level === l ? ' on' : '')} onClick={() => setLevel(l)}>
-            {l}
-          </button>
-        ))}
-      </div>
-
-      {err && <div className="error">{err}</div>}
-
-      <div className="cols3">
-        {quizzes.map((qz) => {
-          const recommended = isQuizRecommended(qz);
+      {/* Chiprow matching quiz-list.html */}
+      <div ref={listRef} className="chiprow" style={{ marginBottom: 16 }}>
+        {LEVELS.map((l) => {
+          const count = getTabCount(l);
           return (
-            <div
-              className="card"
-              key={qz.id}
-              style={{
-                position: 'relative',
-                borderRadius: 18,
-                padding: '24px 22px',
-                border: recommended ? '2px solid var(--primary)' : '1px solid var(--line)',
-                boxShadow: recommended ? '0 8px 24px rgba(79, 70, 229, 0.12)' : 'var(--shadow-sm)',
-                transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'space-between',
-              }}
+            <button
+              key={l}
+              className={'fchip' + (level === l ? ' on' : '')}
+              onClick={() => handleLevelChange(l)}
             >
-              {recommended && (
-                <div
-                  style={{
-                    position: 'absolute',
-                    top: -11,
-                    right: 18,
-                    background: 'linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%)',
-                    color: '#fff',
-                    fontSize: 11.5,
-                    fontWeight: 800,
-                    padding: '3px 12px',
-                    borderRadius: 99,
-                    boxShadow: '0 4px 10px rgba(79, 70, 229, 0.25)',
-                  }}
-                >
-                  ✨ AI đề xuất
-                </div>
-              )}
-
-              <div>
-                <div className="row">
-                  <span className="pill level" style={{ fontWeight: 800, fontSize: 12 }}>
-                    Cấp độ {qz.level}
-                  </span>
-                  <span className="sub" style={{ fontSize: 13, fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 5 }}>
-                    <Icon n="clock" s={15} /> {qz.timeLimit} phút
-                  </span>
-                </div>
-                <h2 className="mt8" style={{ fontSize: 18, fontWeight: 900, color: 'var(--ink)' }}>{qz.title}</h2>
-                <div className="sub mt8" style={{ fontSize: 13.5, color: 'var(--muted)' }}>
-                  {qz.questionCount} câu hỏi trắc nghiệm{qz.category ? ` · ${qz.category}` : ''}
-                </div>
-              </div>
-
-              <button className="btn block mt16" onClick={() => nav(`/quiz/${qz.id}`)}>
-                Bắt đầu làm bài →
-              </button>
-            </div>
+              {l === 'Tất cả' ? 'Tất cả trình độ' : l}
+              <span
+                style={{
+                  marginLeft: 6,
+                  fontSize: 11,
+                  fontWeight: 800,
+                  padding: '1px 7px',
+                  borderRadius: 99,
+                  background: level === l ? 'rgba(255,255,255,0.28)' : 'rgba(10,37,64,0.08)',
+                  color: level === l ? '#fff' : 'var(--ink)',
+                }}
+              >
+                {count}
+              </span>
+            </button>
           );
         })}
       </div>
 
-      {quizzes.length === 0 && !err && (
-        <div className="empty">
+      {err && <div className="error">{err}</div>}
+
+      {/* Grid 2 cols with smooth page switch animation */}
+      <AnimatePresence mode="wait" initial={false}>
+        <motion.div
+          key={`${level}-${page}`}
+          className="cols2"
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -8 }}
+          transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+        >
+          {paginatedQuizzes.map((qz, idx) => {
+            const recommended = isQuizRecommended(qz);
+            return (
+              <motion.div
+                className="card"
+                key={qz.id}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{
+                  duration: 0.2,
+                  delay: Math.min(idx * 0.025, 0.18),
+                  ease: [0.16, 1, 0.3, 1],
+                }}
+                whileHover={{
+                  y: -3,
+                  boxShadow: '0 12px 28px rgba(10, 37, 64, 0.08)',
+                  transition: { duration: 0.18 },
+                }}
+              >
+                <div className="row">
+                  <b style={{ fontSize: '18.5px' }}>{qz.title}</b>
+                  <span className="pill level">Cấp {qz.level}</span>
+                </div>
+                {(() => {
+                  const mins = qz.timeLimit > 60 ? Math.round(qz.timeLimit / 60) : qz.timeLimit;
+                  return (
+                    <>
+                      <div className="sub mt8">
+                        {qz.questionCount} câu · giới hạn {mins} phút{qz.category ? ` · ${qz.category}` : ''}
+                      </div>
+                      <div className="row mt16">
+                        {recommended ? (
+                          <span className="pill" style={{ background: 'var(--primary)', color: '#fff' }}>✨ AI đề xuất</span>
+                        ) : (
+                          <span className="pill level">Bấm giờ {mins}p</span>
+                        )}
+                        <button
+                          className="btn"
+                          style={{ minHeight: 46, padding: '0 22px' }}
+                          onClick={() => nav(`/quiz/${qz.id}`)}
+                        >
+                          Bắt đầu làm
+                        </button>
+                      </div>
+                    </>
+                  );
+                })()}
+              </motion.div>
+            );
+          })}
+        </motion.div>
+      </AnimatePresence>
+
+      {filteredQuizzes.length === 0 && !loading && !err && (
+        <div className="empty" style={{ textAlign: 'center', padding: '48px 16px' }}>
           {level === '🎯 Đề xuất cho bạn'
             ? 'Không tìm thấy bài quiz nào trùng với chủ đề đề xuất hiện tại.'
             : 'Chưa có quiz nào ở trình độ này.'}
         </div>
       )}
+
+      {/* Pagination Controls - chỉ hiển thị 10 bài rồi sang trang */}
+      {totalPages > 1 && (
+        <motion.div
+          className="row"
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.2 }}
+          style={{
+            marginTop: 28,
+            padding: '16px 22px',
+            background: '#fff',
+            borderRadius: 18,
+            boxShadow: 'var(--sh)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: 12,
+          }}
+        >
+          <span className="sub" style={{ fontSize: 14 }}>
+            Trang <b>{page + 1}</b> / <b>{totalPages}</b> · Đang hiển thị{' '}
+            <b>{paginatedQuizzes.length}</b> / <b>{totalElements}</b> bài trắc nghiệm
+          </span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <motion.button
+              type="button"
+              className="pagebtn"
+              disabled={page === 0}
+              onClick={() => changePage(Math.max(0, page - 1))}
+              whileTap={page > 0 ? { scale: 0.92 } : undefined}
+              whileHover={page > 0 ? { y: -1 } : undefined}
+              title="Trang trước"
+              style={{ opacity: page === 0 ? 0.45 : 1, cursor: page === 0 ? 'not-allowed' : 'pointer' }}
+            >
+              ‹
+            </motion.button>
+            {Array.from({ length: totalPages }, (_, i) => (
+              <motion.button
+                key={i}
+                type="button"
+                className={'pagebtn' + (page === i ? ' on' : '')}
+                onClick={() => changePage(i)}
+                whileTap={{ scale: 0.92 }}
+                whileHover={{ y: -1 }}
+                style={
+                  page === i
+                    ? {
+                        background: 'var(--primary)',
+                        color: '#fff',
+                        boxShadow: '0 4px 14px rgba(21, 101, 192, 0.32)',
+                        transform: 'scale(1.04)',
+                      }
+                    : {}
+                }
+              >
+                {i + 1}
+              </motion.button>
+            ))}
+            <motion.button
+              type="button"
+              className="pagebtn"
+              disabled={page >= totalPages - 1}
+              onClick={() => changePage(Math.min(totalPages - 1, page + 1))}
+              whileTap={page < totalPages - 1 ? { scale: 0.92 } : undefined}
+              whileHover={page < totalPages - 1 ? { y: -1 } : undefined}
+              title="Trang sau"
+              style={{
+                opacity: page >= totalPages - 1 ? 0.45 : 1,
+                cursor: page >= totalPages - 1 ? 'not-allowed' : 'pointer',
+              }}
+            >
+              ›
+            </motion.button>
+          </div>
+        </motion.div>
+      )}
     </div>
   );
 }
-

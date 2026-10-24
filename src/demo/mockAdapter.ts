@@ -391,6 +391,27 @@ export const mockAdapter: AxiosAdapter = async (config: InternalAxiosRequestConf
     } catch {}
     return ok(null);
   }
+  if (method === 'get' && (url === '/subscription/usage' || url === '/api/subscription/usage' || url === '/subscriptions/usage' || url === '/api/subscriptions/usage')) {
+    let isVip = false;
+    try {
+      const stored = localStorage.getItem('vocab_demo_subscription');
+      if (stored) {
+        const sub = JSON.parse(stored);
+        if (sub?.status === 'ACTIVE') isVip = true;
+      }
+    } catch {}
+    return ok({
+      isVip,
+      resetAt: new Date(Date.now() + 86400000).toISOString(),
+      features: {
+        chat: { limit: isVip ? null : 5, used: 2, remaining: isVip ? null : 3 },
+        speaking: { limit: isVip ? null : 5, used: 1, remaining: isVip ? null : 4 },
+        grammar: { limit: isVip ? null : 5, used: 0, remaining: isVip ? null : 5 },
+        explain: { limit: isVip ? null : 10, used: 3, remaining: isVip ? null : 7 },
+        roadmap: { limit: isVip ? null : 2, used: 1, remaining: isVip ? null : 1 },
+      },
+    });
+  }
   if (method === 'post' && (url?.startsWith('/payments/initiate') || url?.startsWith('/api/payments/initiate'))) {
     const isMockYearly = url.includes('packageId=2');
     const mockPlanName = isMockYearly ? 'Gói Theo Năm' : 'Gói Theo Tháng';

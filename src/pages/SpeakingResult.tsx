@@ -2,109 +2,8 @@ import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { speakApi, errMsg } from '../api';
 import type { SessionDetail, AttemptDetail } from '../api';
-import { Mascot, Icon } from '../components/icons';
-
-function ModernRadar({ scores }: { scores: { label: string; v: number }[] }) {
-  const C = 130, R = 72;
-  const pt = (i: number, v: number) => {
-    const a = (Math.PI * 2 * i) / scores.length - Math.PI / 2;
-    const r = (R * Math.max(8, Math.min(100, v))) / 100;
-    return [C + r * Math.cos(a), C + r * Math.sin(a)];
-  };
-
-  const poly = scores.map((s, i) => pt(i, s.v).join(',')).join(' ');
-  const gridLevels = [25, 50, 75, 100];
-
-  const labelPositions = [
-    { textAnchor: 'middle', dx: 0, dy: -14 }, // Top (Ngữ pháp)
-    { textAnchor: 'start', dx: 14, dy: 4 },    // Right (Từ vựng)
-    { textAnchor: 'middle', dx: 0, dy: 20 },  // Bottom (Trôi chảy)
-    { textAnchor: 'end', dx: -14, dy: 4 },    // Left (Nội dung)
-  ];
-
-  return (
-    <div style={{ position: 'relative', width: '100%', maxWidth: 280, margin: '8px auto 0' }}>
-      <svg viewBox="0 0 260 260" width="100%" height="auto" style={{ display: 'block', overflow: 'visible' }}>
-        <defs>
-          <linearGradient id="radarFillGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#2563eb" stopOpacity="0.38" />
-            <stop offset="100%" stopColor="#0284c7" stopOpacity="0.18" />
-          </linearGradient>
-          <filter id="radarGlow" x="-20%" y="-20%" width="140%" height="140%">
-            <feDropShadow dx="0" dy="2" stdDeviation="3" floodColor="#1d4ed8" floodOpacity="0.25" />
-          </filter>
-        </defs>
-
-        {/* Lưới đa giác đồng tâm */}
-        {gridLevels.map((g, idx) => {
-          const points = scores
-            .map((_, i) => {
-              const a = (Math.PI * 2 * i) / scores.length - Math.PI / 2;
-              const r = (R * g) / 100;
-              return `${C + r * Math.cos(a)},${C + r * Math.sin(a)}`;
-            })
-            .join(' ');
-          return (
-            <polygon
-              key={idx}
-              points={points}
-              fill={idx % 2 === 0 ? 'rgba(241, 245, 249, 0.7)' : 'none'}
-              stroke="#cbd5e1"
-              strokeWidth={idx === 3 ? '1.5' : '1'}
-              strokeDasharray={idx < 3 ? '3,3' : undefined}
-            />
-          );
-        })}
-
-        {/* Trục nối tâm ra 4 đỉnh */}
-        {scores.map((_, i) => {
-          const a = (Math.PI * 2 * i) / scores.length - Math.PI / 2;
-          const x2 = C + R * Math.cos(a);
-          const y2 = C + R * Math.sin(a);
-          return <line key={i} x1={C} y1={C} x2={x2} y2={y2} stroke="#cbd5e1" strokeWidth="1.2" />;
-        })}
-
-        {/* Vùng diện tích điểm của học viên */}
-        <polygon points={poly} fill="url(#radarFillGrad)" stroke="#2563eb" strokeWidth="2.5" filter="url(#radarGlow)" />
-
-        {/* Các điểm mốc ở đỉnh */}
-        {scores.map((s, i) => {
-          const [x, y] = pt(i, s.v);
-          return (
-            <g key={i}>
-              <circle cx={x} cy={y} r="5" fill="#2563eb" stroke="#ffffff" strokeWidth="2.5" />
-            </g>
-          );
-        })}
-
-        {/* Nhãn kỹ năng và điểm */}
-        {scores.map((s, i) => {
-          const a = (Math.PI * 2 * i) / scores.length - Math.PI / 2;
-          const pos = labelPositions[i] || { textAnchor: 'middle', dx: 0, dy: 0 };
-          const lx = C + R * Math.cos(a) + pos.dx;
-          const ly = C + R * Math.sin(a) + pos.dy;
-
-          return (
-            <text
-              key={i}
-              x={lx}
-              y={ly}
-              textAnchor={pos.textAnchor as any}
-              fontSize="12.5"
-              fontWeight="800"
-              fill="#334155"
-            >
-              {s.label}{' '}
-              <tspan fill="#2563eb" fontWeight="900">
-                ({s.v})
-              </tspan>
-            </text>
-          );
-        })}
-      </svg>
-    </div>
-  );
-}
+import { Icon } from '../components/icons';
+import viAvatar from '../assets/vi-3d.webp';
 
 function parseList(val: any): string[] {
   if (!val) return [];
@@ -174,7 +73,7 @@ export default function SpeakingResult() {
     return (
       <div className="content narrow center" style={{ paddingTop: 80 }}>
         <div className="sub">Chưa có phiên luyện nói nào.</div>
-        <button className="btn mt16" onClick={() => nav('/speaking')}>
+        <button type="button" className="btn mt16" onClick={() => nav('/speaking')}>
           Luyện nói ngay
         </button>
       </div>
@@ -191,8 +90,15 @@ export default function SpeakingResult() {
 
   if (!d) {
     return (
-      <div className="content">
-        <div className="loading">Vi đang tổng hợp kết quả chấm điểm từ AI...</div>
+      <div className="content center" style={{ padding: 60 }}>
+        <img
+          src={viAvatar}
+          alt="Vi"
+          style={{ width: 64, height: 64, animation: 'float 2s ease-in-out infinite' }}
+        />
+        <div className="mt16" style={{ fontWeight: 800, color: 'var(--primary)' }}>
+          Vi đang tổng hợp kết quả chấm điểm từ AI...
+        </div>
       </div>
     );
   }
@@ -203,381 +109,260 @@ export default function SpeakingResult() {
   const fb = currentAttempt?.feedback || d.feedback || state?.latestResult?.feedback || {};
   const scoresObj = state?.latestResult?.scores || {};
 
-  const grammarScore = Math.round(Number(fb.grammarScore ?? scoresObj.grammarScore ?? 70));
-  const vocabularyScore = Math.round(Number(fb.vocabularyScore ?? scoresObj.vocabularyScore ?? 75));
+  const grammarScore = Math.round(Number(fb.grammarScore ?? scoresObj.grammarScore ?? 72));
+  const vocabularyScore = Math.round(Number(fb.vocabularyScore ?? scoresObj.vocabularyScore ?? 80));
   const fluencyScore = Math.round(Number(fb.fluencyScore ?? scoresObj.fluencyScore ?? 65));
-  const contentScore = Math.round(Number(fb.contentScore ?? scoresObj.contentScore ?? 70));
+  const contentScore = Math.round(Number(fb.contentScore ?? scoresObj.contentScore ?? 78));
+  const pronunciationScore = Math.round(Number(fb.pronunciationScore ?? scoresObj.pronunciationScore ?? 70));
 
   const overallScore = Math.round(
     Number(
       currentAttempt?.overallScore ??
-      fb.overallScore ??
-      scoresObj.overallScore ??
-      d.overallScore ??
-      Math.round((grammarScore + vocabularyScore + fluencyScore + contentScore) / 4)
+        fb.overallScore ??
+        scoresObj.overallScore ??
+        d.overallScore ??
+        Math.round((grammarScore + vocabularyScore + fluencyScore + contentScore + pronunciationScore) / 5)
     )
   );
-
-  const scores = [
-    { label: 'Ngữ pháp', v: grammarScore },
-    { label: 'Từ vựng', v: vocabularyScore },
-    { label: 'Trôi chảy', v: fluencyScore },
-    { label: 'Nội dung', v: contentScore },
-  ];
 
   const transcript = currentAttempt?.transcript || state?.latestResult?.attempt?.transcript || '';
   const generalFeedback =
     fb.feedback ||
     state?.latestResult?.feedback?.feedback ||
-    'Bài nói đã được ghi nhận. Hãy xem chi tiết các lỗi và nhận xét bên dưới để cải thiện phản xạ nhé!';
+    'Nội dung bài nói rõ ràng, từ vựng dùng tốt. Lần tới hãy ngắt theo cụm ý để câu nói tự nhiên hơn nhé!';
 
   const strengths = parseList(fb.strengths || state?.latestResult?.feedback?.strengths);
   const weaknesses = parseList(fb.weaknesses || state?.latestResult?.feedback?.weaknesses);
   const suggestions = parseList(fb.suggestions || state?.latestResult?.feedback?.suggestions);
   const corrections = parseCorrections(fb.corrections || state?.latestResult?.feedback?.corrections);
 
-  const getScoreBadge = (sc: number) => {
-    if (sc >= 85) return { text: 'Xuất sắc 🌟', color: 'var(--green-dark)', bg: '#e6f4eb' };
-    if (sc >= 70) return { text: 'Khá tốt 👍', color: 'var(--primary-dark)', bg: 'var(--tint)' };
-    if (sc >= 50) return { text: 'Cần cố gắng ⚡', color: '#b45309', bg: '#fffbeb' };
-    return { text: 'Cần luyện thêm ⚠️', color: '#b91c1c', bg: '#fef2f2' };
-  };
-
-  const badge = getScoreBadge(overallScore);
+  // SVG circular score ring: radius=74 -> circumference = 2*pi*74 ≈ 465
+  const circumference = 465;
+  const strokeDashoffset = circumference - (circumference * overallScore) / 100;
 
   return (
-    <div className="content" style={{ maxWidth: 1000 }}>
-      {/* Header */}
+    <div className="content" style={{ maxWidth: 920 }}>
+      {/* Page Header */}
       <div className="pagehead">
-        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '4px 12px', background: 'rgba(79, 70, 229, 0.08)', borderRadius: 99, color: 'var(--primary)', fontSize: 13, fontWeight: 800, marginBottom: 8 }}>
-          <Icon n="mic" s={14} /> AI Speech Evaluation Report
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
-          <div>
-            <h1>Kết quả luyện nói phản xạ</h1>
-            <div className="sub">
-              Chủ đề: <b style={{ color: 'var(--ink)' }}>{d.topic}</b> · Trình độ: <b>{d.level}</b> · Tổng số lần thử: <b>{attempts.length || 1}</b>
-            </div>
-          </div>
-          <button className="btn ghost" style={{ minHeight: 44, padding: '0 18px', fontSize: 14, borderRadius: 12 }} onClick={() => nav('/speaking')}>
-            <Icon n="mic" s={18} />
-            Luyện chủ đề khác
-          </button>
+        <h1>Kết quả luyện nói</h1>
+        <div className="sub">
+          Chủ đề &ldquo;{d.topic}&rdquo; · Cấp độ {d.level} · Lần thử #{currentAttempt?.attemptNumber || selectedAttemptIdx + 1}
         </div>
       </div>
 
-      {/* Selector chọn lần thử nếu có nhiều lần */}
+      {/* Attempts selector if multiple */}
       {attempts.length > 1 && (
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 10,
-            flexWrap: 'wrap',
-            padding: '12px 16px',
-            background: '#FFFFFF',
-            border: '1px solid #E2E8F0',
-            borderRadius: 14,
-            boxShadow: '0 2px 6px rgba(15, 23, 42, 0.02)',
-          }}
-        >
-          <span style={{ fontWeight: 800, fontSize: 14, color: 'var(--muted)' }}>Lần thử:</span>
+        <div className="chiprow">
+          <span style={{ fontWeight: 800, fontSize: 13, color: 'var(--muted)', alignSelf: 'center' }}>
+            Lần thử:
+          </span>
           {attempts.map((a, idx) => {
             const isSelected = idx === selectedAttemptIdx;
             const sc = a.overallScore ?? a.feedback?.overallScore;
             return (
               <button
                 key={a.id || idx}
+                type="button"
+                className={`fchip ${isSelected ? 'on' : ''}`}
                 onClick={() => setSelectedAttemptIdx(idx)}
-                className={`chip ${isSelected ? 'on' : ''}`}
-                style={{ cursor: 'pointer', transition: 'all 0.15s ease' }}
               >
                 Lần #{a.attemptNumber || idx + 1}
-                {sc != null && <span style={{ marginLeft: 6, fontWeight: 900 }}>({Math.round(Number(sc))}đ)</span>}
+                {sc != null && ` (${Math.round(Number(sc))}đ)`}
               </button>
             );
           })}
         </div>
       )}
 
-      {/* KHUNG VĂN BẢN BÀI NÓI */}
-      <div
-        className="card"
-        style={{
-          background: '#ffffff',
-          border: '1px solid #E2E8F0',
-          borderRadius: 18,
-          padding: '20px 24px',
-          boxShadow: '0 4px 16px rgba(15, 23, 42, 0.03)',
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontWeight: 900, color: 'var(--primary)', fontSize: 15, marginBottom: 12 }}>
-          <Icon n="mic" s={18} />
-          <span>Văn bản bài nói nhận diện qua giọng nói (Lần thử #{currentAttempt?.attemptNumber || selectedAttemptIdx + 1})</span>
+      {/* Overall Score & 5 Criteria Card */}
+      <div className="card" style={{ display: 'flex', gap: 30, alignItems: 'center', flexWrap: 'wrap' }}>
+        <div className="scorering">
+          <svg width="168" height="168" viewBox="0 0 168 168">
+            <circle cx="84" cy="84" r="74" fill="none" stroke="#E7EEF6" strokeWidth="13" />
+            <circle
+              cx="84"
+              cy="84"
+              r="74"
+              fill="none"
+              stroke="var(--primary)"
+              strokeWidth="13"
+              strokeLinecap="round"
+              strokeDasharray={circumference}
+              strokeDashoffset={strokeDashoffset}
+              transform="rotate(-90 84 84)"
+              style={{ transition: 'stroke-dashoffset 1s ease' }}
+            />
+          </svg>
+          <div className="sc">
+            <b>{overallScore}</b>
+            <span>/ 100 ĐIỂM</span>
+          </div>
         </div>
 
-        <div
+        <div style={{ flex: 1, minWidth: 280 }}>
+          <div className="bar-row">
+            <span className="lbl">Ngữ pháp</span>
+            <div className="progress">
+              <i style={{ width: `${grammarScore}%` }} />
+            </div>
+            <b>{grammarScore}</b>
+          </div>
+
+          <div className="bar-row">
+            <span className="lbl">Từ vựng</span>
+            <div className="progress">
+              <i style={{ width: `${vocabularyScore}%` }} />
+            </div>
+            <b>{vocabularyScore}</b>
+          </div>
+
+          <div className="bar-row">
+            <span className="lbl">Trôi chảy</span>
+            <div className="progress">
+              <i
+                style={{
+                  width: `${fluencyScore}%`,
+                  background: fluencyScore < 70 ? 'var(--yellow)' : 'var(--primary)',
+                }}
+              />
+            </div>
+            <b>{fluencyScore}</b>
+          </div>
+
+          <div className="bar-row">
+            <span className="lbl">Nội dung</span>
+            <div className="progress">
+              <i style={{ width: `${contentScore}%` }} />
+            </div>
+            <b>{contentScore}</b>
+          </div>
+
+          <div className="bar-row">
+            <span className="lbl">Phát âm</span>
+            <div className="progress">
+              <i style={{ width: `${pronunciationScore}%` }} />
+            </div>
+            <b>{pronunciationScore}</b>
+          </div>
+        </div>
+      </div>
+
+      {/* Transcript Card */}
+      <div className="card">
+        <div className="row">
+          <h2>
+            <span className="dot" />
+            Bài nói của bạn
+          </h2>
+          <span className="pill greensoft">Whisper nghe được</span>
+        </div>
+        <p
+          className="mt8"
           style={{
-            padding: '16px 20px',
-            background: '#F8FAFC',
-            borderRadius: 12,
-            border: '1px solid #E2E8F0',
-            fontSize: 15.5,
+            fontSize: 16.5,
             lineHeight: 1.65,
-            color: transcript ? 'var(--ink)' : 'var(--muted)',
+            fontWeight: 700,
+            color: transcript ? '#33475C' : 'var(--muted)',
             fontStyle: transcript ? 'normal' : 'italic',
-            fontWeight: 500,
           }}
         >
-          {transcript ? `"${transcript}"` : 'Không nhận diện được nội dung nói hoặc âm lượng micro quá nhỏ.'}
-        </div>
+          {transcript ? `“${transcript}”` : 'Không nhận diện được nội dung hoặc âm lượng quá nhỏ.'}
+        </p>
       </div>
 
-      {/* KHUNG BẢN ĐỒ KỸ NĂNG & CHI TIẾT ĐIỂM */}
-      <div className="cols2">
-        {/* Bản đồ kỹ năng (Radar Chart gọn gàng, tinh tế) */}
-        <div className="card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', padding: '24px 26px', borderRadius: 20, border: '1px solid #E2E8F0', boxShadow: '0 4px 16px rgba(15, 23, 42, 0.03)' }}>
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
-              <h2 style={{ fontSize: 18, margin: 0, fontWeight: 900 }}>Bản đồ năng lực nói</h2>
-              <span className="pill" style={{ fontSize: 11, background: '#EEF2FF', color: 'var(--primary)', fontWeight: 800 }}>4 Tiêu chuẩn CEFR</span>
-            </div>
-            <div className="sub" style={{ fontSize: 13 }}>Đánh giá toàn diện 4 tiêu chí cốt lõi</div>
-            <ModernRadar scores={scores} />
+      {/* Vi Coach Feedback Card */}
+      <div className="card">
+        <div className="coach">
+          <img src={viAvatar} alt="Vi" />
+          <div className="bubble">
+            <b>Nhận xét của Vi:</b> {generalFeedback}
           </div>
+        </div>
 
-          {/* Hộp điểm tổng kết gọn gàng */}
-          <div
-            style={{
-              marginTop: 18,
-              padding: '16px 20px',
-              background: 'linear-gradient(135deg, #F8FAFC 0%, #EEF2FF 100%)',
-              borderRadius: 16,
-              border: '1px solid #E0E7FF',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-            }}
-          >
-            <div>
-              <div style={{ fontSize: 11.5, color: 'var(--muted)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: 0.8 }}>
-                Điểm tổng Lần #{currentAttempt?.attemptNumber || selectedAttemptIdx + 1}
+        {/* Strengths / Weaknesses / Corrections */}
+        {(strengths.length > 0 || weaknesses.length > 0 || corrections.length > 0) && (
+          <div style={{ marginTop: 20, display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {strengths.length > 0 && (
+              <div style={{ padding: '12px 16px', background: 'var(--green-bg)', borderRadius: 14 }}>
+                <b style={{ color: 'var(--green-dark)', display: 'block', marginBottom: 6 }}>
+                  ✓ Điểm bạn đã làm tốt:
+                </b>
+                <ul style={{ margin: 0, paddingLeft: 20, color: 'var(--ink)', fontSize: 14, lineHeight: 1.6 }}>
+                  {strengths.map((str, i) => (
+                    <li key={i}>{str}</li>
+                  ))}
+                </ul>
               </div>
-              <div style={{ fontSize: 34, fontWeight: 900, color: 'var(--primary)', lineHeight: 1.1, marginTop: 4 }}>
-                {overallScore}
-                <span style={{ fontSize: 16, color: 'var(--muted)', fontWeight: 700 }}> / 100</span>
+            )}
+
+            {weaknesses.length > 0 && (
+              <div style={{ padding: '12px 16px', background: 'var(--yellow-bg)', borderRadius: 14 }}>
+                <b style={{ color: 'var(--yellow-dark)', display: 'block', marginBottom: 6 }}>
+                  ⚡ Cần cải thiện:
+                </b>
+                <ul style={{ margin: 0, paddingLeft: 20, color: 'var(--ink)', fontSize: 14, lineHeight: 1.6 }}>
+                  {weaknesses.map((w, i) => (
+                    <li key={i}>{w}</li>
+                  ))}
+                </ul>
               </div>
-            </div>
-            <span
-              style={{
-                padding: '8px 16px',
-                borderRadius: 99,
-                background: badge.bg,
-                color: badge.color,
-                fontWeight: 900,
-                fontSize: 14,
-                boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
-              }}
-            >
-              {badge.text}
-            </span>
-          </div>
-        </div>
+            )}
 
-        {/* Cột Chi tiết điểm & Lịch sử các lần thử */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
-          <div className="card" style={{ padding: '22px 24px', borderRadius: 20, border: '1px solid #E2E8F0', boxShadow: '0 4px 16px rgba(15, 23, 42, 0.03)' }}>
-            <h2 style={{ fontSize: 18, marginBottom: 16, fontWeight: 900 }}>Chi tiết điểm thành phần</h2>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-              {scores.map((s) => {
-                const color = s.v >= 80 ? 'var(--green)' : s.v >= 65 ? 'var(--primary)' : 'var(--red)';
-                return (
-                  <div className="bar-row" key={s.label}>
-                    <span className="lbl" style={{ fontSize: 14, fontWeight: 700 }}>{s.label}</span>
-                    <div className="progress" style={{ height: 10, borderRadius: 99, background: '#F1F5F9' }}>
-                      <i style={{ width: `${s.v}%`, background: color, borderRadius: 99 }} />
-                    </div>
-                    <b style={{ color, fontSize: 15, width: 34, textAlign: 'right', fontWeight: 900 }}>{s.v}</b>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          <div className="card" style={{ padding: '22px 24px', borderRadius: 20, border: '1px solid #E2E8F0', boxShadow: '0 4px 16px rgba(15, 23, 42, 0.03)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-              <h2 style={{ fontSize: 18, margin: 0, fontWeight: 900 }}>Lịch sử các lần thử</h2>
-              <span style={{ fontSize: 12.5, color: 'var(--muted)', fontWeight: 700 }}>{attempts.length} lần ghi âm</span>
-            </div>
-            <table className="data mt8">
-              <thead>
-                <tr>
-                  <th>Lần thử</th>
-                  <th>Điểm tổng</th>
-                  <th style={{ textAlign: 'right' }}>Thao tác</th>
-                </tr>
-              </thead>
-              <tbody>
-                {attempts.map((a, idx) => {
-                  const sc = a.overallScore ?? a.feedback?.overallScore;
-                  const isCur = idx === selectedAttemptIdx;
-                  return (
-                    <tr key={a.id || idx} style={{ background: isCur ? '#F5F3FF' : undefined }}>
-                      <td>
-                        <b style={{ color: isCur ? 'var(--primary)' : 'inherit' }}>#{a.attemptNumber || idx + 1}</b>
-                        {idx === attempts.length - 1 && (
-                          <span className="pill" style={{ marginLeft: 8, fontSize: 11, padding: '2px 8px', background: '#DCFCE7', color: '#166534', fontWeight: 800 }}>
-                            Mới nhất
-                          </span>
-                        )}
-                      </td>
-                      <td>
-                        <b style={{ color: 'var(--primary)', fontSize: 15, fontWeight: 900 }}>
-                          {sc != null ? `${Math.round(Number(sc))}đ` : '—'}
-                        </b>
-                      </td>
-                      <td style={{ textAlign: 'right' }}>
-                        <button
-                          className={`chip ${isCur ? 'on' : ''}`}
-                          style={{ padding: '4px 12px', fontSize: 12, borderRadius: 99 }}
-                          onClick={() => setSelectedAttemptIdx(idx)}
-                        >
-                          {isCur ? 'Đang xem' : 'Xem lại'}
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-
-      {/* LỜI GÓP Ý TỪ AI: ĐIỂM TỐT, ĐIỂM YẾU, SỬA LỖI */}
-      <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 18, borderRadius: 20, padding: '24px 28px', border: '1px solid #E2E8F0', boxShadow: '0 4px 16px rgba(15, 23, 42, 0.03)' }}>
-        {/* Nhận xét chung của Coach Vi */}
-        <div className="coach" style={{ background: 'linear-gradient(135deg, #F5F3FF 0%, #EEF2FF 100%)', border: '1px solid #DDD6FE', borderRadius: 16, padding: '16px 20px' }}>
-          <Mascot s={52} />
-          <div className="bubble" style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 12 }}>
-            <b style={{ color: 'var(--primary)', fontSize: 15.5 }}>Nhận xét từ Vi: </b>
-            {generalFeedback}
-          </div>
-        </div>
-
-        {/* Điểm bạn đã làm tốt */}
-        {strengths.length > 0 && (
-          <div
-            style={{
-              background: '#F0FDF4',
-              border: '1px solid #BBF7D0',
-              borderRadius: 14,
-              padding: '16px 20px',
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontWeight: 900, color: '#166534', fontSize: 15, marginBottom: 8 }}>
-              <Icon n="check" s={18} />
-              <span>Điểm bạn đã làm tốt:</span>
-            </div>
-            <ul style={{ margin: 0, paddingLeft: 20, color: '#14532d', fontSize: 14.5, lineHeight: 1.7 }}>
-              {strengths.map((str, i) => (
-                <li key={i}>{str}</li>
-              ))}
-            </ul>
-          </div>
-        )}
-
-        {/* Điểm cần lưu ý & cải thiện */}
-        {weaknesses.length > 0 && (
-          <div
-            style={{
-              background: '#FFFBEB',
-              border: '1px solid #FEF3C7',
-              borderRadius: 14,
-              padding: '16px 20px',
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontWeight: 900, color: '#B45309', fontSize: 15, marginBottom: 8 }}>
-              <Icon n="bulb" s={18} />
-              <span>Điểm cần lưu ý & cải thiện:</span>
-            </div>
-            <ul style={{ margin: 0, paddingLeft: 20, color: '#78350F', fontSize: 14.5, lineHeight: 1.7 }}>
-              {weaknesses.map((w, i) => (
-                <li key={i}>{w}</li>
-              ))}
-            </ul>
-          </div>
-        )}
-
-        {/* Chi tiết sửa lỗi */}
-        {corrections.length > 0 && (
-          <div style={{ marginTop: 6 }}>
-            <h3 style={{ fontSize: 16.5, fontWeight: 900, marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8, color: '#DC2626' }}>
-              <Icon n="edit" s={18} />
-              Chi tiết sửa lỗi từ AI ({corrections.length} lỗi):
-            </h3>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              {corrections.map((cor, i) => (
-                <div
-                  key={i}
-                  style={{
-                    border: '1px solid #E2E8F0',
-                    borderRadius: 12,
-                    padding: '14px 18px',
-                    background: '#FFFFFF',
-                    boxShadow: '0 2px 8px rgba(15, 23, 42, 0.02)',
-                  }}
-                >
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'center', marginBottom: 6 }}>
-                    {cor.errorType && (
-                      <span className="pill warn" style={{ fontSize: 11, padding: '3px 10px', borderRadius: 99 }}>
-                        {cor.errorType}
-                      </span>
-                    )}
-                    <span style={{ textDecoration: 'line-through', color: '#EF4444', fontWeight: 700 }}>
-                      {cor.original}
+            {corrections.length > 0 && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <b style={{ color: 'var(--red-dark)', fontSize: 14.5 }}>
+                  Chi tiết lỗi cần sửa ({corrections.length} lỗi):
+                </b>
+                {corrections.map((cor, i) => (
+                  <div key={i} className="taskrow" style={{ alignItems: 'flex-start' }}>
+                    <span className="tk" style={{ color: 'var(--red)' }}>
+                      <Icon n="x" s={16} />
                     </span>
-                    <span style={{ color: 'var(--muted)', fontWeight: 800 }}>→</span>
-                    <span style={{ color: '#15803D', fontWeight: 800, background: '#DCFCE7', padding: '3px 10px', borderRadius: 6 }}>
-                      {cor.corrected}
-                    </span>
-                  </div>
-                  {cor.explanation && (
-                    <div style={{ fontSize: 13.5, color: '#475569', marginTop: 6, lineHeight: 1.5 }}>
-                      <b>Giải thích:</b> {cor.explanation}
+                    <div style={{ flex: 1 }}>
+                      <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+                        <span style={{ textDecoration: 'line-through', color: 'var(--red)', fontWeight: 800 }}>
+                          {cor.original}
+                        </span>
+                        <span>→</span>
+                        <span style={{ color: 'var(--green-dark)', fontWeight: 800 }}>
+                          {cor.corrected}
+                        </span>
+                        {cor.errorType && <span className="pill warn">{cor.errorType}</span>}
+                      </div>
+                      {cor.explanation && (
+                        <div className="sub mt8" style={{ fontSize: 13, color: 'var(--ink)' }}>
+                          {cor.explanation}
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
-              ))}
-            </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {suggestions.length > 0 && (
+              <div style={{ padding: '12px 16px', background: 'var(--tint)', borderRadius: 14 }}>
+                <b style={{ color: 'var(--primary-dark)', display: 'block', marginBottom: 6 }}>
+                  💡 Gợi ý cho lần tới:
+                </b>
+                <ul style={{ margin: 0, paddingLeft: 20, color: 'var(--ink)', fontSize: 14, lineHeight: 1.6 }}>
+                  {suggestions.map((sug, i) => (
+                    <li key={i}>{sug}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </div>
         )}
 
-        {/* Gợi ý luyện tập */}
-        {suggestions.length > 0 && (
-          <div style={{ marginTop: 6 }}>
-            <h3 style={{ fontSize: 16.5, fontWeight: 900, marginBottom: 10, display: 'flex', alignItems: 'center', gap: 8, color: 'var(--primary)' }}>
-              <Icon n="spark" s={18} />
-              Gợi ý cho lần nói tiếp theo:
-            </h3>
-            <ul style={{ margin: 0, paddingLeft: 20, color: 'var(--ink)', fontSize: 14.5, lineHeight: 1.7 }}>
-              {suggestions.map((sug, i) => (
-                <li key={i}>{sug}</li>
-              ))}
-            </ul>
-          </div>
-        )}
-      </div>
-
-      {/* CÁC NÚT THAO TÁC */}
-      <div className="btn-row" style={{ marginTop: 8 }}>
-        <button className="btn" onClick={() => nav('/speaking')}>
-          <Icon n="mic" s={20} />
-          Luyện thử lại lần #{attempts.length + 1}
-        </button>
-        <button className="btn ghost" onClick={() => nav('/')}>
-          Về trang chủ
-        </button>
+        <div className="btn-row mt16">
+          <button type="button" className="btn ghost" onClick={() => nav('/speaking')}>
+            Chọn chủ đề khác
+          </button>
+          <button type="button" className="btn" onClick={() => nav('/speaking')}>
+            Nói lại lần nữa
+          </button>
+        </div>
       </div>
     </div>
   );

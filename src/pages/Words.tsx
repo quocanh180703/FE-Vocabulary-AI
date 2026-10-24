@@ -4,10 +4,12 @@ import { wordApi, errMsg, getPartOfSpeechBadgeStyle, ttsApi } from '../api';
 import type { Word } from '../api';
 import { Icon } from '../components/icons';
 import { AutocompleteSearch } from '../components/AutocompleteSearch';
+import { useUsage } from '../context/UsageContext';
 
 const LEVELS = ['Tất cả', 'A1', 'A2', 'B1', 'B2', 'C1'];
 
 export default function Words() {
+  const { isVip, openUpgradeModal, isAtLeastHalfFreeUsage } = useUsage();
   const [words, setWords] = useState<Word[]>([]);
   const [level, setLevel] = useState('Tất cả');
   const [search, setSearch] = useState('');
@@ -16,7 +18,7 @@ export default function Words() {
   const [totalPages, setTotalPages] = useState(1);
   const [totalElements, setTotalElements] = useState(0);
   const [loading, setLoading] = useState(false);
-  const [fav, setFav] = useState<Set<number | string>>(new Set());
+  const [fav, setFav] = useState<Set<string>>(new Set());
   const [err, setErr] = useState('');
   const nav = useNavigate();
 
@@ -43,35 +45,72 @@ export default function Words() {
   }, [level, page, q]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    wordApi.favorites(0, 100)
-      .then(({ data }) => {
-        const ids = new Set<number | string>(data.content.map((w) => w.id));
-        (data.localIds || []).forEach((id) => ids.add(id));
-        setFav(ids);
-      })
-      .catch(() => { });
+    const loadFavs = (e?: Event) => {
+      const ce = e as CustomEvent;
+      if (ce?.detail?.ids && Array.isArray(ce.detail.ids)) {
+        setFav(new Set(ce.detail.ids.map(String)));
+        return;
+      }
+
+      try {
+        const raw = localStorage.getItem('vocab_user');
+        if (raw) {
+          const u = JSON.parse(raw);
+          const uid = u?.id || u?.username;
+          if (uid) {
+            const cachedIds: string[] = JSON.parse(localStorage.getItem(`vocab_favs_${uid}`) || '[]');
+            if (Array.isArray(cachedIds) && cachedIds.length > 0) {
+              setFav(new Set(cachedIds.map(String)));
+            }
+          }
+        }
+      } catch {}
+
+      wordApi.favorites(0, 100)
+        .then(({ data }) => {
+          const ids = new Set<string>([
+            ...data.content.map((w) => String(w.id)),
+            ...(data.localIds || []).map((id) => String(id)),
+          ]);
+          setFav(ids);
+        })
+        .catch(() => {});
+    };
+
+    loadFavs();
+    window.addEventListener('vocab_favorites_changed', loadFavs);
+    return () => {
+      window.removeEventListener('vocab_favorites_changed', loadFavs);
+    };
   }, []);
 
   const toggleFav = async (id: number | string, wordObj?: Word) => {
-    const isFav = fav.has(id) || fav.has(String(id));
+    const idStr = String(id);
+    const isFav = fav.has(idStr);
+    setFav((s) => {
+      const n = new Set(s);
+      if (isFav) {
+        n.delete(idStr);
+      } else {
+        n.add(idStr);
+      }
+      return n;
+    });
+
     try {
       if (isFav) {
         await wordApi.unfavorite(id);
       } else {
         await wordApi.favorite(id, wordObj);
       }
-      setFav((s) => {
-        const n = new Set(s);
-        if (isFav) {
-          n.delete(id);
-          n.delete(String(id));
-        } else {
-          n.add(id);
-        }
-        return n;
-      });
     } catch (e) {
       setErr(errMsg(e));
+      setFav((s) => {
+        const n = new Set(s);
+        if (isFav) n.add(idStr);
+        else n.delete(idStr);
+        return n;
+      });
     }
   };
 
@@ -100,33 +139,33 @@ export default function Words() {
   };
 
   return (
-    <div className="content">
-      <div className="pagehead" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 16 }}>
+    <div className="content" style={{ maxWidth: 1180 }}>
+      {/* Page Header */}
+      <div className="pagehead" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 14 }}>
         <div>
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '4px 12px', background: 'rgba(79, 70, 229, 0.08)', borderRadius: 99, color: 'var(--primary)', fontSize: 13, fontWeight: 800, marginBottom: 8 }}>
-            <Icon n="spark" s={14} /> Kho từ vựng Oxford 3000/5000
-          </div>
           <h1>Khám phá từ vựng tiếng Anh</h1>
           <div className="sub">
-            {totalElements > 0 ? `Hơn ${totalElements} từ vựng chuẩn CEFR (A1 - C1) kèm phiên âm IPA, nghĩa tiếng Việt và ví dụ thực tế.` : 'Tìm kiếm từ mới theo trình độ và chủ đề.'}
+            Kho từ Oxford 3000/5000 · {totalElements > 0 ? `Hơn ${totalElements} từ vựng chuẩn CEFR (A1 - C1)` : 'Sắp xếp theo cấp độ CEFR'}
           </div>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <button className="btn ghost" onClick={() => nav('/favorites')} style={{ minHeight: 42, padding: '0 16px', fontSize: 14 }}>
-            <Icon n="heart" s={16} /> Từ yêu thích ({fav.size})
+        <div style={{ display: 'flex', gap: 10 }}>
+          <button className="btn ghost" onClick={() => nav('/favorites')} style={{ minHeight: 46, padding: '0 20px', fontSize: 14 }}>
+            <svg viewBox="0 0 24 24" className="ic" style={{ color: 'var(--red)' }}><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
+            Từ yêu thích ({fav.size})
           </button>
-          <button className="btn" onClick={() => nav('/review')} style={{ minHeight: 42, padding: '0 18px', fontSize: 14 }}>
-            <Icon n="bulb" s={16} /> Ôn tập SRS
+          <button className="btn" onClick={() => nav('/review')} style={{ minHeight: 46, padding: '0 22px', fontSize: 14 }}>
+            Ôn tập ngay
           </button>
         </div>
       </div>
 
-      <div style={{ marginBottom: 16 }}>
+      {/* Searchbar */}
+      <div style={{ marginBottom: 14 }}>
         <AutocompleteSearch
           value={search}
           onChange={setSearch}
           onSearch={(query) => handleSearch(query)}
-          placeholder="Tìm từ vựng theo tiền tố hoặc từ tiếng Anh (ví dụ: apple, brilliant, difference)..."
+          placeholder="Tìm từ vựng… thử gõ “resilient”, “apple”, “business”..."
           type="words"
           showButton={true}
           buttonText="Tìm kiếm"
@@ -134,153 +173,157 @@ export default function Words() {
         />
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, marginBottom: 16 }}>
-        <div className="chips">
-          {LEVELS.map((l) => (
+      {/* Filter Chips matching words.html .chiprow and .fchip */}
+      <div className="chiprow" style={{ marginBottom: 14 }}>
+        {LEVELS.map((l) => {
+          const isLocked = !isVip && isAtLeastHalfFreeUsage && (l === 'B1' || l === 'B2' || l === 'C1');
+          return (
             <button
               key={l}
-              className={'chip' + (level === l ? ' on' : '')}
+              className={'fchip' + (level === l ? ' on' : '')}
               onClick={() => {
+                if (isLocked) {
+                  openUpgradeModal({
+                    feature: 'CEFR_B1_C1',
+                    message: `Cấp độ ${l} thuộc kho từ vựng Oxford nâng cao (B1–C1) dành riêng cho tài khoản Premium. Hãy nâng cấp để mở khóa toàn bộ!`,
+                  });
+                  return;
+                }
                 setLevel(l);
                 setPage(0);
               }}
+              title={isLocked ? 'Cần tài khoản Premium' : undefined}
+              style={isLocked ? { display: 'inline-flex', alignItems: 'center', gap: 4 } : undefined}
             >
-              {l === 'Tất cả' ? '🌐 Tất cả cấp độ' : `Cấp độ ${l}`}
+              {l === 'Tất cả' ? 'Tất cả cấp độ' : l}
+              {isLocked && <span style={{ fontSize: 11, opacity: 0.8 }}>🔒</span>}
             </button>
-          ))}
-        </div>
-        <span style={{ fontSize: 13, color: 'var(--muted)', fontWeight: 700 }}>
-          Đang hiển thị <b>{words.length}</b> / {totalElements} từ
+          );
+        })}
+        <span className="pill" style={{ marginLeft: 'auto', alignSelf: 'center' }}>
+          {totalElements} từ
         </span>
       </div>
 
       {err && <div className="error">{err}</div>}
 
-      <div className="card" style={{ padding: 10 }}>
+      {/* Word List Card */}
+      <div className="card" style={{ padding: 12 }}>
         {loading && words.length === 0 ? (
           <div className="loading" style={{ padding: 48 }}>
             <Icon n="spark" s={20} /> Đang tải danh sách từ vựng chuẩn CEFR...
           </div>
         ) : words.length === 0 ? (
-          <div className="empty" style={{ padding: '48px 20px' }}>
+          <div className="empty" style={{ padding: '48px 20px', textAlign: 'center' }}>
             <div style={{ fontSize: 32, marginBottom: 8 }}>🔍</div>
             <b style={{ fontSize: 16, color: 'var(--ink)' }}>Không tìm thấy từ vựng phù hợp</b>
-            <div style={{ fontSize: 13, color: 'var(--muted)', marginTop: 4 }}>
+            <div className="sub mt8">
               Hãy thử tìm kiếm với từ khóa khác hoặc chuyển sang cấp độ khác.
             </div>
           </div>
         ) : (
-          words.map((w, idx) => (
-            <div
-              className="word"
-              key={w.id}
-              style={{
-                borderBottom: idx === words.length - 1 ? 'none' : '1px solid var(--line)',
-                cursor: 'pointer',
-                padding: '14px 16px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 14,
-              }}
-              onClick={() => nav(`/words/${w.id}`)}
-            >
-              <div className="avatar">
-                <Icon n="book" s={22} />
-              </div>
+          words.map((w) => {
+            const isSaved = fav.has(String(w.id));
+            const badge = w.partOfSpeech ? getPartOfSpeechBadgeStyle(w.partOfSpeech) : null;
+            return (
+              <div
+                className="wrow"
+                key={w.id}
+                onClick={() => nav(`/words/${w.id}`)}
+                style={{ cursor: 'pointer' }}
+              >
+                <span className="wchk">
+                  <svg viewBox="0 0 24 24" className="ic"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+                </span>
 
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div className="w" style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-                  <span style={{ fontSize: 16.5, fontWeight: 900, color: 'var(--ink)' }}>{w.word || w.lemma}</span>
-                  {w.pronunciation && (
-                    <span style={{ fontSize: 13, color: 'var(--muted)', fontWeight: 600 }}>
-                      {w.pronunciation}
-                    </span>
-                  )}
-                  <button
-                    onClick={(e) => playAudio(w, e)}
-                    title="Nghe phát âm chuẩn"
-                    style={{
-                      border: 'none',
-                      background: 'rgba(79, 70, 229, 0.08)',
-                      color: 'var(--primary)',
-                      cursor: 'pointer',
-                      borderRadius: '50%',
-                      width: 28,
-                      height: 28,
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      transition: 'all 0.15s ease',
-                    }}
-                  >
-                    <Icon n="vol" s={14} />
-                  </button>
-                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div className="w">
+                    {w.word || w.lemma}{' '}
+                    {w.pronunciation && (
+                      <span style={{ color: 'var(--muted)', fontSize: 13.5, fontWeight: 700 }}>
+                        {w.pronunciation}
+                      </span>
+                    )}
+                    <button
+                      onClick={(e) => playAudio(w, e)}
+                      title="Nghe phát âm chuẩn"
+                      className="speakbtn"
+                      style={{ width: 30, height: 30, marginLeft: 8, display: 'inline-flex' }}
+                    >
+                      <svg viewBox="0 0 24 24" className="ic" style={{ width: 16, height: 16 }}><path d="M11 5 6 9H2v6h4l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.4 5.6a9 9 0 0 1 0 12.8"/></svg>
+                    </button>
+                  </div>
 
-                <div className="m" style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4 }}>
-                  {w.partOfSpeech && (() => {
-                    const badge = getPartOfSpeechBadgeStyle(w.partOfSpeech);
-                    return (
+                  <div className="m">
+                    {badge && (
                       <span
                         className="pill"
                         style={{
                           fontSize: 11,
-                          padding: '2px 8px',
+                          padding: '1px 7px',
                           background: badge.bg,
                           color: badge.color,
                           border: `1px solid ${badge.border}`,
                           fontWeight: 800,
+                          marginRight: 6,
                         }}
                       >
                         {badge.shortLabel}
                       </span>
-                    );
-                  })()}
-                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: 14, color: 'var(--muted)', fontWeight: 600 }}>
-                    {w.meaning || w.vietnameseMeaning}
-                  </span>
+                    )}
+                    <span>{w.meaning || w.vietnameseMeaning}</span>
+                  </div>
                 </div>
+
+                {(() => {
+                  const wLevel = (w.level || w.cefrLevel || 'A1').toUpperCase();
+                  const isLockedLevel = !isVip && ['B1', 'B2', 'C1'].includes(wLevel) && !isSaved;
+                  return (
+                    <span
+                      className="pill level"
+                      style={isLockedLevel ? { opacity: 0.9, borderColor: '#f59e0b', color: '#b45309' } : undefined}
+                      title={isLockedLevel ? 'Cần tài khoản Premium hoặc đã lưu trong tiến độ để xem chi tiết' : undefined}
+                    >
+                      {isLockedLevel && <span style={{ marginRight: 3, fontSize: 10 }}>🔒</span>}
+                      {wLevel}
+                    </span>
+                  );
+                })()}
+
+                <button
+                  className={'heartbtn' + (isSaved ? ' on' : '')}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    toggleFav(w.id, w);
+                  }}
+                  title={isSaved ? 'Bỏ lưu yêu thích' : 'Lưu vào từ yêu thích'}
+                >
+                  <svg viewBox="0 0 24 24" className="ic"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
+                </button>
               </div>
-
-              <span className="pill level" style={{ marginLeft: 8, fontWeight: 800, fontSize: 12 }}>
-                {w.level || w.cefrLevel}
-              </span>
-
-              <button
-                className={'heart' + (fav.has(w.id) || fav.has(String(w.id)) ? ' on' : '')}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  toggleFav(w.id, w);
-                }}
-                aria-label="yêu thích"
-                title={fav.has(w.id) || fav.has(String(w.id)) ? 'Bỏ lưu yêu thích' : 'Lưu vào từ yêu thích'}
-              >
-                <Icon n="heart" s={22} />
-              </button>
-            </div>
-          ))
+            );
+          })
         )}
       </div>
 
+      {/* Pagination matching words.html */}
       {totalPages > 1 && (
         <div
+          className="row"
           style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            marginTop: 20,
-            padding: '0 8px',
+            marginTop: 18,
+            padding: '0 4px',
             flexWrap: 'wrap',
             gap: 12,
           }}
         >
-          <div className="sub" style={{ fontSize: 14 }}>
-            Trang <b>{page + 1}</b> / <b>{totalPages}</b> (Tổng <b>{totalElements}</b> từ vựng)
-          </div>
+          <span className="sub">
+            Trang <b>{page + 1}</b> / <b>{totalPages}</b> (Đang hiển thị {words.length} / {totalElements} từ)
+          </span>
           <div style={{ display: 'flex', gap: 10 }}>
             <button
               className="btn ghost"
-              style={{ minHeight: 40, padding: '0 16px', fontSize: 13 }}
+              style={{ minHeight: 44, padding: '0 18px', fontSize: 13.5 }}
               disabled={page === 0}
               onClick={() => {
                 setPage((p) => Math.max(0, p - 1));
@@ -291,7 +334,7 @@ export default function Words() {
             </button>
             <button
               className="btn ghost"
-              style={{ minHeight: 40, padding: '0 16px', fontSize: 13 }}
+              style={{ minHeight: 44, padding: '0 18px', fontSize: 13.5 }}
               disabled={page + 1 >= totalPages}
               onClick={() => {
                 setPage((p) => p + 1);

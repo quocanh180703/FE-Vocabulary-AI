@@ -1,13 +1,22 @@
 import { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { adminApi } from '../../api';
 import type { AdminVocabularyItem, AdminCefrStats } from '../../api';
 import { Icon } from '../../components/icons';
 import { AutocompleteSearch } from '../../components/AutocompleteSearch';
+import { AdminVocabStudio } from './AdminVocabStudio';
 
 const CEFR_LEVELS = ['ALL', 'A1', 'A2', 'B1', 'B2', 'C1'];
-const POS_LIST = ['ALL', 'NOUN', 'VERB', 'ADJECTIVE', 'ADVERB', 'PREPOSITION', 'CONJUNCTION', 'PRONOUN', 'DETERMINER'];
+const POS_LIST = [
+  { id: 'ALL', label: 'Mọi loại từ' },
+  { id: 'NOUN', label: 'Danh từ' },
+  { id: 'VERB', label: 'Động từ' },
+  { id: 'ADJECTIVE', label: 'Tính từ' },
+  { id: 'ADVERB', label: 'Phó từ' },
+];
 
 export default function AdminWords() {
+  const [searchParams] = useSearchParams();
   const [words, setWords] = useState<AdminVocabularyItem[]>([]);
   const [totalElements, setTotalElements] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
@@ -18,7 +27,10 @@ export default function AdminWords() {
   const [loading, setLoading] = useState(true);
   const [cefrStats, setCefrStats] = useState<AdminCefrStats | null>(null);
 
-  // Modals state
+  // Tab state: 'words' | 'vocab-studio'
+  const [adminWordsTab, setAdminWordsTab] = useState<'words' | 'vocab-studio'>(
+    searchParams.get('studio') === 'true' ? 'vocab-studio' : 'words'
+  );
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingWord, setEditingWord] = useState<AdminVocabularyItem | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -65,6 +77,12 @@ export default function AdminWords() {
   useEffect(() => {
     loadStats();
   }, []);
+
+  useEffect(() => {
+    if (searchParams.get('studio') === 'true') {
+      setAdminWordsTab('vocab-studio');
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     fetchWords();
@@ -163,521 +181,372 @@ export default function AdminWords() {
     }
   };
 
+  const getCefrCount = (lvl: string) => {
+    if (!cefrStats) return '';
+    switch (lvl) {
+      case 'A1': return cefrStats.a1Count ?? 898;
+      case 'A2': return cefrStats.a2Count ?? 792;
+      case 'B1': return cefrStats.b1Count ?? 690;
+      case 'B2': return cefrStats.b2Count ?? 1297;
+      case 'C1': return cefrStats.c1Count ?? 1277;
+      default: return cefrStats.totalCount ?? 4954;
+    }
+  };
+
   return (
-    <div style={{ maxWidth: 1240, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 24 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
+      <div className="pagehead" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12 }}>
         <div>
-          <h1 style={{ fontSize: '1.9rem', fontWeight: 900, margin: 0, color: '#0F172A', letterSpacing: '-0.5px' }}>
-            Kho Từ Vựng & Khung Năng Lực CEFR
-          </h1>
-          <p style={{ margin: '4px 0 0 0', color: '#64748B', fontSize: '0.94rem' }}>
-            Quản trị {totalElements.toLocaleString('vi-VN')} từ vựng chuẩn Cambridge / Oxford (A1 - C1)
-          </p>
+          <h1>Từ vựng &amp; CEFR</h1>
+          <div className="sub">
+            {adminWordsTab === 'vocab-studio'
+              ? 'Xưởng từ vựng AI · Tự động làm giàu dữ liệu và sinh từ vựng chuẩn Oxford CEFR'
+              : `Kho ${totalElements.toLocaleString('vi-VN')} từ vựng Oxford · quản lý theo cấp độ và loại từ`}
+          </div>
         </div>
-        <div style={{ display: 'flex', gap: 10 }}>
+        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
           <button
-            onClick={handleImportAll}
+            type="button"
+            className="btn ghost"
             disabled={importing}
-            style={{
-              background: '#059669',
-              color: '#FFFFFF',
-              border: 'none',
-              padding: '10px 18px',
-              borderRadius: 12,
-              fontWeight: 700,
-              cursor: importing ? 'wait' : 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 8,
-              boxShadow: '0 4px 12px rgba(5, 150, 105, 0.25)'
-            }}
+            onClick={handleImportAll}
           >
-            <Icon n="zap" s={18} />
+            <Icon n="zap" s={16} />
             {importing ? 'Đang Import...' : 'Import File CEFR'}
           </button>
           <button
+            type="button"
+            className="btn"
             onClick={openAdd}
-            style={{
-              background: '#4F46E5',
-              color: '#FFFFFF',
-              border: 'none',
-              padding: '10px 20px',
-              borderRadius: 12,
-              fontWeight: 700,
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 8,
-              boxShadow: '0 4px 12px rgba(79, 70, 229, 0.3)'
-            }}
           >
-            <Icon n="spark" s={18} />
+            <Icon n="plus" s={18} />
             Thêm từ mới
           </button>
         </div>
       </div>
 
       {message && (
-        <div style={{
-          background: message.error ? '#FEE2E2' : '#D1FAE5',
-          color: message.error ? '#991B1B' : '#065F46',
-          border: `1px solid ${message.error ? '#FCA5A5' : '#6EE7B7'}`,
-          padding: '12px 18px',
-          borderRadius: 12,
-          marginBottom: 20,
-          fontWeight: 600,
-          fontSize: '0.92rem'
-        }}>
+        <div className={message.error ? 'error' : 'ok'}>
           {message.text}
         </div>
       )}
 
-      {/* CEFR Level Bar Cards */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))',
-        gap: 14,
-        marginBottom: 22
-      }}>
-        {[
-          { level: 'A1', label: 'Căn bản', count: cefrStats?.a1Count ?? 898, color: '#10B981' },
-          { level: 'A2', label: 'Sơ cấp', count: cefrStats?.a2Count ?? 792, color: '#06B6D4' },
-          { level: 'B1', label: 'Trung cấp', count: cefrStats?.b1Count ?? 690, color: '#3B82F6' },
-          { level: 'B2', label: 'Trung cao', count: cefrStats?.b2Count ?? 1297, color: '#8B5CF6' },
-          { level: 'C1', label: 'Cao cấp', count: cefrStats?.c1Count ?? 1277, color: '#EC4899' },
-        ].map((item) => (
-          <div
-            key={item.level}
-            onClick={() => { setCefrFilter(item.level); setPage(0); }}
-            style={{
-              background: cefrFilter === item.level ? item.color : '#FFFFFF',
-              color: cefrFilter === item.level ? '#FFFFFF' : '#1E293B',
-              border: `1px solid ${cefrFilter === item.level ? item.color : '#E2E8F0'}`,
-              borderRadius: 14,
-              padding: '14px 18px',
-              cursor: 'pointer',
-              transition: 'all 0.2s',
-              boxShadow: cefrFilter === item.level ? `0 6px 16px ${item.color}40` : '0 2px 6px rgba(0,0,0,0.02)'
-            }}
-          >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ fontWeight: 800, fontSize: '1.2rem' }}>{item.level}</span>
-              <span style={{ fontSize: '0.78rem', fontWeight: 600, opacity: 0.85 }}>{item.label}</span>
-            </div>
-            <div style={{ fontSize: '1.25rem', fontWeight: 800, marginTop: 4 }}>
-              {item.count.toLocaleString('vi-VN')} <span style={{ fontSize: '0.75rem', fontWeight: 500 }}>từ</span>
-            </div>
-          </div>
-        ))}
+      {/* Sub-Tabs: Kho từ vựng vs Xưởng từ vựng AI */}
+      <div className="chiprow">
+        <button
+          type="button"
+          className={'fchip' + (adminWordsTab === 'words' ? ' on' : '')}
+          onClick={() => setAdminWordsTab('words')}
+          style={{ fontSize: 13.5, padding: '7px 16px' }}
+        >
+          <Icon n="book" s={15} />
+          Kho từ vựng ({totalElements.toLocaleString('vi-VN')})
+        </button>
+        <button
+          type="button"
+          className={'fchip' + (adminWordsTab === 'vocab-studio' ? ' on' : '')}
+          onClick={() => setAdminWordsTab('vocab-studio')}
+          style={{ fontSize: 13.5, padding: '7px 16px' }}
+        >
+          <Icon n="spark" s={15} />
+          Xưởng từ vựng AI
+        </button>
       </div>
 
-      {/* Filter & Search Bar */}
-      <div style={{
-        background: '#FFFFFF',
-        borderRadius: 16,
-        padding: '16px 20px',
-        border: '1px solid #E2E8F0',
-        marginBottom: 20,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        flexWrap: 'wrap',
-        gap: 14
-      }}>
-        <div style={{ flex: 1, minWidth: 280 }}>
+      {/* VIEW 1: VOCABULARY STUDIO */}
+      {adminWordsTab === 'vocab-studio' ? (
+        <AdminVocabStudio
+          onSaved={() => {
+            fetchWords();
+            loadStats();
+          }}
+          onBackToWords={() => setAdminWordsTab('words')}
+        />
+      ) : (
+        /* VIEW 2: WORDS LIST TABLE */
+        <>
+          {/* CEFR Level Filter Chips */}
+      <div className="chiprow">
+        {CEFR_LEVELS.map((lvl) => {
+          const count = getCefrCount(lvl);
+          return (
+            <button
+              key={lvl}
+              type="button"
+              className={'fchip' + (cefrFilter === lvl ? ' on' : '')}
+              onClick={() => {
+                setCefrFilter(lvl);
+                setPage(0);
+              }}
+            >
+              {lvl === 'ALL' ? 'Tất cả' : lvl} {count !== '' && `· ${count}`}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Toolbar: Search + Part of Speech Filters */}
+      <div className="toolbar">
+        <div style={{ flex: 1, minWidth: 260 }}>
           <AutocompleteSearch
             value={search}
             onChange={setSearch}
             onSearch={handleSearch}
-            placeholder="Tìm theo từ vựng hoặc nghĩa tiếng Việt (app, apple, difference...)..."
+            placeholder="Tìm từ vựng trong kho..."
             type="admin-words"
             showButton={true}
             buttonText="Tìm kiếm"
             limit={8}
+            inputStyle={{ minHeight: 46 }}
           />
         </div>
 
-        <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#64748B' }}>CEFR:</span>
-            <select
-              value={cefrFilter}
-              onChange={(e) => { setCefrFilter(e.target.value); setPage(0); }}
-              style={{
-                padding: '8px 12px',
-                borderRadius: 8,
-                border: '1px solid #CBD5E1',
-                fontWeight: 600,
-                fontSize: '0.88rem',
-                outline: 'none',
-                background: '#FFFFFF'
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          {POS_LIST.map((pos) => (
+            <button
+              key={pos.id}
+              type="button"
+              className={'fchip' + (posFilter === pos.id ? ' on' : '')}
+              onClick={() => {
+                setPosFilter(pos.id);
+                setPage(0);
               }}
             >
-              {CEFR_LEVELS.map((lvl) => (
-                <option key={lvl} value={lvl}>{lvl === 'ALL' ? 'Tất cả cấp độ' : `Cấp độ ${lvl}`}</option>
-              ))}
-            </select>
-          </div>
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#64748B' }}>Từ loại:</span>
-            <select
-              value={posFilter}
-              onChange={(e) => { setPosFilter(e.target.value); setPage(0); }}
-              style={{
-                padding: '8px 12px',
-                borderRadius: 8,
-                border: '1px solid #CBD5E1',
-                fontWeight: 600,
-                fontSize: '0.88rem',
-                outline: 'none',
-                background: '#FFFFFF'
-              }}
-            >
-              {POS_LIST.map((p) => (
-                <option key={p} value={p}>{p === 'ALL' ? 'Tất cả từ loại' : p}</option>
-              ))}
-            </select>
-          </div>
+              {pos.label}
+            </button>
+          ))}
         </div>
       </div>
 
-      {/* Words Table */}
-      <div style={{
-        background: '#FFFFFF',
-        borderRadius: 18,
-        border: '1px solid #E2E8F0',
-        overflow: 'hidden',
-        boxShadow: '0 2px 10px rgba(0,0,0,0.02)',
-        marginBottom: 20
-      }}>
-        <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.9rem' }}>
-            <thead>
-              <tr style={{ background: '#F8FAFC', borderBottom: '1px solid #E2E8F0', color: '#64748B' }}>
-                <th style={{ padding: '14px 18px' }}>Từ Vựng</th>
-                <th style={{ padding: '14px 18px' }}>Phát âm</th>
-                <th style={{ padding: '14px 18px' }}>Từ loại</th>
-                <th style={{ padding: '14px 18px' }}>Cấp độ</th>
-                <th style={{ padding: '14px 18px' }}>Nghĩa Tiếng Việt</th>
-                <th style={{ padding: '14px 18px' }}>Định nghĩa / Ví dụ</th>
-                <th style={{ padding: '14px 18px', textAlign: 'right' }}>Thao tác</th>
+      {/* Vocabulary Table Card */}
+      <div className="card" style={{ padding: '20px 14px' }}>
+        <table className="atable">
+          <thead>
+            <tr>
+              <th>Từ vựng</th>
+              <th>Loại từ</th>
+              <th>Nghĩa tiếng Việt</th>
+              <th>Cấp độ</th>
+              <th style={{ textAlign: 'right' }}>Thao tác</th>
+            </tr>
+          </thead>
+          <tbody>
+            {loading ? (
+              <tr>
+                <td colSpan={5} style={{ padding: 40, textAlign: 'center', color: 'var(--muted)' }}>
+                  Đang tải danh sách từ vựng...
+                </td>
               </tr>
-            </thead>
-            <tbody>
-              {loading ? (
-                <tr>
-                  <td colSpan={7} style={{ padding: 40, textAlign: 'center', color: '#64748B' }}>
-                    Đang tải danh sách từ vựng...
+            ) : words.length === 0 ? (
+              <tr>
+                <td colSpan={5} style={{ padding: 40, textAlign: 'center', color: 'var(--muted)' }}>
+                  Không tìm thấy từ vựng nào phù hợp.
+                </td>
+              </tr>
+            ) : (
+              words.map((w) => (
+                <tr key={w.id}>
+                  <td>
+                    <b style={{ fontSize: 15.5 }}>{w.word}</b>{' '}
+                    {w.pronunciation && (
+                      <span className="sub">{w.pronunciation}</span>
+                    )}
+                  </td>
+                  <td>
+                    <span className="pill" style={{ fontSize: 11 }}>
+                      {w.partOfSpeech || 'NOUN'}
+                    </span>
+                  </td>
+                  <td style={{ color: 'var(--ink)' }}>
+                    {w.vietnameseMeaning || w.meaning || '—'}
+                  </td>
+                  <td>
+                    <span className="pill level">{w.cefr || 'A1'}</span>
+                  </td>
+                  <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
+                    <button
+                      type="button"
+                      className="link"
+                      onClick={() => openEdit(w)}
+                      style={{ fontSize: 13.5, marginRight: 8 }}
+                    >
+                      Sửa
+                    </button>
+                    ·
+                    <button
+                      type="button"
+                      className="link"
+                      onClick={() => handleDeleteWord(w)}
+                      style={{ fontSize: 13.5, color: 'var(--red-dark)', marginLeft: 8 }}
+                    >
+                      Xóa
+                    </button>
                   </td>
                 </tr>
-              ) : words.length === 0 ? (
-                <tr>
-                  <td colSpan={7} style={{ padding: 40, textAlign: 'center', color: '#64748B' }}>
-                    Không có từ vựng nào khớp với bộ lọc hiện tại.
-                  </td>
-                </tr>
-              ) : (
-                words.map((w) => (
-                  <tr key={w.id} style={{ borderBottom: '1px solid #F1F5F9' }}>
-                    <td style={{ padding: '14px 18px', fontWeight: 800, color: '#0F172A', fontSize: '1rem' }}>
-                      {w.word}
-                    </td>
-                    <td style={{ padding: '14px 18px', color: '#64748B', fontFamily: 'monospace' }}>
-                      {w.pronunciation || '—'}
-                    </td>
-                    <td style={{ padding: '14px 18px' }}>
-                      <span style={{
-                        padding: '2px 8px',
-                        background: '#F1F5F9',
-                        borderRadius: 6,
-                        fontSize: '0.78rem',
-                        fontWeight: 700,
-                        color: '#475569'
-                      }}>
-                        {w.partOfSpeech || 'NOUN'}
-                      </span>
-                    </td>
-                    <td style={{ padding: '14px 18px' }}>
-                      <span style={{
-                        padding: '3px 8px',
-                        borderRadius: 6,
-                        fontSize: '0.78rem',
-                        fontWeight: 800,
-                        color: '#FFFFFF',
-                        background:
-                          w.cefr === 'A1' ? '#10B981' :
-                          w.cefr === 'A2' ? '#06B6D4' :
-                          w.cefr === 'B1' ? '#3B82F6' :
-                          w.cefr === 'B2' ? '#8B5CF6' : '#EC4899'
-                      }}>
-                        {w.cefr || 'A1'}
-                      </span>
-                    </td>
-                    <td style={{ padding: '14px 18px', fontWeight: 600, color: '#0F172A', maxWidth: 260 }}>
-                      {w.vietnameseMeaning || w.meaning || '—'}
-                    </td>
-                    <td style={{ padding: '14px 18px', color: '#64748B', maxWidth: 280, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={w.definition || w.example || ''}>
-                      {w.definition || w.example || '—'}
-                    </td>
-                    <td style={{ padding: '14px 18px', textAlign: 'right' }}>
-                      <div style={{ display: 'inline-flex', gap: 6 }}>
-                        <button
-                          onClick={() => openEdit(w)}
-                          style={{
-                            background: '#F1F5F9',
-                            border: '1px solid #E2E8F0',
-                            color: '#4F46E5',
-                            padding: '5px 10px',
-                            borderRadius: 8,
-                            fontSize: '0.82rem',
-                            fontWeight: 700,
-                            cursor: 'pointer'
-                          }}
-                        >
-                          Sửa
-                        </button>
-                        <button
-                          onClick={() => handleDeleteWord(w)}
-                          style={{
-                            background: 'rgba(239, 68, 68, 0.1)',
-                            border: '1px solid rgba(239, 68, 68, 0.2)',
-                            color: '#DC2626',
-                            padding: '5px 10px',
-                            borderRadius: 8,
-                            fontSize: '0.82rem',
-                            fontWeight: 700,
-                            cursor: 'pointer'
-                          }}
-                        >
-                          Xóa
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <div style={{
-            padding: '14px 20px',
-            borderTop: '1px solid #E2E8F0',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            background: '#F8FAFC'
-          }}>
-            <span style={{ fontSize: '0.88rem', color: '#64748B' }}>
-              Trang <b>{page + 1}</b> / <b>{totalPages}</b>
-            </span>
-            <div style={{ display: 'flex', gap: 8 }}>
-              <button
-                disabled={page === 0}
-                onClick={() => setPage((p) => Math.max(0, p - 1))}
-                style={{
-                  padding: '6px 14px',
-                  borderRadius: 8,
-                  border: '1px solid #CBD5E1',
-                  background: page === 0 ? '#F1F5F9' : '#FFFFFF',
-                  color: page === 0 ? '#94A3B8' : '#334155',
-                  fontWeight: 600,
-                  fontSize: '0.85rem',
-                  cursor: page === 0 ? 'not-allowed' : 'pointer'
-                }}
-              >
-                Trang trước
-              </button>
-              <button
-                disabled={page >= totalPages - 1}
-                onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
-                style={{
-                  padding: '6px 14px',
-                  borderRadius: 8,
-                  border: '1px solid #CBD5E1',
-                  background: page >= totalPages - 1 ? '#F1F5F9' : '#FFFFFF',
-                  color: page >= totalPages - 1 ? '#94A3B8' : '#334155',
-                  fontWeight: 600,
-                  fontSize: '0.85rem',
-                  cursor: page >= totalPages - 1 ? 'not-allowed' : 'pointer'
-                }}
-              >
-                Trang kế tiếp
-              </button>
-            </div>
-          </div>
-        )}
+              ))
+            )}
+          </tbody>
+        </table>
       </div>
+
+      {/* Pagination Controls */}
+      {totalPages > 1 && (
+        <div className="row" style={{ alignItems: 'center' }}>
+          <span className="sub">
+            Trang <b>{page + 1}</b> / <b>{totalPages}</b> · {totalElements.toLocaleString('vi-VN')} từ
+          </span>
+          <div style={{ display: 'flex', gap: 6 }}>
+            <button
+              type="button"
+              className="pagebtn"
+              disabled={page === 0}
+              onClick={() => setPage((p) => Math.max(0, p - 1))}
+            >
+              ‹
+            </button>
+            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+              const pNum = i;
+              return (
+                <button
+                  key={pNum}
+                  type="button"
+                  className={'pagebtn' + (page === pNum ? ' on' : '')}
+                  onClick={() => setPage(pNum)}
+                >
+                  {pNum + 1}
+                </button>
+              );
+            })}
+            <button
+              type="button"
+              className="pagebtn"
+              disabled={page >= totalPages - 1}
+              onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+            >
+              ›
+            </button>
+          </div>
+        </div>
+      )}
+        </>
+      )}
 
       {/* Add / Edit Word Modal */}
       {(showAddModal || editingWord) && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'rgba(15, 23, 42, 0.65)',
-          backdropFilter: 'blur(4px)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 1000,
-          padding: 20
-        }}>
-          <div style={{
-            background: '#FFFFFF',
-            borderRadius: 22,
-            padding: '28px 32px',
-            maxWidth: 580,
-            width: '100%',
-            boxShadow: '0 20px 40px rgba(0,0,0,0.2)',
-            position: 'relative'
-          }}>
-            <h2 style={{ fontSize: '1.4rem', fontWeight: 800, margin: '0 0 18px 0', color: '#0F172A' }}>
-              {editingWord ? `Chỉnh sửa từ: "${editingWord.word}"` : 'Thêm từ vựng mới'}
-            </h2>
+        <>
+          <div className="scrim" onClick={() => { setShowAddModal(false); setEditingWord(null); }} />
+          <div className="modal" style={{ maxWidth: 560 }}>
+            <div className="row" style={{ alignItems: 'center', marginBottom: 16 }}>
+              <h2 style={{ fontSize: 20 }}>
+                {editingWord ? `Chỉnh sửa từ: "${editingWord.word}"` : 'Thêm từ vựng mới'}
+              </h2>
+              <button
+                type="button"
+                className="btn ghost sm"
+                onClick={() => { setShowAddModal(false); setEditingWord(null); }}
+                style={{ padding: '4px 8px' }}
+              >
+                ✕
+              </button>
+            </div>
 
-            <form onSubmit={handleSaveWord}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 14 }}>
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.84rem', fontWeight: 700, color: '#334155', marginBottom: 4 }}>
-                    Từ tiếng Anh (*)
-                  </label>
+            <form onSubmit={handleSaveWord} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: 12 }}>
+                <div className="field">
+                  <label>Từ tiếng Anh (*)</label>
                   <input
-                    type="text"
-                    required
-                    disabled={Boolean(editingWord)}
+                    className="input"
                     value={formData.word}
                     onChange={(e) => setFormData({ ...formData, word: e.target.value })}
-                    style={{ width: '100%', padding: '9px 12px', borderRadius: 8, border: '1px solid #CBD5E1', boxSizing: 'border-box' }}
+                    placeholder="e.g. resilient"
+                    required
                   />
                 </div>
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.84rem', fontWeight: 700, color: '#334155', marginBottom: 4 }}>
-                    Phiên âm IPA
-                  </label>
+                <div className="field">
+                  <label>Phiên âm IPA</label>
                   <input
-                    type="text"
-                    placeholder="/.../"
+                    className="input"
                     value={formData.pronunciation}
                     onChange={(e) => setFormData({ ...formData, pronunciation: e.target.value })}
-                    style={{ width: '100%', padding: '9px 12px', borderRadius: 8, border: '1px solid #CBD5E1', boxSizing: 'border-box' }}
+                    placeholder="/rɪˈzɪliənt/"
                   />
                 </div>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 14 }}>
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.84rem', fontWeight: 700, color: '#334155', marginBottom: 4 }}>
-                    Cấp độ CEFR
-                  </label>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                <div className="field">
+                  <label>Loại từ</label>
                   <select
-                    value={formData.cefr}
-                    onChange={(e) => setFormData({ ...formData, cefr: e.target.value })}
-                    style={{ width: '100%', padding: '9px 12px', borderRadius: 8, border: '1px solid #CBD5E1', boxSizing: 'border-box', background: '#FFFFFF' }}
-                  >
-                    {['A1', 'A2', 'B1', 'B2', 'C1'].map((c) => (
-                      <option key={c} value={c}>{c}</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.84rem', fontWeight: 700, color: '#334155', marginBottom: 4 }}>
-                    Từ loại (POS)
-                  </label>
-                  <select
+                    className="input"
                     value={formData.partOfSpeech}
                     onChange={(e) => setFormData({ ...formData, partOfSpeech: e.target.value })}
-                    style={{ width: '100%', padding: '9px 12px', borderRadius: 8, border: '1px solid #CBD5E1', boxSizing: 'border-box', background: '#FFFFFF' }}
                   >
-                    {POS_LIST.filter((p) => p !== 'ALL').map((p) => (
-                      <option key={p} value={p}>{p}</option>
-                    ))}
+                    <option value="NOUN">Danh từ (Noun)</option>
+                    <option value="VERB">Động từ (Verb)</option>
+                    <option value="ADJECTIVE">Tính từ (Adjective)</option>
+                    <option value="ADVERB">Phó từ (Adverb)</option>
+                    <option value="PREPOSITION">Giới từ (Preposition)</option>
+                    <option value="CONJUNCTION">Liên từ (Conjunction)</option>
+                  </select>
+                </div>
+                <div className="field">
+                  <label>Cấp độ CEFR</label>
+                  <select
+                    className="input"
+                    value={formData.cefr}
+                    onChange={(e) => setFormData({ ...formData, cefr: e.target.value })}
+                  >
+                    <option value="A1">A1 - Sơ cấp căn bản</option>
+                    <option value="A2">A2 - Sơ cấp nâng cao</option>
+                    <option value="B1">B1 - Trung cấp</option>
+                    <option value="B2">B2 - Trung cấp nâng cao</option>
+                    <option value="C1">C1 - Cao cấp</option>
                   </select>
                 </div>
               </div>
 
-              <div style={{ marginBottom: 14 }}>
-                <label style={{ display: 'block', fontSize: '0.84rem', fontWeight: 700, color: '#334155', marginBottom: 4 }}>
-                  Nghĩa Tiếng Việt (*)
-                </label>
+              <div className="field">
+                <label>Nghĩa tiếng Việt (*)</label>
                 <input
-                  type="text"
-                  required
-                  placeholder="Ví dụ: xinh đẹp, rực rỡ"
+                  className="input"
                   value={formData.meaning}
                   onChange={(e) => setFormData({ ...formData, meaning: e.target.value })}
-                  style={{ width: '100%', padding: '9px 12px', borderRadius: 8, border: '1px solid #CBD5E1', boxSizing: 'border-box' }}
+                  placeholder="e.g. kiên cường, mau hồi phục"
+                  required
                 />
               </div>
 
-              <div style={{ marginBottom: 14 }}>
-                <label style={{ display: 'block', fontSize: '0.84rem', fontWeight: 700, color: '#334155', marginBottom: 4 }}>
-                  Định nghĩa tiếng Anh
-                </label>
-                <input
-                  type="text"
-                  placeholder="pleasing to look at; attractive"
-                  value={formData.definition}
-                  onChange={(e) => setFormData({ ...formData, definition: e.target.value })}
-                  style={{ width: '100%', padding: '9px 12px', borderRadius: 8, border: '1px solid #CBD5E1', boxSizing: 'border-box' }}
-                />
-              </div>
-
-              <div style={{ marginBottom: 20 }}>
-                <label style={{ display: 'block', fontSize: '0.84rem', fontWeight: 700, color: '#334155', marginBottom: 4 }}>
-                  Câu ví dụ minh họa
-                </label>
-                <input
-                  type="text"
-                  placeholder="She has a beautiful smile."
+              <div className="field">
+                <label>Câu ví dụ (Example sentence)</label>
+                <textarea
+                  className="input"
                   value={formData.example}
                   onChange={(e) => setFormData({ ...formData, example: e.target.value })}
-                  style={{ width: '100%', padding: '9px 12px', borderRadius: 8, border: '1px solid #CBD5E1', boxSizing: 'border-box' }}
+                  placeholder="e.g. She is a resilient leader who stays calm under pressure."
+                  style={{ minHeight: 70 }}
                 />
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 6 }}>
                 <button
                   type="button"
+                  className="btn ghost"
                   onClick={() => { setShowAddModal(false); setEditingWord(null); }}
-                  style={{
-                    background: '#F1F5F9',
-                    color: '#334155',
-                    border: '1px solid #CBD5E1',
-                    padding: '10px 18px',
-                    borderRadius: 10,
-                    fontWeight: 600,
-                    cursor: 'pointer'
-                  }}
                 >
                   Hủy
                 </button>
                 <button
                   type="submit"
+                  className="btn"
                   disabled={submitting}
-                  style={{
-                    background: '#4F46E5',
-                    color: '#FFFFFF',
-                    border: 'none',
-                    padding: '10px 22px',
-                    borderRadius: 10,
-                    fontWeight: 700,
-                    cursor: submitting ? 'wait' : 'pointer',
-                    boxShadow: '0 4px 12px rgba(79, 70, 229, 0.3)'
-                  }}
                 >
-                  {submitting ? 'Đang lưu...' : 'Lưu từ vựng'}
+                  {submitting ? 'Đang lưu...' : editingWord ? 'Lưu cập nhật' : 'Thêm vào kho'}
                 </button>
               </div>
             </form>
           </div>
-        </div>
+        </>
       )}
     </div>
   );

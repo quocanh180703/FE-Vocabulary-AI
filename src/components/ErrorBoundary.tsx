@@ -1,4 +1,5 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react';
+import vi3dImg from '../assets/vi-3d.webp';
 
 interface Props {
   children: ReactNode;
@@ -26,35 +27,48 @@ export class ErrorBoundary extends Component<Props, State> {
   public render() {
     if (this.state.hasError) {
       return (
-        <div style={{ padding: 48, textAlign: 'center', maxWidth: 600, margin: '40px auto' }}>
-          <h2>Đã có lỗi xảy ra</h2>
-          <p className="sub mt8" style={{ color: 'var(--text-sub)' }}>
-            Không thể tải nội dung trang này. Vui lòng tải lại trang hoặc quay về trang chủ.
-          </p>
-          {this.state.error && (
-            <div
-              style={{
-                marginTop: 16,
-                padding: 16,
-                background: '#fee2e2',
-                color: '#991b1b',
-                borderRadius: 8,
-                fontSize: 13,
-                textAlign: 'left',
-                overflowX: 'auto',
-                fontFamily: 'monospace',
-              }}
-            >
-              {this.state.error.message}
+        <div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}>
+          <div className="errcard">
+            <img src={vi3dImg} alt="Vi Mascot" />
+            <h1>Đã có lỗi xảy ra</h1>
+            <p className="sub" style={{ marginTop: '10px', lineHeight: 1.65 }}>
+              Rất tiếc, đã có sự cố ngoài ý muốn khi tải nội dung này. Dữ liệu học của bạn vẫn an toàn — bạn thử lại hoặc quay về trang chính nhé.
+            </p>
+            {this.state.error && (
+              <div
+                style={{
+                  marginTop: '16px',
+                  padding: '12px 14px',
+                  background: 'var(--red-bg)',
+                  color: 'var(--red-dark)',
+                  borderRadius: '12px',
+                  fontSize: '13px',
+                  textAlign: 'left',
+                  overflowX: 'auto',
+                  fontFamily: 'monospace',
+                }}
+              >
+                {this.state.error.message}
+              </div>
+            )}
+            <div className="btn-row" style={{ justifyContent: 'center', marginTop: '24px', gap: '12px' }}>
+              <button
+                type="button"
+                className="btn ghost"
+                style={{ minHeight: '48px', padding: '0 22px' }}
+                onClick={() => { window.location.href = '/dashboard'; }}
+              >
+                Về trang chính
+              </button>
+              <button
+                type="button"
+                className="btn"
+                style={{ minHeight: '48px', padding: '0 22px' }}
+                onClick={() => this.setState({ hasError: false, error: null })}
+              >
+                Thử lại
+              </button>
             </div>
-          )}
-          <div className="btn-row mt16" style={{ justifyContent: 'center' }}>
-            <button className="btn ghost" onClick={() => window.location.href = '/'}>
-              Về trang chủ
-            </button>
-            <button className="btn" onClick={() => this.setState({ hasError: false, error: null })}>
-              Thử lại
-            </button>
           </div>
         </div>
       );

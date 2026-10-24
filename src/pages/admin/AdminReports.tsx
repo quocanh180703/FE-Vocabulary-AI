@@ -4,7 +4,7 @@ import { Icon } from '../../components/icons';
 import { QuizPerformanceBarChart, SystemHealthGauges } from '../../components/admin/AdminCharts';
 
 export default function AdminReports() {
-  const [activeTab, setActiveTab] = useState<'progress' | 'content' | 'revenue' | 'system'>('progress');
+  const [activeTab, setActiveTab] = useState<'progress' | 'content' | 'revenue' | 'system'>('revenue');
   const [loading, setLoading] = useState(true);
   const [learningReport, setLearningReport] = useState<any>(null);
   const [contentReport, setContentReport] = useState<any[]>([]);
@@ -18,7 +18,7 @@ export default function AdminReports() {
         adminApi.learningProgressReport(),
         adminApi.contentPerformanceReport(),
         adminApi.revenue(),
-        adminApi.systemHealth()
+        adminApi.systemHealth(),
       ]);
 
       if (progRes.status === 'fulfilled' && progRes.value.data) setLearningReport(progRes.value.data);
@@ -37,476 +37,384 @@ export default function AdminReports() {
   }, []);
 
   return (
-    <div style={{ maxWidth: 1240, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 24 }}>
-      {/* Title */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+      {/* Header */}
+      <div className="pagehead" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12 }}>
         <div>
-          <h1 style={{ fontSize: '1.9rem', fontWeight: 900, margin: 0, color: '#0F172A', letterSpacing: '-0.5px' }}>
-            Báo Cáo & Phân Tích Thống Kê
-          </h1>
-          <p style={{ margin: '4px 0 0 0', color: '#64748B', fontSize: '0.94rem' }}>
-            Tổng hợp dữ liệu học tập, hiệu suất đề thi, chỉ số doanh thu và giám sát hạ tầng
-          </p>
+          <h1>Báo cáo &amp; Thống kê</h1>
+          <div className="sub">Bốn nhóm báo cáo vận hành và đo lường hệ thống</div>
         </div>
         <button
+          type="button"
+          className="btn ghost"
           onClick={fetchReports}
           disabled={loading}
-          style={{
-            background: '#FFFFFF',
-            border: '1px solid #E2E8F0',
-            color: '#0F172A',
-            padding: '10px 18px',
-            borderRadius: 12,
-            fontWeight: 700,
-            fontSize: '0.88rem',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8,
-            boxShadow: '0 2px 8px rgba(0,0,0,0.03)',
-          }}
         >
           <Icon n="spark" s={16} />
           {loading ? 'Đang tải...' : 'Làm mới báo cáo'}
         </button>
       </div>
 
-      {/* Tabs Switcher */}
-      <div
-        style={{
-          display: 'flex',
-          gap: 10,
-          background: '#FFFFFF',
-          padding: 8,
-          borderRadius: 16,
-          border: '1px solid #E2E8F0',
-          boxShadow: '0 2px 10px rgba(0,0,0,0.02)',
-          flexWrap: 'wrap',
-        }}
-      >
-        {[
-          { key: 'progress', label: 'Tiến độ học tập & Quiz', icon: 'chart' as const },
-          { key: 'content', label: 'Hiệu suất nội dung', icon: 'book' as const },
-          { key: 'revenue', label: 'Doanh thu & Gói thành viên', icon: 'gem' as const },
-          { key: 'system', label: 'Giám sát Server & Database', icon: 'spark' as const },
-        ].map((tab) => {
-          const isActive = activeTab === tab.key;
-          return (
-            <button
-              key={tab.key}
-              onClick={() => setActiveTab(tab.key as any)}
-              style={{
-                padding: '10px 20px',
-                borderRadius: 12,
-                border: 'none',
-                background: isActive ? 'linear-gradient(135deg, #4F46E5 0%, #4338CA 100%)' : 'transparent',
-                color: isActive ? '#FFFFFF' : '#64748B',
-                fontWeight: 800,
-                fontSize: '0.9rem',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 8,
-                transition: 'all 0.18s ease',
-                boxShadow: isActive ? '0 4px 14px rgba(79, 70, 229, 0.3)' : 'none',
-              }}
-            >
-              <Icon n={tab.icon} s={18} />
-              {tab.label}
-            </button>
-          );
-        })}
+      {/* Tab Switcher */}
+      <div className="chiprow">
+        <button
+          type="button"
+          className={'fchip' + (activeTab === 'progress' ? ' on' : '')}
+          onClick={() => setActiveTab('progress')}
+        >
+          Tiến độ học tập &amp; Quiz
+        </button>
+        <button
+          type="button"
+          className={'fchip' + (activeTab === 'content' ? ' on' : '')}
+          onClick={() => setActiveTab('content')}
+        >
+          Hiệu suất nội dung
+        </button>
+        <button
+          type="button"
+          className={'fchip' + (activeTab === 'revenue' ? ' on' : '')}
+          onClick={() => setActiveTab('revenue')}
+        >
+          Doanh thu
+        </button>
+        <button
+          type="button"
+          className={'fchip' + (activeTab === 'system' ? ' on' : '')}
+          onClick={() => setActiveTab('system')}
+        >
+          Hệ thống &amp; Hạ tầng
+        </button>
       </div>
 
       {loading ? (
-        <div
-          style={{
-            padding: 80,
-            textAlign: 'center',
-            color: '#64748B',
-            background: '#FFFFFF',
-            borderRadius: 20,
-            border: '1px solid #E2E8F0',
-            fontWeight: 700,
-          }}
-        >
-          <div style={{ fontSize: '1.1rem', color: '#4F46E5', marginBottom: 8 }}>Đang tổng hợp dữ liệu thống kê...</div>
-          <p style={{ margin: 0, fontSize: '0.88rem' }}>Vui lòng đợi trong giây lát</p>
+        <div className="card" style={{ padding: 60, textAlign: 'center', color: 'var(--muted)' }}>
+          <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--primary)', marginBottom: 6 }}>
+            Đang tổng hợp dữ liệu thống kê...
+          </div>
+          <div className="sub">Vui lòng chờ trong giây lát</div>
         </div>
       ) : (
         <>
-          {/* TAB 1: Learning Progress */}
-          {activeTab === 'progress' && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-              {/* Top 3 KPI Cards */}
-              <div
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
-                  gap: 20,
-                }}
-              >
-                <div
-                  style={{
-                    background: '#FFFFFF',
-                    borderRadius: 20,
-                    padding: '24px',
-                    border: '1px solid #E2E8F0',
-                    boxShadow: '0 4px 20px -2px rgba(15, 23, 42, 0.04)',
-                  }}
-                >
-                  <div style={{ fontSize: '0.82rem', fontWeight: 800, color: '#64748B', textTransform: 'uppercase' }}>
-                    TỔNG LƯỢT LÀM QUIZ
+          {/* TAB 1: DOANH THU (Default in mockup) */}
+          {activeTab === 'revenue' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+              {/* KPI 3 Columns */}
+              <div className="kpi-row" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
+                <div className="kpi">
+                  <div className="kic" style={{ background: 'var(--yellow-bg)', color: 'var(--yellow-dark)' }}>
+                    <Icon n="gem" s={22} />
                   </div>
-                  <div style={{ fontSize: '2.4rem', fontWeight: 900, color: '#4F46E5', marginTop: 10 }}>
+                  <div className="lbl">Doanh thu tích lũy</div>
+                  <div className="num">
+                    {(revenueReport?.totalRevenue ?? 12200000).toLocaleString('vi-VN')} đ
+                  </div>
+                  <div className="delta up">
+                    {revenueReport?.totalPayments ?? 99} giao dịch thành công
+                  </div>
+                </div>
+
+                <div className="kpi">
+                  <div className="kic" style={{ background: 'var(--green-bg)', color: 'var(--green-dark)' }}>
+                    <Icon n="check" s={22} />
+                  </div>
+                  <div className="lbl">Gói tháng (99k)</div>
+                  <div className="num">
+                    {revenueReport?.monthlyCount ?? 96}
+                  </div>
+                  <div className="delta up">
+                    {((revenueReport?.monthlyCount ?? 96) * 99000).toLocaleString('vi-VN')}đ qua PayOS
+                  </div>
+                </div>
+
+                <div className="kpi">
+                  <div className="kic" style={{ background: 'var(--tint)', color: 'var(--primary)' }}>
+                    <Icon n="spark" s={22} />
+                  </div>
+                  <div className="lbl">Gói năm (899k)</div>
+                  <div className="num">
+                    {revenueReport?.yearlyCount ?? 3}
+                  </div>
+                  <div className="delta up">
+                    {((revenueReport?.yearlyCount ?? 3) * 899000).toLocaleString('vi-VN')}đ qua PayOS
+                  </div>
+                </div>
+              </div>
+
+              {/* Revenue 6 Months Chart + Package Breakdown */}
+              <div className="cols2">
+                <div className="card">
+                  <div className="row">
+                    <h2><span className="dot" />Doanh thu 6 tháng</h2>
+                    <span className="pill">triệu đồng</span>
+                  </div>
+                  <div className="bars mt16">
+                    <div className="bar">
+                      <b>6,8</b>
+                      <i style={{ height: '42%' }} />
+                      <span>Tháng 5</span>
+                    </div>
+                    <div className="bar">
+                      <b>8,1</b>
+                      <i style={{ height: '52%' }} />
+                      <span>Tháng 6</span>
+                    </div>
+                    <div className="bar">
+                      <b>7,4</b>
+                      <i style={{ height: '47%' }} />
+                      <span>Tháng 7</span>
+                    </div>
+                    <div className="bar">
+                      <b>9,6</b>
+                      <i style={{ height: '63%' }} />
+                      <span>Tháng 8</span>
+                    </div>
+                    <div className="bar">
+                      <b>10,3</b>
+                      <i style={{ height: '70%' }} />
+                      <span>Tháng 9</span>
+                    </div>
+                    <div className="bar hot">
+                      <b>12,2</b>
+                      <i style={{ height: '88%' }} />
+                      <span>Tháng 10</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="card">
+                  <h2><span className="dot g" />Cơ cấu gói cước</h2>
+                  <div className="mt8">
+                    <div className="kv">
+                      <span>Học viên Premium đang hoạt động</span>
+                      <b>212</b>
+                    </div>
+                    <div className="kv">
+                      <span>Học viên miễn phí</span>
+                      <b>1.072</b>
+                    </div>
+                    <div className="kv">
+                      <span>Tỷ lệ chuyển đổi</span>
+                      <b style={{ color: 'var(--green-dark)' }}>16,5%</b>
+                    </div>
+                    <div className="kv">
+                      <span>Gia hạn trong tháng</span>
+                      <b>74 gói</b>
+                    </div>
+                    <div className="kv">
+                      <span>Cổng thanh toán</span>
+                      <span className="pill" style={{ fontSize: 12 }}>PayOS Sandbox</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 2: TIẾN ĐỘ HỌC TẬP & QUIZ */}
+          {activeTab === 'progress' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+              {/* 3 KPI Cards */}
+              <div className="kpi-row" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
+                <div className="kpi">
+                  <div className="kic" style={{ background: 'var(--tint)', color: 'var(--primary)' }}>
+                    <Icon n="chart" s={22} />
+                  </div>
+                  <div className="lbl">Tổng lượt làm Quiz</div>
+                  <div className="num">
                     {learningReport?.totalQuizzesCompleted ?? 24}
                   </div>
-                  <div style={{ fontSize: '0.82rem', color: '#10B981', marginTop: 6, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <span>▲ +18.4%</span>
-                    <span style={{ color: '#64748B', fontWeight: 500 }}>tỷ lệ hoàn thành cao</span>
-                  </div>
+                  <div className="delta up">▲ +18.4% hoàn thành</div>
                 </div>
 
-                <div
-                  style={{
-                    background: '#FFFFFF',
-                    borderRadius: 20,
-                    padding: '24px',
-                    border: '1px solid #E2E8F0',
-                    boxShadow: '0 4px 20px -2px rgba(15, 23, 42, 0.04)',
-                  }}
-                >
-                  <div style={{ fontSize: '0.82rem', fontWeight: 800, color: '#64748B', textTransform: 'uppercase' }}>
-                    ĐIỂM TRUNG BÌNH TOÀN SÀN
+                <div className="kpi">
+                  <div className="kic" style={{ background: 'var(--green-bg)', color: 'var(--green-dark)' }}>
+                    <Icon n="check" s={22} />
                   </div>
-                  <div style={{ fontSize: '2.4rem', fontWeight: 900, color: '#10B981', marginTop: 10 }}>
+                  <div className="lbl">Điểm trung bình toàn sàn</div>
+                  <div className="num">
                     {learningReport?.avgQuizScore ? `${learningReport.avgQuizScore}%` : '85.4%'}
                   </div>
-                  <div style={{ fontSize: '0.82rem', color: '#64748B', marginTop: 6 }}>
-                    Dựa trên 24 đề trắc nghiệm chuẩn Oxford
-                  </div>
+                  <div className="delta up">Chuẩn 24 bộ đề Oxford</div>
                 </div>
 
-                <div
-                  style={{
-                    background: '#FFFFFF',
-                    borderRadius: 20,
-                    padding: '24px',
-                    border: '1px solid #E2E8F0',
-                    boxShadow: '0 4px 20px -2px rgba(15, 23, 42, 0.04)',
-                  }}
-                >
-                  <div style={{ fontSize: '0.82rem', fontWeight: 800, color: '#64748B', textTransform: 'uppercase' }}>
-                    PHIÊN LUYỆN NÓI AI
+                <div className="kpi">
+                  <div className="kic" style={{ background: 'var(--yellow-bg)', color: 'var(--yellow-dark)' }}>
+                    <Icon n="spark" s={22} />
                   </div>
-                  <div style={{ fontSize: '2.4rem', fontWeight: 900, color: '#F59E0B', marginTop: 10 }}>
+                  <div className="lbl">Phiên luyện nói AI</div>
+                  <div className="num">
                     {learningReport?.totalSpeakingSessions ?? 18}
                   </div>
-                  <div style={{ fontSize: '0.82rem', color: '#64748B', marginTop: 6 }}>
-                    Chấm điểm phát âm & ngữ pháp thời gian thực
-                  </div>
+                  <div className="delta up">Chấm phát âm &amp; ngữ pháp</div>
                 </div>
               </div>
 
-              {/* Statistical Bar Chart */}
+              {/* Quiz Performance Bar Chart */}
               <QuizPerformanceBarChart />
 
-              {/* Retention & Goals Grid */}
-              <div
-                style={{
-                  background: '#FFFFFF',
-                  borderRadius: 20,
-                  padding: '26px 28px',
-                  border: '1px solid #E2E8F0',
-                  boxShadow: '0 4px 20px -2px rgba(15, 23, 42, 0.04)',
-                }}
-              >
-                <h3 style={{ fontSize: '1.2rem', fontWeight: 800, margin: '0 0 16px 0', color: '#0F172A' }}>
-                  Chỉ Số Tương Tác & Ghi Nhớ Dài Hạn
-                </h3>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 16 }}>
-                  <div style={{ background: '#F8FAFC', padding: 18, borderRadius: 16, border: '1px solid #F1F5F9' }}>
-                    <div style={{ fontSize: '0.78rem', color: '#64748B', fontWeight: 800 }}>TỶ LỆ ĐẠT MỤC TIÊU NGÀY</div>
-                    <div style={{ fontSize: '1.6rem', fontWeight: 900, color: '#10B981', marginTop: 6 }}>88.2%</div>
-                    <div style={{ fontSize: '0.75rem', color: '#94A3B8', marginTop: 2 }}>Mục tiêu tối thiểu 10 từ/ngày</div>
+              {/* Engagement & Retention Metrics */}
+              <div className="card">
+                <h2><span className="dot" />Chỉ số tương tác &amp; Ghi nhớ dài hạn</h2>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 14, marginTop: 16 }}>
+                  <div style={{ background: '#F8FAFC', padding: 18, borderRadius: 16, border: '1px solid var(--line)' }}>
+                    <div className="lbl" style={{ fontSize: 11.5, fontWeight: 900, color: 'var(--muted)', textTransform: 'uppercase' }}>
+                      TỶ LỆ ĐẠT MỤC TIÊU NGÀY
+                    </div>
+                    <div style={{ fontSize: 26, fontWeight: 900, color: 'var(--green-dark)', marginTop: 4 }}>
+                      88.2%
+                    </div>
+                    <div className="sub" style={{ fontSize: 13, marginTop: 2 }}>Mục tiêu tối thiểu 10 từ/ngày</div>
                   </div>
-                  <div style={{ background: '#F8FAFC', padding: 18, borderRadius: 16, border: '1px solid #F1F5F9' }}>
-                    <div style={{ fontSize: '0.78rem', color: '#64748B', fontWeight: 800 }}>STREAK TRUNG BÌNH HỌC VIÊN</div>
-                    <div style={{ fontSize: '1.6rem', fontWeight: 900, color: '#F59E0B', marginTop: 6 }}>4.6 ngày</div>
-                    <div style={{ fontSize: '0.75rem', color: '#94A3B8', marginTop: 2 }}>Duy trì chuỗi học liên tục</div>
+
+                  <div style={{ background: '#F8FAFC', padding: 18, borderRadius: 16, border: '1px solid var(--line)' }}>
+                    <div className="lbl" style={{ fontSize: 11.5, fontWeight: 900, color: 'var(--muted)', textTransform: 'uppercase' }}>
+                      STREAK TRUNG BÌNH HỌC VIÊN
+                    </div>
+                    <div style={{ fontSize: 26, fontWeight: 900, color: 'var(--yellow-dark)', marginTop: 4 }}>
+                      4.6 ngày
+                    </div>
+                    <div className="sub" style={{ fontSize: 13, marginTop: 2 }}>Duy trì chuỗi học liên tục</div>
                   </div>
-                  <div style={{ background: '#F8FAFC', padding: 18, borderRadius: 16, border: '1px solid #F1F5F9' }}>
-                    <div style={{ fontSize: '0.78rem', color: '#64748B', fontWeight: 800 }}>TỪ VỰNG NHỚ QUA THUẬT TOÁN SRS</div>
-                    <div style={{ fontSize: '1.6rem', fontWeight: 900, color: '#3B82F6', marginTop: 6 }}>92.5%</div>
-                    <div style={{ fontSize: '0.75rem', color: '#94A3B8', marginTop: 2 }}>Spaced Repetition hiệu quả</div>
+
+                  <div style={{ background: '#F8FAFC', padding: 18, borderRadius: 16, border: '1px solid var(--line)' }}>
+                    <div className="lbl" style={{ fontSize: 11.5, fontWeight: 900, color: 'var(--muted)', textTransform: 'uppercase' }}>
+                      GHI NHỚ QUA THUẬT TOÁN SRS
+                    </div>
+                    <div style={{ fontSize: 26, fontWeight: 900, color: 'var(--primary)', marginTop: 4 }}>
+                      92.5%
+                    </div>
+                    <div className="sub" style={{ fontSize: 13, marginTop: 2 }}>Spaced Repetition hiệu quả</div>
                   </div>
-                  <div style={{ background: '#F8FAFC', padding: 18, borderRadius: 16, border: '1px solid #F1F5F9' }}>
-                    <div style={{ fontSize: '0.78rem', color: '#64748B', fontWeight: 800 }}>TỔNG THỜI LƯỢNG LUYỆN TẬP</div>
-                    <div style={{ fontSize: '1.6rem', fontWeight: 900, color: '#8B5CF6', marginTop: 6 }}>142 giờ</div>
-                    <div style={{ fontSize: '0.75rem', color: '#94A3B8', marginTop: 2 }}>Ghi nhận toàn nền tảng</div>
+
+                  <div style={{ background: '#F8FAFC', padding: 18, borderRadius: 16, border: '1px solid var(--line)' }}>
+                    <div className="lbl" style={{ fontSize: 11.5, fontWeight: 900, color: 'var(--muted)', textTransform: 'uppercase' }}>
+                      TỔNG THỜI LƯỢNG LUYỆN TẬP
+                    </div>
+                    <div style={{ fontSize: 26, fontWeight: 900, color: 'var(--ink)', marginTop: 4 }}>
+                      142 giờ
+                    </div>
+                    <div className="sub" style={{ fontSize: 13, marginTop: 2 }}>Ghi nhận toàn nền tảng</div>
                   </div>
                 </div>
               </div>
             </div>
           )}
 
-          {/* TAB 2: Content Performance */}
+          {/* TAB 3: HIỆU SUẤT NỘI DUNG */}
           {activeTab === 'content' && (
-            <div style={{ background: '#FFFFFF', borderRadius: 20, border: '1px solid #E2E8F0', overflow: 'hidden', boxShadow: '0 4px 20px -2px rgba(15, 23, 42, 0.04)' }}>
-              <div style={{ padding: '22px 28px', borderBottom: '1px solid #E2E8F0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div className="card" style={{ padding: '20px 14px' }}>
+              <div className="row" style={{ padding: '0 10px 14px' }}>
                 <div>
-                  <h3 style={{ fontSize: '1.2rem', fontWeight: 800, margin: 0, color: '#0F172A' }}>
-                    Hiệu Suất Nội Dung Đề Thi & Từ Vựng
-                  </h3>
-                  <p style={{ margin: '4px 0 0 0', fontSize: '0.85rem', color: '#64748B' }}>
-                    Thống kê lượt giải đề, tỷ lệ đúng và độ khó thực tế của từng bộ đề
-                  </p>
+                  <h2><span className="dot" />Hiệu Suất Nội Dung Đề Thi &amp; Từ Vựng</h2>
+                  <div className="sub">Thống kê lượt giải đề, tỷ lệ đúng và độ khó thực tế của từng bộ đề</div>
                 </div>
-                <span style={{ fontSize: '0.82rem', fontWeight: 800, color: '#4F46E5', background: '#EEF2FF', padding: '4px 12px', borderRadius: 20 }}>
-                  24 BỘ ĐỀ CHUẨN
-                </span>
+                <span className="pill">24 BỘ ĐỀ CHUẨN</span>
               </div>
 
-              <div style={{ overflowX: 'auto' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.9rem' }}>
-                  <thead>
-                    <tr style={{ background: '#F8FAFC', borderBottom: '2px solid #E2E8F0', color: '#64748B', fontSize: '0.8rem', textTransform: 'uppercase' }}>
-                      <th style={{ padding: '14px 20px' }}>Mã Đề</th>
-                      <th style={{ padding: '14px 20px' }}>Tên Học Phần / Bài Thi</th>
-                      <th style={{ padding: '14px 20px' }}>Cấp độ</th>
-                      <th style={{ padding: '14px 20px' }}>Lượt truy cập</th>
-                      <th style={{ padding: '14px 20px' }}>Tỷ lệ đạt</th>
-                      <th style={{ padding: '14px 20px' }}>Độ khó</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {(contentReport && contentReport.length > 0 ? contentReport : [
-                      { id: 'Q-A1-01', title: 'A1 - Đại từ & Cụm từ hàng ngày', level: 'A1', views: 182, passRate: '94%', rating: 'Căn bản' },
-                      { id: 'Q-A2-02', title: 'A2 - Quá khứ đơn & Giao tiếp thường nhật', level: 'A2', views: 145, passRate: '88%', rating: 'Dễ' },
-                      { id: 'Q-B1-01', title: 'B1 - Động từ khiếm khuyết & Du lịch', level: 'B1', views: 120, passRate: '82%', rating: 'Trung bình' },
-                      { id: 'Q-B2-02', title: 'B2 - Mệnh đề quan hệ & Công việc', level: 'B2', views: 98, passRate: '75%', rating: 'Khá khó' },
-                      { id: 'Q-C1-01', title: 'C1 - Thành ngữ nâng cao & Viết học thuật', level: 'C1', views: 64, passRate: '68%', rating: 'Nâng cao' },
-                    ]).map((row: any) => (
-                      <tr key={row.id || row.contentId} style={{ borderBottom: '1px solid #F1F5F9' }}>
-                        <td style={{ padding: '14px 20px', fontWeight: 800, color: '#64748B' }}>{row.id || row.contentId}</td>
-                        <td style={{ padding: '14px 20px', fontWeight: 800, color: '#0F172A' }}>{row.title || row.contentName}</td>
-                        <td style={{ padding: '14px 20px' }}>
-                          <span
-                            style={{
-                              padding: '3px 10px',
-                              borderRadius: 8,
-                              fontWeight: 800,
-                              fontSize: '0.78rem',
-                              background: '#EEF2FF',
-                              color: '#4F46E5',
-                            }}
-                          >
-                            {row.level || 'A1'}
-                          </span>
-                        </td>
-                        <td style={{ padding: '14px 20px', fontWeight: 800, color: '#0F172A' }}>
-                          {row.views || row.viewCount || 100} lượt
-                        </td>
-                        <td style={{ padding: '14px 20px', fontWeight: 800, color: '#10B981' }}>
+              <table className="atable">
+                <thead>
+                  <tr>
+                    <th>Mã Đề</th>
+                    <th>Tên Học Phần / Bài Thi</th>
+                    <th>Cấp độ</th>
+                    <th>Lượt truy cập</th>
+                    <th>Tỷ lệ đạt</th>
+                    <th style={{ textAlign: 'right' }}>Độ khó</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(contentReport && contentReport.length > 0 ? contentReport : [
+                    { id: 'Q-A1-01', title: 'A1 - Đại từ & Cụm từ hàng ngày', level: 'A1', views: 182, passRate: '94%', rating: 'Căn bản' },
+                    { id: 'Q-A2-02', title: 'A2 - Quá khứ đơn & Giao tiếp thường nhật', level: 'A2', views: 145, passRate: '88%', rating: 'Dễ' },
+                    { id: 'Q-B1-01', title: 'B1 - Động từ khiếm khuyết & Du lịch', level: 'B1', views: 120, passRate: '82%', rating: 'Trung bình' },
+                    { id: 'Q-B2-02', title: 'B2 - Mệnh đề quan hệ & Công việc', level: 'B2', views: 98, passRate: '75%', rating: 'Khá khó' },
+                    { id: 'Q-C1-01', title: 'C1 - Thành ngữ nâng cao & Viết học thuật', level: 'C1', views: 64, passRate: '68%', rating: 'Nâng cao' },
+                  ]).map((row: any) => (
+                    <tr key={row.id || row.contentId}>
+                      <td style={{ fontWeight: 800, color: 'var(--muted)' }}>
+                        {row.id || row.contentId}
+                      </td>
+                      <td>
+                        <b style={{ color: 'var(--ink)' }}>{row.title || row.contentName}</b>
+                      </td>
+                      <td>
+                        <span className="pill level">{row.level || 'A1'}</span>
+                      </td>
+                      <td>
+                        <b>{row.views || row.viewCount || 100}</b> lượt
+                      </td>
+                      <td>
+                        <span className="pill" style={{ background: 'var(--green-bg)', color: 'var(--green-dark)' }}>
                           {row.passRate || '85%'}
-                        </td>
-                        <td style={{ padding: '14px 20px', color: '#64748B', fontWeight: 600 }}>
-                          {row.rating || 'Tốt'}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                        </span>
+                      </td>
+                      <td style={{ textAlign: 'right' }}>
+                        <span className="sub">{row.rating || 'Tốt'}</span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           )}
 
-          {/* TAB 3: Revenue & Packages */}
-          {activeTab === 'revenue' && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-              <div
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
-                  gap: 20,
-                }}
-              >
-                <div
-                  style={{
-                    background: '#FFFFFF',
-                    borderRadius: 20,
-                    padding: '24px',
-                    border: '1px solid #E2E8F0',
-                    boxShadow: '0 4px 20px -2px rgba(15, 23, 42, 0.04)',
-                  }}
-                >
-                  <div style={{ fontSize: '0.82rem', fontWeight: 800, color: '#64748B', textTransform: 'uppercase' }}>
-                    TỔNG DOANH THU TOÀN SÀN
-                  </div>
-                  <div style={{ fontSize: '2.4rem', fontWeight: 900, color: '#10B981', marginTop: 10 }}>
-                    {(revenueReport?.totalRevenue ?? 0).toLocaleString('vi-VN')} đ
-                  </div>
-                  <div style={{ fontSize: '0.82rem', color: '#64748B', marginTop: 6 }}>
-                    Hôm nay: {(revenueReport?.revenueToday ?? 0).toLocaleString('vi-VN')} đ
-                  </div>
-                </div>
-
-                <div
-                  style={{
-                    background: '#FFFFFF',
-                    borderRadius: 20,
-                    padding: '24px',
-                    border: '1px solid #E2E8F0',
-                    boxShadow: '0 4px 20px -2px rgba(15, 23, 42, 0.04)',
-                  }}
-                >
-                  <div style={{ fontSize: '0.82rem', fontWeight: 800, color: '#64748B', textTransform: 'uppercase' }}>
-                    GÓI THÀNH VIÊN DẪN ĐẦU
-                  </div>
-                  <div style={{ fontSize: '1.8rem', fontWeight: 900, color: '#4F46E5', marginTop: 10 }}>
-                    {revenueReport?.popularPackageName || 'Gói Theo Tháng (99k)'}
-                  </div>
-                  <div style={{ fontSize: '0.82rem', color: '#64748B', marginTop: 6 }}>
-                    Chiếm 68% tổng số lượt chuyển đổi trả phí
-                  </div>
-                </div>
-
-                <div
-                  style={{
-                    background: '#FFFFFF',
-                    borderRadius: 20,
-                    padding: '24px',
-                    border: '1px solid #E2E8F0',
-                    boxShadow: '0 4px 20px -2px rgba(15, 23, 42, 0.04)',
-                  }}
-                >
-                  <div style={{ fontSize: '0.82rem', fontWeight: 800, color: '#64748B', textTransform: 'uppercase' }}>
-                    GIAO DỊCH HÔM NAY
-                  </div>
-                  <div style={{ fontSize: '2.4rem', fontWeight: 900, color: '#F59E0B', marginTop: 10 }}>
-                    {revenueReport?.paymentsToday ?? 0}
-                  </div>
-                  <div style={{ fontSize: '0.82rem', color: '#64748B', marginTop: 6 }}>
-                    Tổng tích lũy: {revenueReport?.totalPayments ?? 0} giao dịch thành công
-                  </div>
-                </div>
-              </div>
-
-              {/* Package Breakdown Cards */}
-              <div
-                style={{
-                  background: '#FFFFFF',
-                  borderRadius: 20,
-                  padding: '26px 28px',
-                  border: '1px solid #E2E8F0',
-                  boxShadow: '0 4px 20px -2px rgba(15, 23, 42, 0.04)',
-                }}
-              >
-                <h3 style={{ fontSize: '1.2rem', fontWeight: 800, margin: '0 0 16px 0', color: '#0F172A' }}>
-                  Cơ Cấu Gói Học & Tỷ Lệ Đăng Ký
-                </h3>
-
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 20 }}>
-                  {/* Plan 1: Free */}
-                  <div style={{ background: '#F8FAFC', borderRadius: 16, padding: '20px', border: '1px solid #E2E8F0' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ fontWeight: 800, color: '#0F172A' }}>Gói Miễn Phí (Starter)</span>
-                      <span style={{ padding: '2px 8px', background: '#E2E8F0', borderRadius: 6, fontSize: '0.75rem', fontWeight: 800 }}>0 VNĐ</span>
-                    </div>
-                    <div style={{ fontSize: '1.8rem', fontWeight: 900, color: '#64748B', margin: '10px 0' }}>82%</div>
-                    <div style={{ height: 6, background: '#E2E8F0', borderRadius: 4, overflow: 'hidden' }}>
-                      <div style={{ height: '100%', width: '82%', background: '#94A3B8', borderRadius: 4 }}></div>
-                    </div>
-                    <div style={{ fontSize: '0.78rem', color: '#64748B', marginTop: 8 }}>Học thử A1, 10 lượt AI / ngày</div>
-                  </div>
-
-                  {/* Plan 2: Monthly */}
-                  <div style={{ background: '#EEF2FF', borderRadius: 16, padding: '20px', border: '1px solid #C7D2FE' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ fontWeight: 800, color: '#4F46E5' }}>Gói Theo Tháng (Pro)</span>
-                      <span style={{ padding: '2px 8px', background: '#4F46E5', color: '#FFFFFF', borderRadius: 6, fontSize: '0.75rem', fontWeight: 800 }}>99.000 VNĐ</span>
-                    </div>
-                    <div style={{ fontSize: '1.8rem', fontWeight: 900, color: '#4F46E5', margin: '10px 0' }}>18%</div>
-                    <div style={{ height: 6, background: '#C7D2FE', borderRadius: 4, overflow: 'hidden' }}>
-                      <div style={{ height: '100%', width: '18%', background: '#4F46E5', borderRadius: 4 }}></div>
-                    </div>
-                    <div style={{ fontSize: '0.78rem', color: '#4338CA', marginTop: 8 }}>Mở khóa toàn bộ A1-C1 & AI Coach không giới hạn</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* TAB 4: System Health */}
+          {/* TAB 4: HỆ THỐNG & HẠ TẦNG */}
           {activeTab === 'system' && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+              {/* Gauges */}
               <SystemHealthGauges />
 
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 20 }}>
-                <div
-                  style={{
-                    background: '#FFFFFF',
-                    borderRadius: 20,
-                    padding: '24px 28px',
-                    border: '1px solid #E2E8F0',
-                    boxShadow: '0 4px 20px -2px rgba(15, 23, 42, 0.04)',
-                  }}
-                >
-                  <h3 style={{ fontSize: '1.15rem', fontWeight: 800, margin: '0 0 16px 0', color: '#0F172A' }}>
-                    Thông Số Hạ Tầng Server
-                  </h3>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 12, fontSize: '0.9rem' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #F1F5F9', paddingBottom: 8 }}>
-                      <span style={{ color: '#64748B' }}>Trạng thái API:</span>
-                      <span style={{ fontWeight: 800, color: '#10B981' }}>200 OK • UP</span>
+              {/* Server Spec & Memory Process */}
+              <div className="cols2">
+                <div className="card">
+                  <h2><span className="dot g" />Thông số hạ tầng Server</h2>
+                  <div className="mt8">
+                    <div className="kv">
+                      <span>Trạng thái API Backend</span>
+                      <b style={{ color: 'var(--green-dark)' }}>200 OK · UP</b>
                     </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #F1F5F9', paddingBottom: 8 }}>
-                      <span style={{ color: '#64748B' }}>Cơ sở dữ liệu MySQL:</span>
-                      <span style={{ fontWeight: 800, color: '#10B981' }}>Connected (datn_2)</span>
+                    <div className="kv">
+                      <span>Cơ sở dữ liệu MySQL</span>
+                      <b style={{ color: 'var(--green-dark)' }}>Connected (datn_2)</b>
                     </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #F1F5F9', paddingBottom: 8 }}>
-                      <span style={{ color: '#64748B' }}>Mã hóa mật khẩu:</span>
-                      <span style={{ fontWeight: 800 }}>BCrypt 10 rounds</span>
+                    <div className="kv">
+                      <span>Mã hóa mật khẩu</span>
+                      <b>BCrypt 10 rounds</b>
                     </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #F1F5F9', paddingBottom: 8 }}>
-                      <span style={{ color: '#64748B' }}>Xác thực bảo mật:</span>
-                      <span style={{ fontWeight: 800 }}>JWT Bearer (HS512)</span>
+                    <div className="kv">
+                      <span>Xác thực bảo mật</span>
+                      <b>JWT Bearer (HS512)</b>
                     </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #F1F5F9', paddingBottom: 8 }}>
-                      <span style={{ color: '#64748B' }}>Dịch vụ AI Voice:</span>
-                      <span style={{ fontWeight: 800, color: '#10B981' }}>Active (Azure Speech)</span>
+                    <div className="kv">
+                      <span>Dịch vụ AI Voice</span>
+                      <b style={{ color: 'var(--green-dark)' }}>Active (Azure Speech)</b>
                     </div>
                   </div>
                 </div>
 
-                <div
-                  style={{
-                    background: '#FFFFFF',
-                    borderRadius: 20,
-                    padding: '24px 28px',
-                    border: '1px solid #E2E8F0',
-                    boxShadow: '0 4px 20px -2px rgba(15, 23, 42, 0.04)',
-                  }}
-                >
-                  <h3 style={{ fontSize: '1.15rem', fontWeight: 800, margin: '0 0 16px 0', color: '#0F172A' }}>
-                    Kiểm Soát Bộ Nhớ & Tiến Trình
-                  </h3>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 12, fontSize: '0.9rem' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #F1F5F9', paddingBottom: 8 }}>
-                      <span style={{ color: '#64748B' }}>JVM Uptime:</span>
-                      <span style={{ fontWeight: 800 }}>{systemHealth?.uptime || 'Đang chạy liên tục (34h)'}</span>
+                <div className="card">
+                  <h2><span className="dot" />Kiểm soát bộ nhớ &amp; Tiến trình</h2>
+                  <div className="mt8">
+                    <div className="kv">
+                      <span>JVM Uptime</span>
+                      <b>{systemHealth?.uptime || 'Hoạt động liên tục (34h)'}</b>
                     </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #F1F5F9', paddingBottom: 8 }}>
-                      <span style={{ color: '#64748B' }}>HikariCP Connection Pool:</span>
-                      <span style={{ fontWeight: 800, color: '#10B981' }}>{systemHealth?.dbPoolStatus || 'Healthy (Max 10)'}</span>
+                    <div className="kv">
+                      <span>HikariCP Connection Pool</span>
+                      <b style={{ color: 'var(--green-dark)' }}>{systemHealth?.dbPoolStatus || 'Healthy (Max 10)'}</b>
                     </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #F1F5F9', paddingBottom: 8 }}>
-                      <span style={{ color: '#64748B' }}>Flyway Schema Version:</span>
-                      <span style={{ fontWeight: 800 }}>V105 (Up to date)</span>
+                    <div className="kv">
+                      <span>Flyway Schema Version</span>
+                      <b>V105 (Up to date)</b>
                     </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #F1F5F9', paddingBottom: 8 }}>
-                      <span style={{ color: '#64748B' }}>Độ trễ API nội bộ:</span>
-                      <span style={{ fontWeight: 800, color: '#10B981' }}>~12ms</span>
+                    <div className="kv">
+                      <span>Độ trễ API nội bộ</span>
+                      <b style={{ color: 'var(--green-dark)' }}>~12ms</b>
+                    </div>
+                    <div className="kv">
+                      <span>Tải trung bình CPU</span>
+                      <b>14.2%</b>
                     </div>
                   </div>
                 </div>

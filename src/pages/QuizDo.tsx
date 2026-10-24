@@ -3,8 +3,6 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { quizApi, aiApi, errMsg } from '../api';
 import type { QuizDetail, Attempt } from '../api';
 import { Icon } from '../components/icons';
-import { motion } from 'motion/react';
-import { staggerContainer, staggerItem } from '../motion';
 
 export default function QuizDo() {
   const { id } = useParams();
@@ -50,7 +48,15 @@ export default function QuizDo() {
     setSubmitting(true);
     try {
       const { data } = await quizApi.submit(attempt.attemptId, payload);
-      nav(`/quiz/${id}/result`, { state: { result: data, title: quiz?.title } });
+      nav(`/quiz/${id}/result`, {
+        state: {
+          result: data,
+          title: quiz?.title,
+          attemptId: attempt.attemptId,
+          quiz,
+          userAnswers: answers,
+        },
+      });
     } catch (e) {
       setErr(errMsg(e, 'Nộp bài lỗi, thử lại nhé.'));
       setSubmitting(false);
@@ -61,140 +67,116 @@ export default function QuizDo() {
   if (!quiz) return <div className="content"><div className="loading">Đang tải đề...</div></div>;
 
   return (
-    <div className="content narrow">
-      <div className="row" style={{ alignItems: 'flex-start', flexWrap: 'wrap', gap: 14 }}>
-        <div>
+    <div className="content" style={{ maxWidth: 820 }}>
+      {/* Top Header */}
+      <div className="pagehead">
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
           <button
             onClick={() => {
               if (confirm('Bạn có chắc muốn thoát bài thi này? Tiến trình làm bài sẽ không được lưu.')) nav('/quiz');
             }}
+            className="sub"
             style={{
               background: 'none',
               border: 'none',
-              color: 'var(--muted)',
-              fontSize: 13,
-              fontWeight: 700,
+              color: 'var(--primary)',
+              fontSize: 14,
+              fontWeight: 800,
               cursor: 'pointer',
-              marginBottom: 4,
+              padding: 0,
             }}
           >
             ← Thoát bài thi
           </button>
-          <h1 style={{ fontSize: 24, fontWeight: 900, color: 'var(--ink)' }}>{quiz.title}</h1>
-          <div className="sub" style={{ marginTop: 2 }}>
-            Tổng số: <b>{quiz.questions.length}</b> câu hỏi · Đã trả lời: <b>{Object.keys(answers).length}</b>/{quiz.questions.length}
-          </div>
         </div>
-        <div
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: 8,
-            padding: '8px 18px',
-            borderRadius: 99,
-            background: secs < 180 ? '#FEE2E2' : '#EFF6FF',
-            border: `1.5px solid ${secs < 180 ? '#FECACA' : '#BFDBFE'}`,
-            color: secs < 180 ? '#DC2626' : '#2563EB',
-            fontSize: 18,
-            fontWeight: 900,
-            fontVariantNumeric: 'tabular-nums',
-            boxShadow: 'var(--shadow-sm)',
-          }}
-        >
-          <Icon n="clock" s={20} /> {mm}:{ss}
+        <h1>Quiz: {quiz.title}</h1>
+        <div className="sub">
+          {quiz.questions.length} câu hỏi · đáp án được chấm và phân tích khi nộp bài
         </div>
       </div>
 
-      <div style={{ marginTop: 14 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, fontWeight: 700, color: 'var(--muted)', marginBottom: 6 }}>
-          <span>Tiến độ làm bài</span>
-          <span style={{ color: 'var(--primary)', fontWeight: 800 }}>
-            {Math.round((Object.keys(answers).length / quiz.questions.length) * 100)}%
-          </span>
+      {/* Flashnav with Timer matching quiz.html */}
+      <div className="flashnav" style={{ marginBottom: 18 }}>
+        <span className={'pill' + (secs < 180 ? ' warn' : '')} style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+          <svg viewBox="0 0 24 24" className="ic" style={{ width: 16, height: 16 }}><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+          {mm}:{ss}
+        </span>
+        <div className="progress">
+          <i style={{ width: `${(Object.keys(answers).length / quiz.questions.length) * 100}%` }} />
         </div>
-        <div className="progress" style={{ height: 8, background: '#E2E8F0', borderRadius: 99, overflow: 'hidden' }}>
-          <i
-            style={{
-              width: `${(Object.keys(answers).length / quiz.questions.length) * 100}%`,
-              transition: 'width 0.35s cubic-bezier(0.16, 1, 0.3, 1)',
-              background: 'linear-gradient(90deg, #4F46E5 0%, #10B981 100%)',
-              height: '100%',
-              display: 'block',
-              borderRadius: 99,
-            }}
-          />
-        </div>
+        <span className="pill">
+          {Object.keys(answers).length}/{quiz.questions.length} câu
+        </span>
       </div>
 
       {err && <div className="error">{err}</div>}
 
-      <motion.div
-        variants={staggerContainer}
-        initial="hidden"
-        animate="visible"
-        style={{ display: 'flex', flexDirection: 'column', gap: 18, marginTop: 10 }}
-      >
-        {quiz.questions.map((q, qi) => (
-          <motion.div
-            variants={staggerItem}
-            className="card"
-            key={q.id}
-            style={{ borderRadius: 18, padding: '24px 22px' }}
+      {/* Reading Passage if available */}
+      {quiz.description && (
+        <div
+          className="card"
+          style={{
+            padding: '20px 24px',
+            marginBottom: 20,
+            background: 'var(--surface-hover, #f8fafc)',
+            border: '1px solid var(--border)',
+            borderRadius: 12,
+          }}
+        >
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              fontWeight: 700,
+              fontSize: 14,
+              color: 'var(--primary)',
+              marginBottom: 12,
+            }}
           >
-            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, marginBottom: 14 }}>
-              <span className="pill" style={{ fontWeight: 800, fontSize: 12, padding: '3px 10px', background: 'rgba(79, 70, 229, 0.08)', color: 'var(--primary)' }}>
+            <svg viewBox="0 0 24 24" style={{ width: 18, height: 18, fill: 'currentColor' }}>
+              <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/>
+            </svg>
+            Đoạn văn bài đọc (Reading Passage)
+          </div>
+          <div
+            style={{
+              whiteSpace: 'pre-wrap',
+              lineHeight: 1.7,
+              fontSize: 15,
+              color: 'var(--text-main)',
+              fontFamily: 'inherit',
+            }}
+          >
+            {quiz.description}
+          </div>
+        </div>
+      )}
+
+      {/* Question List */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+        {quiz.questions.map((q, qi) => (
+          <div className="card" key={q.id} style={{ padding: 24 }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 16 }}>
+              <span className="pill level" style={{ fontSize: 12 }}>
                 Câu {qi + 1}
               </span>
-              <b style={{ fontSize: 16.5, color: 'var(--ink)', lineHeight: 1.5 }}>{q.content}</b>
+              <h2 style={{ fontSize: 18, margin: 0, lineHeight: 1.45 }}>{q.content}</h2>
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 11 }}>
               {q.options.map((op, oi) => {
                 const isSelected = answers[q.id] === oi;
                 return (
-                  <motion.button
+                  <button
                     key={oi}
-                    whileTap={{ scale: 0.99 }}
+                    type="button"
+                    className={'opt' + (isSelected ? ' sel' : '')}
                     onClick={() => setAnswers((a) => ({ ...a, [q.id]: oi }))}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 14,
-                      width: '100%',
-                      textAlign: 'left',
-                      padding: '12px 16px',
-                      minHeight: 52,
-                      background: isSelected ? '#EEF2FF' : '#FFFFFF',
-                      border: `1.5px solid ${isSelected ? 'var(--primary)' : 'var(--line)'}`,
-                      borderRadius: 12,
-                      fontSize: 15,
-                      fontWeight: 700,
-                      color: isSelected ? 'var(--primary-dark)' : 'var(--ink)',
-                      cursor: 'pointer',
-                      transition: 'background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease',
-                      boxShadow: isSelected ? '0 2px 8px rgba(79, 70, 229, 0.1)' : 'none',
-                    }}
                   >
-                    <span
-                      style={{
-                        width: 32,
-                        height: 32,
-                        borderRadius: 8,
-                        background: isSelected ? 'var(--primary)' : 'var(--bg)',
-                        color: isSelected ? '#FFFFFF' : 'var(--muted)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontWeight: 900,
-                        fontSize: 14,
-                        flexShrink: 0,
-                        transition: 'background 0.2s ease, color 0.2s ease',
-                      }}
-                    >
-                      {'ABCD'[oi]}
-                    </span>
+                    <span className="k">{'ABCD'[oi]}</span>
                     <span style={{ flex: 1 }}>{op}</span>
-                  </motion.button>
+                  </button>
                 );
               })}
             </div>
@@ -203,11 +185,11 @@ export default function QuizDo() {
               <div
                 style={{
                   marginTop: 14,
-                  padding: '10px 14px',
-                  background: '#FFFBEB',
+                  padding: '12px 16px',
+                  background: 'var(--yellow-bg)',
                   border: '1px solid #FDE68A',
-                  borderRadius: 10,
-                  fontSize: 13,
+                  borderRadius: 12,
+                  fontSize: 13.5,
                   color: '#92400E',
                   lineHeight: 1.5,
                 }}
@@ -216,36 +198,33 @@ export default function QuizDo() {
               </div>
             ) : (
               <button
+                type="button"
                 className="link mt8"
                 onClick={() => getHint(q.id)}
-                style={{ fontSize: 13, display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 12 }}
+                style={{ fontSize: 13, display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 14 }}
               >
                 <Icon n="bulb" s={15} /> Xin gợi ý từ Vi AI
               </button>
             )}
-          </motion.div>
+          </div>
         ))}
-      </motion.div>
+      </div>
 
-      <motion.button
-        className="btn block"
-        whileTap={{ scale: submitting ? 1 : 0.985 }}
+      <button
+        type="button"
+        className="btn block mt16"
         onClick={submit}
         disabled={submitting}
         style={{
-          marginTop: 20,
-          minHeight: 54,
+          minHeight: 52,
           fontSize: 16,
-          fontWeight: 900,
-          opacity: submitting ? 0.7 : 1,
-          cursor: submitting ? 'wait' : 'pointer',
+          marginTop: 22,
         }}
       >
-        <Icon n="checkc" s={20} />
         {submitting
           ? 'Đang chấm điểm bài thi...'
           : `Nộp bài thi (${Object.keys(answers).length}/${quiz.questions.length} câu)`}
-      </motion.button>
+      </button>
     </div>
   );
 }

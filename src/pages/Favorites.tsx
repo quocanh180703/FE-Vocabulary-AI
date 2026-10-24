@@ -2,30 +2,11 @@ import { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { wordApi, errMsg, getPartOfSpeechBadgeStyle } from '../api';
 import type { Word } from '../api';
-import { Icon, Mascot } from '../components/icons';
+import { Icon } from '../components/icons';
 import { AutocompleteSearch } from '../components/AutocompleteSearch';
 
 const CEFR_LEVELS = ['ALL', 'A1', 'A2', 'B1', 'B2', 'C1', 'C2'] as const;
 
-const getLevelBadgeStyle = (lvl?: string) => {
-  const l = (lvl || '').toUpperCase();
-  switch (l) {
-    case 'A1':
-      return { bg: '#ecfdf5', color: '#047857', border: '#a7f3d0' };
-    case 'A2':
-      return { bg: '#f0fdfa', color: '#0f766e', border: '#99f6e4' };
-    case 'B1':
-      return { bg: '#eff6ff', color: '#1d4ed8', border: '#bfdbfe' };
-    case 'B2':
-      return { bg: '#f5f3ff', color: '#6d28d9', border: '#ddd6fe' };
-    case 'C1':
-      return { bg: '#fffbeb', color: '#b45309', border: '#fde68a' };
-    case 'C2':
-      return { bg: '#fff1f2', color: '#be123c', border: '#fecdd3' };
-    default:
-      return { bg: '#f1f5f9', color: '#475569', border: '#cbd5e1' };
-  }
-};
 
 export default function Favorites() {
   const [words, setWords] = useState<Word[]>([]);
@@ -142,65 +123,32 @@ export default function Favorites() {
   }, [words, selectedLevel, search]);
 
   return (
-    <div className="content" style={{ maxWidth: 1080 }}>
-      {/* Top Header Card */}
-      <div
-        className="card"
-        style={{
-          padding: '24px 28px',
-          background: 'linear-gradient(135deg, #ffffff 0%, #f0f7ff 100%)',
-          border: '1.5px solid #d5dde8',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          gap: 20,
-          flexWrap: 'wrap',
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-          <div
-            style={{
-              width: 56,
-              height: 56,
-              borderRadius: 14,
-              background: '#fee2e2',
-              color: '#ef4444',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              boxShadow: '0 4px 12px rgba(239, 68, 68, 0.15)',
-            }}
-          >
-            <Icon n="heart" s={30} />
-          </div>
-          <div>
-            <h1 style={{ fontSize: 28, fontWeight: 900, color: 'var(--ink, #0A2540)', margin: 0 }}>
-              Từ vựng yêu thích
-            </h1>
-            <div className="sub" style={{ fontSize: 15, marginTop: 4 }}>
-              Bạn đang lưu <b>{words.length}</b> từ vựng để tiện xem lại và rèn luyện mỗi ngày.
-            </div>
+    <div className="content" style={{ maxWidth: 1180 }}>
+      {/* Page Header matching favorites.html */}
+      <div className="pagehead" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 14 }}>
+        <div>
+          <h1>Từ yêu thích của bạn</h1>
+          <div className="sub">
+            {words.length} từ đã lưu · bấm vào từ để xem chi tiết và giải thích AI
           </div>
         </div>
-
-        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: 10 }}>
           {words.length > 0 && (
             <button
-              className="btn green"
+              className="btn"
               onClick={() => nav('/review?mode=FAVORITES')}
-              style={{ minHeight: 48, padding: '0 20px', fontSize: 15, borderRadius: 8 }}
-              title="Mở chế độ Flashcard ôn tập các từ yêu thích"
+              style={{ minHeight: 46, padding: '0 22px', fontSize: 14 }}
             >
-              <Icon n="book" s={20} />
-              <span>Ôn tập Flashcard</span>
+              <svg viewBox="0 0 24 24" className="ic"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.4 1 2.3h6c0-.9.4-1.8 1-2.3A7 7 0 0 0 12 2z"/></svg>
+              Ôn bằng flashcard
             </button>
           )}
           <button
             className="btn ghost"
             onClick={() => nav('/words')}
-            style={{ minHeight: 48, padding: '0 18px', fontSize: 15, borderRadius: 8 }}
+            style={{ minHeight: 46, padding: '0 20px', fontSize: 14 }}
           >
-            <span>+ Khám phá thêm từ</span>
+            + Tìm thêm từ
           </button>
         </div>
       </div>
@@ -208,397 +156,151 @@ export default function Favorites() {
       {err && <div className="error">{err}</div>}
 
       {/* Filter and Search Bar */}
-      <div
-        className="card"
-        style={{
-          padding: '16px 20px',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 14,
-          background: 'var(--card, #ffffff)',
-        }}
-      >
-        {/* Search input with prefix autocomplete */}
+      <div style={{ marginBottom: 14 }}>
         <AutocompleteSearch
           value={search}
           onChange={setSearch}
           onSearch={(query) => setSearch(query)}
-          placeholder="Tìm từ vựng yêu thích theo tiền tố (ví dụ: app, apple, difference) hoặc nghĩa..."
+          placeholder="Tìm từ vựng yêu thích theo từ hoặc nghĩa..."
           type="favorites"
           favoriteWords={words}
           limit={8}
-          inputStyle={{ minHeight: 48, fontSize: 15 }}
         />
-
-        {/* Level Filter Chips */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-          <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--muted, #64748b)', marginRight: 4 }}>
-            Cấp độ:
-          </span>
-          {CEFR_LEVELS.map((lvl) => {
-            const count = levelCounts[lvl] || 0;
-            const isSelected = selectedLevel === lvl;
-            const label = lvl === 'ALL' ? 'Tất cả' : lvl;
-
-            // Chỉ hiển thị level nếu có từ hoặc là 'ALL'
-            if (lvl !== 'ALL' && count === 0) return null;
-
-            return (
-              <button
-                key={lvl}
-                onClick={() => setSelectedLevel(lvl)}
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: 6,
-                  padding: '6px 14px',
-                  borderRadius: 20,
-                  fontSize: 13,
-                  fontWeight: 800,
-                  cursor: 'pointer',
-                  border: isSelected ? '1.5px solid var(--primary, #1565c0)' : '1px solid var(--line, #d5dde8)',
-                  background: isSelected ? 'var(--tint, #edf4fc)' : '#ffffff',
-                  color: isSelected ? 'var(--primary-dark, #0d47a1)' : 'var(--ink, #0a2540)',
-                  transition: 'all 0.15s',
-                }}
-              >
-                <span>{label}</span>
-                <span
-                  style={{
-                    fontSize: 11,
-                    padding: '1px 6px',
-                    borderRadius: 10,
-                    background: isSelected ? 'var(--primary, #1565c0)' : 'var(--bg, #f6f9fc)',
-                    color: isSelected ? '#ffffff' : 'var(--muted, #64748b)',
-                  }}
-                >
-                  {count}
-                </span>
-              </button>
-            );
-          })}
-        </div>
       </div>
 
-      {/* Main Content List */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      {/* Level Filter Chips */}
+      <div className="chiprow" style={{ marginBottom: 14 }}>
+        {CEFR_LEVELS.map((lvl) => {
+          const count = levelCounts[lvl] || 0;
+          const isSelected = selectedLevel === lvl;
+          const label = lvl === 'ALL' ? 'Tất cả cấp độ' : lvl;
+          if (lvl !== 'ALL' && count === 0) return null;
+
+          return (
+            <button
+              key={lvl}
+              onClick={() => setSelectedLevel(lvl)}
+              className={'fchip' + (isSelected ? ' on' : '')}
+            >
+              {label} ({count})
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Word List Card matching favorites.html */}
+      <div className="card" style={{ padding: 12 }}>
         {loading ? (
-          <div className="card loading" style={{ padding: 48, fontSize: 16 }}>
-            <Mascot s={36} />
-            <span>Đang tải danh sách từ yêu thích của bạn...</span>
+          <div className="loading" style={{ padding: 48 }}>
+            <Icon n="spark" s={20} /> Đang tải danh sách từ yêu thích của bạn...
           </div>
         ) : words.length === 0 ? (
-          /* Empty State - No favorites saved */
-          <div
-            className="card"
-            style={{
-              padding: '60px 24px',
-              textAlign: 'center',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              gap: 16,
-              background: '#ffffff',
-            }}
-          >
-            <div
-              style={{
-                width: 80,
-                height: 80,
-                borderRadius: '50%',
-                background: '#fee2e2',
-                color: '#ef4444',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                marginBottom: 6,
-              }}
-            >
-              <Icon n="heart" s={42} />
+          <div className="empty" style={{ padding: '48px 20px', textAlign: 'center' }}>
+            <div style={{ fontSize: 36, marginBottom: 8 }}>❤️</div>
+            <b style={{ fontSize: 16, color: 'var(--ink)' }}>Chưa có từ yêu thích nào</b>
+            <div className="sub mt8" style={{ maxWidth: 420, margin: '8px auto 0' }}>
+              Khi học từ vựng, hãy bấm biểu tượng trái tim để lưu lại từ cần rèn luyện nhé.
             </div>
-            <h2 style={{ fontSize: 22, fontWeight: 900, color: 'var(--ink, #0A2540)' }}>
-              Chưa có từ yêu thích nào
-            </h2>
-            <p style={{ maxWidth: 460, color: 'var(--muted, #64748b)', fontSize: 15, lineHeight: 1.6, margin: 0 }}>
-              Khi duyệt từ vựng ở trang <b>Từ vựng</b> hoặc khi làm bài thi, hãy bấm biểu tượng trái tim{' '}
-              <span style={{ color: '#ef4444' }}>❤️</span> để lưu lại các từ bạn muốn ghi nhớ nhé.
-            </p>
             <button
-              className="btn"
+              className="btn mt16"
               onClick={() => nav('/words')}
-              style={{ minHeight: 48, padding: '0 24px', fontSize: 15, marginTop: 10, borderRadius: 8 }}
+              style={{ minHeight: 44, padding: '0 24px' }}
             >
-              <Icon n="book" s={20} />
-              <span>Khám phá kho từ vựng ngay</span>
+              Khám phá từ vựng ngay
             </button>
           </div>
         ) : filteredWords.length === 0 ? (
-          /* Empty State - Search filter has no match */
-          <div
-            className="card"
-            style={{
-              padding: '48px 20px',
-              textAlign: 'center',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              gap: 12,
-            }}
-          >
-            <div style={{ fontSize: 32 }}>🔍</div>
-            <h3 style={{ fontSize: 18, fontWeight: 800 }}>Không tìm thấy từ yêu thích phù hợp</h3>
-            <p className="sub" style={{ fontSize: 14 }}>
+          <div className="empty" style={{ padding: '36px 20px', textAlign: 'center' }}>
+            <div style={{ fontSize: 32, marginBottom: 8 }}>🔍</div>
+            <b style={{ fontSize: 16, color: 'var(--ink)' }}>Không tìm thấy từ yêu thích phù hợp</b>
+            <div className="sub mt8">
               Không có từ nào khớp với từ khóa "{search}" ở cấp độ {selectedLevel === 'ALL' ? 'Tất cả' : selectedLevel}.
-            </p>
+            </div>
             <button
-              className="btn ghost"
+              className="btn ghost mt16"
               onClick={() => {
                 setSearch('');
                 setSelectedLevel('ALL');
               }}
-              style={{ minHeight: 40, padding: '0 16px', fontSize: 14, borderRadius: 6 }}
             >
               Xóa bộ lọc tìm kiếm
             </button>
           </div>
         ) : (
-          /* Words Grid / List */
           filteredWords.map((w) => {
             const wordText = w.word || w.lemma || '';
             const meaningText = w.vietnameseMeaning || w.meaning || '';
-            const lvlStyle = getLevelBadgeStyle(w.level || w.cefrLevel);
             const posBadge = w.partOfSpeech ? getPartOfSpeechBadgeStyle(w.partOfSpeech) : null;
-            const isPlaying = playingId === w.id;
 
             return (
               <div
                 key={w.id}
-                className="card"
+                className="wrow"
                 onClick={() => nav(`/words/${w.id}`)}
-                style={{
-                  padding: '18px 22px',
-                  display: 'flex',
-                  alignItems: 'flex-start',
-                  justifyContent: 'space-between',
-                  gap: 16,
-                  cursor: 'pointer',
-                  border: '1.5px solid var(--line, #d5dde8)',
-                  borderRadius: 12,
-                  transition: 'all 0.18s ease-in-out',
-                  position: 'relative',
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.borderColor = 'var(--primary, #1565c0)';
-                  e.currentTarget.style.boxShadow = '0 6px 18px rgba(21, 101, 192, 0.08)';
-                  e.currentTarget.style.transform = 'translateY(-2px)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.borderColor = 'var(--line, #d5dde8)';
-                  e.currentTarget.style.boxShadow = 'none';
-                  e.currentTarget.style.transform = 'translateY(0)';
-                }}
+                style={{ cursor: 'pointer' }}
               >
-                {/* Left: Speaker + Word info */}
-                <div style={{ flex: 1, minWidth: 0, display: 'flex', gap: 16 }}>
-                  {/* Speaker Button */}
-                  <button
-                    onClick={(e) => playAudio(w, e)}
-                    style={{
-                      width: 44,
-                      height: 44,
-                      borderRadius: 10,
-                      background: isPlaying ? 'var(--primary, #1565c0)' : 'var(--tint, #edf4fc)',
-                      color: isPlaying ? '#ffffff' : 'var(--primary-dark, #0d47a1)',
-                      border: '1px solid var(--line, #d5dde8)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      cursor: 'pointer',
-                      flexShrink: 0,
-                      marginTop: 2,
-                      transition: 'all 0.15s',
-                    }}
-                    title="Nghe phát âm chuẩn"
-                  >
-                    <Icon n="vol" s={22} />
-                  </button>
+                <span className="wchk">
+                  <svg viewBox="0 0 24 24" className="ic"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+                </span>
 
-                  {/* Word Content */}
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    {/* Head row: Word, Phonetic, Badges */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-                      <span
-                        style={{
-                          fontSize: 22,
-                          fontWeight: 900,
-                          color: 'var(--ink, #0A2540)',
-                          letterSpacing: '-0.3px',
-                        }}
-                      >
-                        {wordText}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div className="w">
+                    {wordText}{' '}
+                    {w.pronunciation && (
+                      <span style={{ color: 'var(--muted)', fontSize: 13.5, fontWeight: 700 }}>
+                        {w.pronunciation}
                       </span>
+                    )}
+                    <button
+                      onClick={(e) => playAudio(w, e)}
+                      title="Nghe phát âm chuẩn"
+                      className={'speakbtn' + (playingId === w.id ? ' on' : '')}
+                      style={{ width: 30, height: 30, marginLeft: 8, display: 'inline-flex' }}
+                    >
+                      <svg viewBox="0 0 24 24" className="ic" style={{ width: 16, height: 16 }}><path d="M11 5 6 9H2v6h4l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.4 5.6a9 9 0 0 1 0 12.8"/></svg>
+                    </button>
+                  </div>
 
-                      {w.pronunciation && (
-                        <span
-                          style={{
-                            fontSize: 14,
-                            fontWeight: 600,
-                            color: 'var(--muted, #64748b)',
-                            fontFamily: 'system-ui, sans-serif',
-                          }}
-                        >
-                          {w.pronunciation}
-                        </span>
-                      )}
-
-                      {/* Level Badge */}
+                  <div className="m">
+                    {posBadge && (
                       <span
+                        className="pill"
                         style={{
-                          fontSize: 12,
+                          fontSize: 11,
+                          padding: '1px 7px',
+                          background: posBadge.bg,
+                          color: posBadge.color,
+                          border: `1px solid ${posBadge.border}`,
                           fontWeight: 800,
-                          padding: '2px 8px',
-                          borderRadius: 6,
-                          background: lvlStyle.bg,
-                          color: lvlStyle.color,
-                          border: `1px solid ${lvlStyle.border}`,
+                          marginRight: 6,
                         }}
                       >
-                        {w.level || w.cefrLevel || 'A1'}
+                        {posBadge.shortLabel}
                       </span>
-
-                      {/* Part of Speech Badge */}
-                      {posBadge && (
-                        <span
-                          style={{
-                            fontSize: 12,
-                            fontWeight: 700,
-                            padding: '2px 8px',
-                            borderRadius: 6,
-                            background: posBadge.bg,
-                            color: posBadge.color,
-                            border: `1px solid ${posBadge.border}`,
-                          }}
-                        >
-                          {posBadge.shortLabel}
-                        </span>
-                      )}
-                    </div>
-
-                    {/* Vietnamese Meaning Box */}
-                    {meaningText && (
-                      <div
-                        style={{
-                          marginTop: 10,
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: 8,
-                          background: '#f0fdf4',
-                          border: '1px solid #bbf7d0',
-                          color: '#15803d',
-                          padding: '6px 14px',
-                          borderRadius: 8,
-                          fontSize: 15,
-                          fontWeight: 800,
-                          lineHeight: 1.4,
-                        }}
-                      >
-                        <span>👉</span>
-                        <span>{meaningText}</span>
-                      </div>
                     )}
-
-                    {/* Example sentence or English Definition */}
-                    {w.example && (
-                      <div
-                        style={{
-                          marginTop: 8,
-                          fontSize: 13.5,
-                          color: 'var(--muted, #64748b)',
-                          fontStyle: 'italic',
-                          lineHeight: 1.5,
-                          display: '-webkit-box',
-                          WebkitLineClamp: 2,
-                          WebkitBoxOrient: 'vertical',
-                          overflow: 'hidden',
-                        }}
-                      >
-                        "{w.example}"
-                      </div>
-                    )}
-
-                    {!w.example && w.definition && w.definition !== meaningText && (
-                      <div
-                        style={{
-                          marginTop: 8,
-                          fontSize: 13,
-                          color: 'var(--muted, #64748b)',
-                          lineHeight: 1.45,
-                          display: '-webkit-box',
-                          WebkitLineClamp: 2,
-                          WebkitBoxOrient: 'vertical',
-                          overflow: 'hidden',
-                        }}
-                      >
-                        {w.definition}
-                      </div>
-                    )}
+                    <span>{meaningText}</span>
                   </div>
                 </div>
 
-                {/* Right: Actions */}
-                <div
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 12,
-                    flexShrink: 0,
-                    marginLeft: 12,
-                  }}
-                >
-                  <button
-                    className="btn ghost"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      nav(`/words/${w.id}`);
-                    }}
-                    style={{
-                      minHeight: 38,
-                      padding: '0 14px',
-                      fontSize: 13.5,
-                      fontWeight: 800,
-                      borderRadius: 6,
-                    }}
-                    title="Xem chi tiết từ vựng và giải thích chuyên sâu AI"
-                  >
-                    <span>Chi tiết</span>
-                    <span style={{ fontSize: 16, marginLeft: 2 }}>→</span>
-                  </button>
+                <span className="pill level">
+                  {w.level || w.cefrLevel || 'A1'}
+                </span>
 
-                  <button
-                    onClick={(e) => remove(w.id, e)}
-                    style={{
-                      width: 40,
-                      height: 40,
-                      borderRadius: 8,
-                      background: '#fee2e2',
-                      border: '1px solid #fca5a5',
-                      color: '#dc2626',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      cursor: 'pointer',
-                      transition: 'all 0.15s',
-                    }}
-                    title="Bỏ khỏi từ yêu thích"
-                    aria-label="Bỏ khỏi từ yêu thích"
-                  >
-                    <Icon n="heart" s={22} />
-                  </button>
-                </div>
+                <button
+                  className="heartbtn on"
+                  onClick={(e) => remove(w.id, e)}
+                  title="Bỏ lưu khỏi danh sách yêu thích"
+                >
+                  <svg viewBox="0 0 24 24" className="ic"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
+                </button>
               </div>
             );
           })
         )}
+      </div>
+
+      <div className="sub mt16" style={{ textAlign: 'center' }}>
+        Bấm biểu tượng trái tim đỏ để bỏ lưu từ khỏi danh sách yêu thích.
       </div>
     </div>
   );

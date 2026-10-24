@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import './LandingPage.css';
 
@@ -20,9 +20,21 @@ const VI_MESSAGES = [
 
 export default function LandingPage() {
   const { user } = useAuth();
+  const navigate = useNavigate();
+  const [isNavigating, setIsNavigating] = useState(false);
   const ctaLink = user ? '/dashboard' : '/login';
   const displayName = user?.fullName?.trim() || user?.username || (user?.email ? user.email.split('@')[0] : 'bạn');
   const userInitial = (displayName || 'U').charAt(0).toUpperCase();
+
+  const handleTransitionNavigate = (to: string) => (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (isNavigating) return;
+    setIsNavigating(true);
+    setTimeout(() => {
+      window.scrollTo(0, 0);
+      navigate(to);
+    }, 220);
+  };
 
   // State for Vi interactive 3D stage
   const stageRef = useRef<HTMLDivElement>(null);
@@ -261,7 +273,8 @@ export default function LandingPage() {
   }, []);
 
   return (
-    <div className="landing">
+    <div className={'landing' + (isNavigating ? ' page-exiting' : '')}>
+      <div className={'landing-route-bar' + (isNavigating ? ' active' : '')} />
       <div className="sheet">
         {/* Navigation Header */}
         <header>
@@ -301,7 +314,12 @@ export default function LandingPage() {
             <div className="navright">
               {user ? (
                 <>
-                  <Link to="/profile" className="user-greeting" title="Xem thông tin cá nhân">
+                  <Link
+                    to="/profile"
+                    className="user-greeting"
+                    title="Xem thông tin cá nhân"
+                    onClick={handleTransitionNavigate('/profile')}
+                  >
                     {user.avatarUrl ? (
                       <img src={user.avatarUrl} alt={displayName} className="user-avatar-mini" />
                     ) : (
@@ -311,7 +329,11 @@ export default function LandingPage() {
                       Xin chào, <strong>{displayName}</strong>
                     </span>
                   </Link>
-                  <Link className="btn small green" to="/dashboard">
+                  <Link
+                    className="btn small green"
+                    to="/dashboard"
+                    onClick={handleTransitionNavigate('/dashboard')}
+                  >
                     Vào Dashboard
                   </Link>
                 </>
@@ -320,7 +342,11 @@ export default function LandingPage() {
                   <a className="loginlink" href="#bang-gia" onClick={(e) => scrollToSection(e, 'bang-gia')}>
                     Học thử miễn phí
                   </a>
-                  <Link className="btn small green" to="/login">
+                  <Link
+                    className="btn small green"
+                    to="/login"
+                    onClick={handleTransitionNavigate('/login')}
+                  >
                     Đăng nhập
                   </Link>
                 </>
@@ -343,7 +369,11 @@ export default function LandingPage() {
                 Vi ôn cùng bạn <b>đúng lúc sắp quên</b> (SRS 1–3–7–14–30 ngày), giải thích từng từ, chấm nói theo 5 tiêu chí.
               </p>
               <div className="cta-row">
-                <Link className="btn" to={ctaLink}>
+                <Link
+                  className="btn"
+                  to={ctaLink}
+                  onClick={handleTransitionNavigate(ctaLink)}
+                >
                   Bắt đầu học miễn phí
                 </Link>
                 <a className="link-arrow" href="#luyen-noi" onClick={(e) => scrollToSection(e, 'luyen-noi')}>
@@ -757,46 +787,52 @@ export default function LandingPage() {
                 <div className="amount">
                   0đ<small> / mãi mãi</small>
                 </div>
-                <p className="note">Làm quen và xây thói quen học tập hàng ngày.</p>
+                <p className="note">Làm quen và xây dựng thói quen học tiếng Anh mỗi ngày.</p>
                 <ul>
                   <li>
                     <svg className="ic" viewBox="0 0 24 24">
                       <path d="M20 6 9 17l-5-5" />
                     </svg>
-                    Học từ vựng theo cấp A1–C1
+                    Kho từ Oxford căn bản A1–A2
                   </li>
                   <li>
                     <svg className="ic" viewBox="0 0 24 24">
                       <path d="M20 6 9 17l-5-5" />
                     </svg>
-                    Ôn tập flashcard theo SRS
+                    Ôn tập Flashcard SRS &amp; Quiz chấm điểm
                   </li>
                   <li>
                     <svg className="ic" viewBox="0 0 24 24">
                       <path d="M20 6 9 17l-5-5" />
                     </svg>
-                    Quiz luyện tập có chấm điểm
+                    5 lượt/ngày: Chat Vi, Luyện nói, Sửa ngữ pháp
                   </li>
                   <li>
                     <svg className="ic" viewBox="0 0 24 24">
                       <path d="M20 6 9 17l-5-5" />
                     </svg>
-                    Lưu từ yêu thích
+                    10 lượt/ngày: AI giải thích từ vựng
+                  </li>
+                  <li>
+                    <svg className="ic" viewBox="0 0 24 24">
+                      <path d="M20 6 9 17l-5-5" />
+                    </svg>
+                    2 lượt/ngày: Lộ trình cá nhân hóa AI
                   </li>
                   <li className="off">
                     <svg className="ic" viewBox="0 0 24 24">
                       <path d="M18 6 6 18M6 6l12 12" />
                     </svg>
-                    Luyện nói chấm 5 tiêu chí
+                    Mở khóa kho từ nâng cao B1–C1
                   </li>
                   <li className="off">
                     <svg className="ic" viewBox="0 0 24 24">
                       <path d="M18 6 6 18M6 6l12 12" />
                     </svg>
-                    Chat với Vi không giới hạn
+                    Không giới hạn lượt dùng AI
                   </li>
                 </ul>
-                <Link className="btn ghost" to={ctaLink}>
+                <Link className="btn ghost" to={ctaLink} onClick={handleTransitionNavigate(ctaLink)}>
                   Tạo tài khoản miễn phí
                 </Link>
               </div>
@@ -806,53 +842,53 @@ export default function LandingPage() {
                   <div className="pname" style={{ color: 'var(--primary-dark)' }}>
                     Premium
                   </div>
-                  <span className="pill level">Gói năm tiết kiệm 24%</span>
+                  <span className="pill level">Phổ biến nhất</span>
                 </div>
                 <div className="amount">
                   99.000đ<small> / tháng</small>
                 </div>
                 <p className="note">
-                  hoặc <b>899.000đ / năm</b> (≈ 74.900đ/tháng). Hủy khi nào cũng được, dùng hết hạn đã trả.
+                  Gia hạn linh hoạt từng tháng. Hủy khi nào cũng được, dùng hết hạn đã trả.
                 </p>
                 <ul>
                   <li>
                     <svg className="ic" viewBox="0 0 24 24">
                       <path d="M20 6 9 17l-5-5" />
                     </svg>
-                    Mọi tính năng Miễn phí
+                    Mở khóa toàn bộ 5.000+ từ Oxford A1–C1
                   </li>
                   <li>
                     <svg className="ic" viewBox="0 0 24 24">
                       <path d="M20 6 9 17l-5-5" />
                     </svg>
-                    Luyện nói chấm 5 tiêu chí bằng AI
+                    Gia sư Chat AI Vi không giới hạn
                   </li>
                   <li>
                     <svg className="ic" viewBox="0 0 24 24">
                       <path d="M20 6 9 17l-5-5" />
                     </svg>
-                    Chat Vi + AI giải thích + sửa ngữ pháp
+                    Luyện nói chấm 5 tiêu chí AI không giới hạn
                   </li>
                   <li>
                     <svg className="ic" viewBox="0 0 24 24">
                       <path d="M20 6 9 17l-5-5" />
                     </svg>
-                    Gợi ý bài học theo điểm yếu
+                    Sửa ngữ pháp &amp; Giải thích từ AI không giới hạn
                   </li>
                   <li>
                     <svg className="ic" viewBox="0 0 24 24">
                       <path d="M20 6 9 17l-5-5" />
                     </svg>
-                    Giữ nguyên giá trong suốt thời hạn gói
+                    Lộ trình AI cá nhân hóa theo điểm yếu không giới hạn
                   </li>
                   <li>
                     <svg className="ic" viewBox="0 0 24 24">
                       <path d="M20 6 9 17l-5-5" />
                     </svg>
-                    Ưu tiên tài nguyên AI tốc độ cao
+                    Ưu tiên tài nguyên AI tốc độ cao &amp; PayOS tức thì
                   </li>
                 </ul>
-                <Link className="btn" to={ctaLink}>
+                <Link className="btn" to={ctaLink} onClick={handleTransitionNavigate(ctaLink)}>
                   Dùng Premium ngay
                 </Link>
               </div>
@@ -909,7 +945,7 @@ export default function LandingPage() {
               <h2>Từ đầu tiên của bạn đang chờ.</h2>
               <p>Miễn phí, 1 phút đăng ký. Học 10 từ hôm nay, 30 ngày nữa tự kiểm chứng.</p>
             </div>
-            <Link className="btn white" to={ctaLink} style={{ minWidth: '230px' }}>
+            <Link className="btn white" to={ctaLink} onClick={handleTransitionNavigate(ctaLink)} style={{ minWidth: '230px' }}>
               Bắt đầu học miễn phí
             </Link>
           </div>

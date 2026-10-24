@@ -18,6 +18,7 @@ import { Mascot, Icon } from '../components/icons';
 import { AiExplanationBox } from '../components/AiExplanationBox';
 import { useAuth } from '../auth/AuthContext';
 import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
+import viAvatar from '../assets/vi-3d.webp';
 
 interface FlashcardWord {
   id: string | number;
@@ -408,39 +409,35 @@ export default function Review() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [cur, i, cards.length]);
 
-  // Completion Screen
+  // Completion Screen matching review-done.html
   if (i === -1) {
     const totalDone = remembered + forgotten;
-    const accuracy = totalDone > 0 ? Math.round((remembered / totalDone) * 100) : 0;
     return (
-      <div className="content narrow center" style={{ paddingTop: 40 }}>
-        <Mascot s={100} />
-        <h1 className="mt16" style={{ fontSize: 32, fontWeight: 900, color: 'var(--ink)' }}>Hoàn thành phiên ôn tập!</h1>
-        <div className="sub mt8" style={{ fontSize: 16 }}>
-          Bạn đã xuất sắc ôn qua <b>{totalDone}</b> từ vựng. Tỉ lệ nhớ đạt <b>{accuracy}%</b>!
-        </div>
-
-        <div className="cols2 mt16" style={{ maxWidth: 400, margin: '24px auto', gap: 16 }}>
-          <div className="card center" style={{ padding: '20px 16px', background: 'linear-gradient(135deg, #F0FDF4 0%, #DCFCE7 100%)', borderColor: '#BBF7D0', borderRadius: 16 }}>
-            <div style={{ color: '#166534', fontSize: 13, fontWeight: 800 }}>✓ ĐÃ THUỘC LÒNG</div>
-            <b style={{ fontSize: 34, color: '#15803D', display: 'block', marginTop: 4 }}>{remembered}</b>
+      <div className="content" style={{ maxWidth: 820 }}>
+        <div className="card" style={{ textAlign: 'center', padding: '44px 34px', margin: '26px auto 0' }}>
+          <img src={viAvatar} alt="Vi" style={{ width: 110, height: 110, borderRadius: '50%', objectFit: 'cover', boxShadow: 'var(--sh)', margin: '0 auto' }} />
+          <h1 style={{ fontSize: 31, fontWeight: 900, marginTop: 20 }}>Hoàn thành phiên ôn tập!</h1>
+          <div className="sub mt8">
+            Bạn vừa ôn xong <b>{totalDone}</b> từ vựng — chuỗi streak được giữ vững.
           </div>
-          <div className="card center" style={{ padding: '20px 16px', background: 'linear-gradient(135deg, #FEF2F2 0%, #FEE2E2 100%)', borderColor: '#FECACA', borderRadius: 16 }}>
-            <div style={{ color: '#991B1B', fontSize: 13, fontWeight: 800 }}>⚡ CẦN LUYỆN LẠI</div>
-            <b style={{ fontSize: 34, color: '#DC2626', display: 'block', marginTop: 4 }}>{forgotten}</b>
+          <div style={{ display: 'flex', gap: 12, justifyContent: 'center', marginTop: 26, flexWrap: 'wrap' }}>
+            <div className="kpi" style={{ minWidth: 150 }}><div className="lbl">Từ đã ôn</div><div className="num">{totalDone}</div></div>
+            <div className="kpi" style={{ minWidth: 150 }}><div className="lbl">Đã nhớ</div><div className="num" style={{ color: 'var(--green-dark)' }}>{remembered}</div></div>
+            <div className="kpi" style={{ minWidth: 150 }}><div className="lbl">Cần ôn lại sớm</div><div className="num" style={{ color: 'var(--red-dark)' }}>{forgotten}</div></div>
           </div>
-        </div>
-
-        <div className="btn-row mt16" style={{ justifyContent: 'center', maxWidth: 440, margin: '20px auto 0', gap: 12 }}>
-          <button className="btn ghost" onClick={() => loadCards(selectedMode, recommendedLevel)} style={{ flex: 1 }}>
-            🎲 Ôn bộ mới
-          </button>
-          <button className="btn" onClick={() => nav('/roadmap')} style={{ flex: 1 }}>
-            Xem Lộ trình AI
-          </button>
-          <button className="btn ghost" onClick={() => nav('/dashboard')} style={{ flex: 1 }}>
-            Tổng quan
-          </button>
+          {forgotten > 0 && (
+            <div className="sub mt16">{forgotten} từ chưa nhớ sẽ quay lại hàng đợi vào ngày mai theo lịch SRS.</div>
+          )}
+          <div className="btn-row mt16" style={{ justifyContent: 'center' }}>
+            {forgotten > 0 && (
+              <button className="btn ghost" style={{ minHeight: 52, padding: '0 24px' }} onClick={() => loadCards(selectedMode, recommendedLevel)}>
+                Ôn lại {forgotten} từ chưa nhớ
+              </button>
+            )}
+            <button className="btn" style={{ minHeight: 52, padding: '0 24px' }} onClick={() => nav('/dashboard')}>
+              Về Tổng quan
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -955,65 +952,41 @@ export default function Review() {
         </div>
       </motion.div>
 
-          {/* AI Hint Section */}
-          {hint && (
-            <div
-              className="card"
-              style={{
-                marginTop: 14,
-                background: '#FFFBEB',
-                borderColor: '#FDE68A',
-                padding: '14px 18px',
-                display: 'flex',
-                gap: 12,
-                alignItems: 'flex-start',
-                borderRadius: 16,
-              }}
-            >
-              <Mascot s={34} />
-              <div>
-                <b style={{ color: '#92400E', fontSize: 13.5 }}>Gợi ý liên tưởng của Vi AI:</b>
-                <div style={{ marginTop: 4, fontSize: 13.5, color: '#78350F', lineHeight: 1.5 }}>
-                  {hint}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Action Button Row */}
-          <div className="btn-row mt16" style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
+          {/* Action Button Row matching review.html */}
+          <div className="btn-row mt16">
             <button
-              className="btn danger-ghost"
-              style={{ flex: 1, minHeight: 52, fontWeight: 800, borderRadius: 12 }}
+              className="btn softred"
+              style={{ flex: 1, minHeight: 52 }}
               onClick={() => answer(false)}
             >
-              ← Chưa nhớ (luyện lại)
+              Chưa nhớ
             </button>
             <button
               className="btn ghost"
-              style={{ minHeight: 52, padding: '0 20px', fontWeight: 800, borderRadius: 12 }}
+              style={{ minHeight: 52, padding: '0 24px' }}
               onClick={getHint}
               disabled={loadingHint}
             >
-              <Icon n="bulb" s={18} />
-              {loadingHint ? 'Đang nghĩ...' : 'Gợi ý AI'}
-            </button>
-            <button
-              className="btn ghost"
-              style={{ minHeight: 52, padding: '0 20px', fontWeight: 800, borderRadius: 12 }}
-              onClick={() => playAudio()}
-              title="Phát âm"
-            >
-              <Icon n="vol" s={18} />
-              Phát âm
+              <svg viewBox="0 0 24 24" className="ic"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.4 1 2.3h6c0-.9.4-1.8 1-2.3A7 7 0 0 0 12 2z"/></svg>
+              {loadingHint ? 'Đang nghĩ...' : 'Gợi ý'}
             </button>
             <button
               className="btn green"
-              style={{ flex: 1, minHeight: 52, fontWeight: 800, borderRadius: 12 }}
+              style={{ flex: 1, minHeight: 52 }}
               onClick={() => answer(true)}
             >
-              Đã nhớ thuộc lòng →
+              Đã nhớ
             </button>
+          </div>
+
+          {/* Coach Box matching review.html */}
+          <div className="card mt16">
+            <div className="coach">
+              <img src={viAvatar} alt="Vi" style={{ width: 54, height: 54, borderRadius: '50%', objectFit: 'cover' }} />
+              <div className="bubble">
+                <b>Vi giải thích:</b> {hint || `“${cur.word}” là từ vựng quan trọng ở cấp độ ${cur.level}. Bạn có thể bấm “Gợi ý” nếu cần manh mối ghi nhớ!`}
+              </div>
+            </div>
           </div>
         </>
       )}

@@ -23,7 +23,6 @@ export default function PaymentResult() {
   useEffect(() => {
     let timer: any;
     if (isSuccess) {
-      // Refresh user subscription status from backend
       refreshSubscription().finally(() => {
         timer = setTimeout(() => setLoading(false), 500);
       });
@@ -35,194 +34,106 @@ export default function PaymentResult() {
 
   if (loading) {
     return (
-      <div className="content narrow" style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ textAlign: 'center' }}>
-          <div className="sub-badge active-vip" style={{ animation: 'pulse-glow 1.5s infinite', padding: '8px 20px', fontSize: 14 }}>
-            <Icon n="spark" s={16} /> Đang cập nhật trạng thái gói học tập...
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}>
+        <div className="paycard" style={{ maxWidth: '420px', padding: '36px 28px' }}>
+          <div className="grading-spin" style={{ display: 'inline-flex', color: 'var(--primary)' }}>
+            <Icon n="spark" s={36} />
           </div>
+          <h2 style={{ fontSize: '20px', fontWeight: 900, marginTop: '16px' }}>Đang cập nhật gói học...</h2>
+          <p className="sub" style={{ marginTop: '6px' }}>Hệ thống đang đồng bộ dữ liệu với cổng thanh toán PayOS.</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="content narrow" style={{ minHeight: '70vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div
-        className="card"
-        style={{
-          width: '100%',
-          maxWidth: 580,
-          textAlign: 'center',
-          padding: '40px 32px',
-          boxShadow: '0 20px 50px rgba(15, 23, 42, 0.08)',
-          borderRadius: 24,
-          position: 'relative',
-          overflow: 'hidden',
-        }}
-      >
+    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}>
+      <div className="paycard">
         {isSuccess ? (
           <>
-            {/* Top decorative gradient bar */}
-            <div
-              style={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                right: 0,
-                height: 6,
-                background: 'linear-gradient(90deg, #10B981 0%, #6366F1 50%, #A855F7 100%)',
-              }}
-            />
-
-            <div style={{ margin: '0 auto 16px', display: 'inline-flex' }}>
-              <div
-                style={{
-                  width: 76,
-                  height: 76,
-                  borderRadius: '50%',
-                  background: 'linear-gradient(135deg, #DCFCE7 0%, #BBF7D0 100%)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  boxShadow: '0 8px 24px rgba(34, 197, 94, 0.25)',
-                  color: '#15803D',
-                }}
-              >
-                <Icon n="check" s={38} />
-              </div>
+            <div className="bigcheck">
+              <svg viewBox="0 0 24 24" className="ic" style={{ width: '44px', height: '44px' }}>
+                <path d="M20 6 9 17l-5-5" />
+              </svg>
             </div>
-
-            <div style={{ display: 'flex', justifyContent: 'center' }}>
-              <span className="sub-badge active-vip" style={{ marginBottom: 12, fontSize: 13, padding: '5px 14px' }}>
-                <Icon n="gem" s={14} /> Gói VIP Đã Kích Hoạt
+            <div className="mt16">
+              <span className="pill level" style={{ fontSize: '13.5px', padding: '7px 14px' }}>
+                <Icon n="gem" s={15} /> Gói VIP Đã Kích Hoạt
               </span>
             </div>
-
-            <h1 style={{ fontSize: 26, fontWeight: 900, margin: '8px 0', color: 'var(--ink)' }}>
-              Thanh toán thành công!
-            </h1>
-            <p className="sub" style={{ fontSize: 15, maxWidth: 460, margin: '0 auto 24px', lineHeight: 1.6 }}>
-              Chúc mừng bạn đã nâng cấp thành công gói hội viên <b>VocabAI Premium</b>. Toàn bộ kho từ vựng và gia sư AI Gemini đã sẵn sàng!
+            <h1>Thanh toán thành công!</h1>
+            <p className="sub" style={{ marginTop: '10px', lineHeight: 1.65 }}>
+              Chúc mừng bạn đã nâng cấp thành công gói hội viên <b style={{ color: 'var(--ink)' }}>VocabularyAI Premium</b>. Toàn bộ kho từ vựng và gia sư AI đã sẵn sàng!
             </p>
 
-            {/* Order & Subscription Details Card */}
-            <div
-              style={{
-                background: 'linear-gradient(180deg, #F8FAFC 0%, #F1F5F9 100%)',
-                border: '1.5px solid #E2E8F0',
-                borderRadius: 16,
-                padding: '20px',
-                textAlign: 'left',
-                margin: '0 auto 28px',
-              }}
-            >
-              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid #E2E8F0' }}>
-                <span className="sub" style={{ fontSize: 13.5 }}>Gói đã đăng ký:</span>
-                <b style={{ color: '#6B21A8' }}>{subscription?.packageName || 'Gói Theo Tháng (30 ngày)'}</b>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid #E2E8F0' }}>
-                <span className="sub" style={{ fontSize: 13.5 }}>Trạng thái kích hoạt:</span>
-                <b style={{ color: '#15803D', display: 'flex', alignItems: 'center', gap: 4 }}>
-                  <span className="dot g" /> Đang hoạt động
-                </b>
+            <div style={{ textAlign: 'left', marginTop: '22px' }}>
+              <div className="kv">
+                <span>Gói đã mua</span>
+                <b>{subscription?.packageName || 'Gói Theo Tháng — Premium'}</b>
               </div>
               {orderCode && (
-                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid #E2E8F0' }}>
-                  <span className="sub" style={{ fontSize: 13.5 }}>Mã giao dịch PayOS:</span>
-                  <b style={{ fontFamily: 'monospace', color: 'var(--ink)' }}>#{orderCode}</b>
+                <div className="kv">
+                  <span>Mã giao dịch</span>
+                  <b>#{orderCode}</b>
                 </div>
               )}
-              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0' }}>
-                <span className="sub" style={{ fontSize: 13.5 }}>Cổng thanh toán:</span>
-                <b style={{ color: '#2563EB' }}>PayOS Checkout (QR Ngân Hàng)</b>
+              <div className="kv">
+                <span>Cổng thanh toán</span>
+                <b>PayOS Checkout (QR Ngân Hàng)</b>
+              </div>
+              <div className="kv">
+                <span>Thời hạn còn lại</span>
+                <b>{subscription?.remainingDays ? `${subscription.remainingDays} ngày` : '30 ngày'}</b>
               </div>
             </div>
 
-            {/* Action Buttons */}
-            <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
+            <button
+              type="button"
+              className="btn block"
+              style={{ marginTop: '24px', minHeight: '54px' }}
+              onClick={() => nav('/dashboard')}
+            >
+              Vào học ngay
+            </button>
+            <div className="center" style={{ marginTop: '14px' }}>
               <button
                 type="button"
-                className="btn ghost"
-                style={{ minHeight: 46, padding: '0 22px', fontSize: 14.5 }}
+                className="link"
                 onClick={() => nav('/profile')}
               >
-                <Icon n="user" s={18} />
-                Xem hồ sơ cá nhân
-              </button>
-              <button
-                type="button"
-                className="btn"
-                style={{
-                  minHeight: 46,
-                  padding: '0 28px',
-                  fontSize: 15,
-                  background: 'linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%)',
-                  boxShadow: '0 4px 16px rgba(124, 58, 237, 0.35)',
-                }}
-                onClick={() => nav('/dashboard')}
-              >
-                <Icon n="spark" s={18} />
-                Bắt đầu học ngay
+                Xem chi tiết gói cước
               </button>
             </div>
           </>
         ) : (
           <>
-            {/* Top red bar for cancel */}
-            <div
-              style={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                right: 0,
-                height: 6,
-                background: 'linear-gradient(90deg, #F59E0B 0%, #EF4444 100%)',
-              }}
-            />
-
-            <div style={{ margin: '0 auto 16px', display: 'inline-flex' }}>
-              <div
-                style={{
-                  width: 76,
-                  height: 76,
-                  borderRadius: '50%',
-                  background: '#FEF2F2',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  boxShadow: '0 8px 24px rgba(239, 68, 68, 0.2)',
-                  color: '#DC2626',
-                }}
-              >
-                <Icon n="x" s={38} />
-              </div>
+            <div className="bigcheck" style={{ background: 'var(--yellow-bg)', color: 'var(--yellow-dark)' }}>
+              <svg viewBox="0 0 24 24" className="ic" style={{ width: '44px', height: '44px' }}>
+                <circle cx="12" cy="12" r="9" />
+                <path d="M12 8v5" />
+                <path d="M12 16.5v.5" />
+              </svg>
             </div>
-
-            <h1 style={{ fontSize: 26, fontWeight: 900, margin: '8px 0', color: 'var(--ink)' }}>
-              Đơn thanh toán chưa hoàn tất
-            </h1>
-            <p className="sub" style={{ fontSize: 15, maxWidth: 460, margin: '0 auto 24px', lineHeight: 1.6 }}>
-              Giao dịch thanh toán qua cổng PayOS đã bị dừng lại hoặc chưa hoàn thành. Tài khoản của bạn hiện vẫn ở gói Miễn Phí.
+            <h1>Thanh toán chưa hoàn tất</h1>
+            <p className="sub" style={{ marginTop: '10px', lineHeight: 1.65 }}>
+              Giao dịch đã bị hủy hoặc hết thời gian chờ nên gói Premium <b style={{ color: 'var(--ink)' }}>chưa được kích hoạt</b>. Bạn không bị trừ tiền cho giao dịch này.
             </p>
 
-            <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
+            <button
+              type="button"
+              className="btn block"
+              style={{ marginTop: '24px', minHeight: '54px' }}
+              onClick={() => nav('/profile')}
+            >
+              Thử thanh toán lại
+            </button>
+            <div className="center" style={{ marginTop: '14px' }}>
               <button
                 type="button"
-                className="btn ghost"
-                style={{ minHeight: 46, padding: '0 20px', fontSize: 14.5 }}
+                className="link"
                 onClick={() => nav('/dashboard')}
               >
-                <Icon n="home" s={18} />
-                Về trang chủ
-              </button>
-              <button
-                type="button"
-                className="btn"
-                style={{ minHeight: 46, padding: '0 24px', fontSize: 15 }}
-                onClick={() => nav('/profile')}
-              >
-                <Icon n="gem" s={18} />
-                Xem gói & Thử lại
+                Về trang Tổng quan
               </button>
             </div>
           </>

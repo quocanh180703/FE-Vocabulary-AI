@@ -25,6 +25,7 @@ export default function PrivacyPolicy() {
       }}>
         <Link
           to="/landing"
+          onClick={() => window.scrollTo(0, 0)}
           style={{
             display: 'inline-flex',
             gap: '8px',
@@ -154,6 +155,7 @@ export default function PrivacyPolicy() {
         }}>
           <Link
             to="/landing"
+            onClick={() => window.scrollTo(0, 0)}
             style={{
               display: 'inline-flex',
               gap: '6px',

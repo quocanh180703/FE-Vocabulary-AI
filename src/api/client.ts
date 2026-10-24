@@ -77,6 +77,25 @@ api.interceptors.response.use(
       localStorage.removeItem('access_token');
       localStorage.removeItem('vocab_user');
     }
+
+    if (err.response?.status === 429) {
+      const resData = err.response.data as any;
+      const code = resData?.code;
+      if (code === 'QUOTA_EXCEEDED' || code === 'UPGRADE_REQUIRED') {
+        try {
+          window.dispatchEvent(
+            new CustomEvent('open-upgrade-modal', {
+              detail: {
+                code,
+                message: resData?.message,
+                data: resData?.data,
+              },
+            })
+          );
+        } catch {}
+      }
+    }
+
     return Promise.reject(err);
   }
 );

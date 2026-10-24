@@ -25,6 +25,7 @@ export default function TermsOfService() {
       }}>
         <Link
           to="/landing"
+          onClick={() => window.scrollTo(0, 0)}
           style={{
             display: 'inline-flex',
             gap: '8px',
@@ -87,7 +88,7 @@ export default function TermsOfService() {
         </h2>
         <ul style={{ paddingLeft: '22px', marginTop: '6px', fontSize: '15.5px', lineHeight: 1.65, color: '#33475C' }}>
           <li style={{ margin: '4px 0' }}>
-            Giá gói Premium: <b>99.000đ / 30 ngày</b> hoặc <b>899.000đ / 365 ngày</b>, thanh toán qua cổng PayOS.
+            Giá gói Premium: <b>99.000đ / 30 ngày</b>, thanh toán qua cổng PayOS.
           </li>
           <li style={{ margin: '4px 0' }}>Gói có hiệu lực ngay khi thanh toán thành công và kéo dài đến hết thời hạn đã trả.</li>
           <li style={{ margin: '4px 0' }}>
@@ -149,6 +150,7 @@ export default function TermsOfService() {
         }}>
           <Link
             to="/landing"
+            onClick={() => window.scrollTo(0, 0)}
             style={{
               display: 'inline-flex',
               gap: '6px',
