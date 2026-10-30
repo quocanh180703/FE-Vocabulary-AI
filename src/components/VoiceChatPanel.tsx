@@ -28,7 +28,7 @@ const VOICES = [
   { id: 'fable', name: 'Fable (Biểu cảm, Nhẹ nhàng)', desc: 'Giọng kể chuyện' },
   { id: 'onyx', name: 'Onyx (Trầm ấm, Chững chạc)', desc: 'Giọng nam trầm' },
   { id: 'nova', name: 'Nova (Trẻ trung, Năng động)', desc: 'Giọng nữ sáng' },
-  { id: 'shimmer', name: 'Shimmer (Rõ ràng, Tươi tắn)', desc: 'Giọng nữ êm' },
+  { id: 'coral', name: 'Coral (Trong trẻo, Dễ nghe)', desc: 'Giọng nữ trong trẻo' },
 ];
 
 function isVietnameseText(text: string): boolean {
@@ -123,6 +123,7 @@ export const VoiceChatPanel: React.FC<VoiceChatPanelProps> = ({
   };
 
   const animFrameRef = useRef<number | null>(null);
+  const playbackSessionRef = useRef<number>(0);
 
   // Push-to-talk Recording state
   const [recordSeconds, setRecordSeconds] = useState(0);
@@ -175,14 +176,21 @@ export const VoiceChatPanel: React.FC<VoiceChatPanelProps> = ({
     scrollToBottom();
   }, [messages, status, scrollToBottom]);
 
-  // Stop currently playing audio
+  // Stop currently playing audio and cancel any pending playback session
   const stopAudio = useCallback(() => {
+    // Invalidate any ongoing playback loop session immediately
+    playbackSessionRef.current += 1;
+
     if (animFrameRef.current) {
       cancelAnimationFrame(animFrameRef.current);
       animFrameRef.current = null;
     }
     if (currentAudioRef.current) {
+      currentAudioRef.current.onplaying = null;
+      currentAudioRef.current.onended = null;
+      currentAudioRef.current.onerror = null;
       currentAudioRef.current.pause();
+      currentAudioRef.current.src = '';
       currentAudioRef.current = null;
     }
     if ('speechSynthesis' in window) {
@@ -194,18 +202,44 @@ export const VoiceChatPanel: React.FC<VoiceChatPanelProps> = ({
     setStatus((prev) => (prev === 'speaking' ? 'idle' : prev));
   }, []);
 
+  // Handle Voice Change: immediately cut off old voice and clear preloaded audio
+  const handleVoiceChange = useCallback(
+    (newVoice: string) => {
+      // 1. Dừng ngay lập tức giọng đọc cũ để không bao giờ bị đọc đè 2 giọng cùng lúc
+      stopAudio();
+
+      // 2. Dọn sạch các file audio đang tải trước của giọng cũ
+      preloadedAudioMap.current.forEach((audio) => {
+        audio.onplaying = null;
+        audio.onended = null;
+        audio.onerror = null;
+        audio.pause();
+        audio.src = '';
+      });
+      preloadedAudioMap.current.clear();
+
+      // 3. Cập nhật giọng nói mới ngay lập tức
+      setVoice(newVoice);
+      voiceRef.current = newVoice;
+      localStorage.setItem('vocab_ai_voice', newVoice);
+    },
+    [stopAudio]
+  );
+
   // Play a sequence of sentences
   const playSentences = useCallback(
     async (msgId: string, sentences: string[]) => {
       stopAudio();
       if (!sentences || sentences.length === 0) return;
 
+      const currentSessionId = playbackSessionRef.current;
       isPlayingRef.current = true;
       setStatus('speaking');
 
       const currentVoice = voiceRef.current;
       for (let i = 0; i < sentences.length; i++) {
-        if (!isPlayingRef.current) break;
+        // Nếu đã bị hủy hoặc bị phiên mới ghi đè -> dừng vòng lặp ngay lập tức
+        if (!isPlayingRef.current || playbackSessionRef.current !== currentSessionId) break;
 
         const sentence = sentences[i];
         const cleanText = stripMarkdown(sentence);
@@ -214,7 +248,7 @@ export const VoiceChatPanel: React.FC<VoiceChatPanelProps> = ({
         const words = sentence.trim().split(/\s+/).filter(Boolean);
         const spans = computeWordSpans(words);
 
-        // Prefetch next sentence
+        // Prefetch next sentence in background
         if (i + 1 < sentences.length) {
           const nextClean = stripMarkdown(sentences[i + 1]);
           if (nextClean && !isVietnameseText(nextClean)) {
@@ -228,6 +262,11 @@ export const VoiceChatPanel: React.FC<VoiceChatPanelProps> = ({
 
         const streamUrl = ttsApi.getStreamUrl(cleanText, currentVoice);
         await new Promise<void>((resolve) => {
+          if (playbackSessionRef.current !== currentSessionId) {
+            resolve();
+            return;
+          }
+
           let audio = preloadedAudioMap.current.get(streamUrl);
           if (!audio) {
             audio = new Audio(streamUrl);
@@ -239,12 +278,24 @@ export const VoiceChatPanel: React.FC<VoiceChatPanelProps> = ({
           let animFrameId: number | null = null;
 
           const onPlaying = () => {
-            // Chỉ làm nổi bật khi âm thanh THỰC SỰ bắt đầu phát ra loa (tránh lệch thời gian tải mạng)
+            if (playbackSessionRef.current !== currentSessionId) {
+              cleanup();
+              resolve();
+              return;
+            }
             setActiveSentence({ msgId, sentenceIdx: i });
             setActiveWordIdx(0);
 
             const trackProgress = () => {
-              if (!isPlayingRef.current || !audio || audio.paused || audio.ended) return;
+              if (
+                playbackSessionRef.current !== currentSessionId ||
+                !isPlayingRef.current ||
+                !audio ||
+                audio.paused ||
+                audio.ended
+              ) {
+                return;
+              }
 
               const duration = audio.duration;
               if (duration && isFinite(duration) && duration > 0) {
@@ -273,6 +324,10 @@ export const VoiceChatPanel: React.FC<VoiceChatPanelProps> = ({
 
           const onError = () => {
             cleanup();
+            if (playbackSessionRef.current !== currentSessionId) {
+              resolve();
+              return;
+            }
             // Fallback to browser SpeechSynthesis
             if ('speechSynthesis' in window) {
               const utt = new SpeechSynthesisUtterance(cleanText);
@@ -282,6 +337,7 @@ export const VoiceChatPanel: React.FC<VoiceChatPanelProps> = ({
               setActiveWordIdx(0);
 
               utt.onboundary = (e) => {
+                if (playbackSessionRef.current !== currentSessionId) return;
                 if (e.name === 'word') {
                   const charIndex = e.charIndex;
                   let runningChars = 0;
@@ -327,10 +383,12 @@ export const VoiceChatPanel: React.FC<VoiceChatPanelProps> = ({
         });
       }
 
-      isPlayingRef.current = false;
-      setActiveSentence(null);
-      setActiveWordIdx(-1);
-      setStatus((prev) => (prev === 'speaking' ? 'idle' : prev));
+      if (playbackSessionRef.current === currentSessionId) {
+        isPlayingRef.current = false;
+        setActiveSentence(null);
+        setActiveWordIdx(-1);
+        setStatus((prev) => (prev === 'speaking' ? 'idle' : prev));
+      }
     },
     [stopAudio]
   );
@@ -342,6 +400,7 @@ export const VoiceChatPanel: React.FC<VoiceChatPanelProps> = ({
       const cleanText = stripMarkdown(sentenceText);
       if (!cleanText || isVietnameseText(cleanText)) return;
 
+      const currentSessionId = playbackSessionRef.current;
       const words = sentenceText.trim().split(/\s+/).filter(Boolean);
       const spans = computeWordSpans(words);
 
@@ -359,18 +418,32 @@ export const VoiceChatPanel: React.FC<VoiceChatPanelProps> = ({
       const finish = () => {
         if (animFrameId) cancelAnimationFrame(animFrameId);
         animFrameRef.current = null;
-        setActiveSentence(null);
-        setActiveWordIdx(-1);
-        setStatus((prev) => (prev === 'speaking' ? 'idle' : prev));
-        isPlayingRef.current = false;
+        if (playbackSessionRef.current === currentSessionId) {
+          setActiveSentence(null);
+          setActiveWordIdx(-1);
+          setStatus((prev) => (prev === 'speaking' ? 'idle' : prev));
+          isPlayingRef.current = false;
+        }
       };
 
       const onPlaying = () => {
+        if (playbackSessionRef.current !== currentSessionId) {
+          finish();
+          return;
+        }
         setActiveSentence({ msgId, sentenceIdx });
         setActiveWordIdx(0);
 
         const trackProgress = () => {
-          if (!isPlayingRef.current || !audio || audio.paused || audio.ended) return;
+          if (
+            playbackSessionRef.current !== currentSessionId ||
+            !isPlayingRef.current ||
+            !audio ||
+            audio.paused ||
+            audio.ended
+          ) {
+            return;
+          }
 
           const duration = audio.duration;
           if (duration && isFinite(duration) && duration > 0) {
@@ -394,6 +467,7 @@ export const VoiceChatPanel: React.FC<VoiceChatPanelProps> = ({
       audio.addEventListener('playing', onPlaying);
       audio.onended = finish;
       audio.onerror = () => {
+        if (playbackSessionRef.current !== currentSessionId) return;
         if ('speechSynthesis' in window) {
           const utt = new SpeechSynthesisUtterance(cleanText);
           utt.lang = 'en-US';
@@ -402,6 +476,7 @@ export const VoiceChatPanel: React.FC<VoiceChatPanelProps> = ({
           setActiveWordIdx(0);
 
           utt.onboundary = (e) => {
+            if (playbackSessionRef.current !== currentSessionId) return;
             if (e.name === 'word') {
               const charIndex = e.charIndex;
               let runningChars = 0;
@@ -493,13 +568,6 @@ export const VoiceChatPanel: React.FC<VoiceChatPanelProps> = ({
       stopAudio();
     };
   }, [effectiveTopic, level, loadOpening, cleanupRequest, stopAudio]);
-
-  // Handle Voice Change
-  const handleVoiceChange = (newVoice: string) => {
-    setVoice(newVoice);
-    localStorage.setItem('vocab_ai_voice', newVoice);
-    preloadedAudioMap.current.clear();
-  };
 
   // Push-To-Talk: Start Recording
   const startRecording = async () => {
