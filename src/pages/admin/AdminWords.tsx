@@ -5,6 +5,8 @@ import type { AdminVocabularyItem, AdminCefrStats } from '../../api';
 import { Icon } from '../../components/icons';
 import { AutocompleteSearch } from '../../components/AutocompleteSearch';
 import { AdminVocabStudio } from './AdminVocabStudio';
+import { AnimatedCounter, MotionCard } from '../../motion';
+import { motion } from 'framer-motion';
 
 const CEFR_LEVELS = ['ALL', 'A1', 'A2', 'B1', 'B2', 'C1'];
 const POS_LIST = [
@@ -26,6 +28,7 @@ export default function AdminWords() {
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
   const [cefrStats, setCefrStats] = useState<AdminCefrStats | null>(null);
+  const [selectedWordIds, setSelectedWordIds] = useState<string[]>([]);
 
   // Tab state: 'words' | 'vocab-studio'
   const [adminWordsTab, setAdminWordsTab] = useState<'words' | 'vocab-studio'>(
@@ -92,6 +95,23 @@ export default function AdminWords() {
     const q = typeof customQuery === 'string' ? customQuery : search;
     setPage(0);
     fetchWords(q);
+  };
+
+  const handleBulkAiTag = async () => {
+    if (selectedWordIds.length === 0) return;
+    try {
+      setMessage({ text: `Đang khởi chạy gắn tag AI cho ${selectedWordIds.length} từ đã chọn...` });
+      await adminApi.aiVocabTagBackfill({
+        scope: 'IDS',
+        wordIds: selectedWordIds,
+        batchSize: 10,
+        confidenceThreshold: 0.8,
+      });
+      setSelectedWordIds([]);
+      setAdminWordsTab('vocab-studio');
+    } catch (err: any) {
+      setMessage({ text: 'Lỗi gắn tag AI: ' + (err?.response?.data?.message || err.message), error: true });
+    }
   };
 
   const handleImportAll = async () => {
@@ -202,7 +222,7 @@ export default function AdminWords() {
           <div className="sub">
             {adminWordsTab === 'vocab-studio'
               ? 'Xưởng từ vựng AI · Tự động làm giàu dữ liệu và sinh từ vựng chuẩn Oxford CEFR'
-              : `Kho ${totalElements.toLocaleString('vi-VN')} từ vựng Oxford · quản lý theo cấp độ và loại từ`}
+              : <span>Kho <AnimatedCounter value={totalElements} /> từ vựng Oxford · quản lý theo cấp độ và loại từ</span>}
           </div>
         </div>
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
@@ -241,7 +261,7 @@ export default function AdminWords() {
           style={{ fontSize: 13.5, padding: '7px 16px' }}
         >
           <Icon n="book" s={15} />
-          Kho từ vựng ({totalElements.toLocaleString('vi-VN')})
+          Kho từ vựng (<AnimatedCounter value={totalElements} />)
         </button>
         <button
           type="button"
@@ -267,21 +287,47 @@ export default function AdminWords() {
         /* VIEW 2: WORDS LIST TABLE */
         <>
           {/* CEFR Level Filter Chips */}
-      <div className="chiprow">
+      <div className="chiprow" style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
         {CEFR_LEVELS.map((lvl) => {
           const count = getCefrCount(lvl);
+          const isActive = cefrFilter === lvl;
           return (
-            <button
+            <motion.button
               key={lvl}
               type="button"
-              className={'fchip' + (cefrFilter === lvl ? ' on' : '')}
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.96 }}
+              className={'fchip' + (isActive ? ' on' : '')}
               onClick={() => {
-                setCefrFilter(lvl);
-                setPage(0);
+                if (cefrFilter !== lvl) {
+                  setCefrFilter(lvl);
+                  setPage(0);
+                }
+              }}
+              style={{
+                position: 'relative',
+                overflow: 'hidden',
+                cursor: 'pointer',
+                transition: 'border-color 0.2s ease, color 0.2s ease',
               }}
             >
-              {lvl === 'ALL' ? 'Tất cả' : lvl} {count !== '' && `· ${count}`}
-            </button>
+              {isActive && (
+                <motion.div
+                  layoutId="active-cefr-chip"
+                  style={{
+                    position: 'absolute',
+                    inset: 0,
+                    background: 'var(--primary)',
+                    borderRadius: 999,
+                    zIndex: 0,
+                  }}
+                  transition={{ type: 'spring', stiffness: 500, damping: 35 }}
+                />
+              )}
+              <span style={{ position: 'relative', zIndex: 1, color: isActive ? '#fff' : 'inherit' }}>
+                {lvl === 'ALL' ? 'Tất cả' : lvl} {count !== '' && `· ${count}`}
+              </span>
+            </motion.button>
           );
         })}
       </div>
@@ -302,28 +348,90 @@ export default function AdminWords() {
           />
         </div>
 
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-          {POS_LIST.map((pos) => (
-            <button
-              key={pos.id}
-              type="button"
-              className={'fchip' + (posFilter === pos.id ? ' on' : '')}
-              onClick={() => {
-                setPosFilter(pos.id);
-                setPage(0);
-              }}
-            >
-              {pos.label}
-            </button>
-          ))}
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+          {POS_LIST.map((pos) => {
+            const isActive = posFilter === pos.id;
+            return (
+              <motion.button
+                key={pos.id}
+                type="button"
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.96 }}
+                className={'fchip' + (isActive ? ' on' : '')}
+                onClick={() => {
+                  if (posFilter !== pos.id) {
+                    setPosFilter(pos.id);
+                    setPage(0);
+                  }
+                }}
+                style={{
+                  position: 'relative',
+                  overflow: 'hidden',
+                  cursor: 'pointer',
+                  transition: 'border-color 0.2s ease, color 0.2s ease',
+                }}
+              >
+                {isActive && (
+                  <motion.div
+                    layoutId="active-pos-chip"
+                    style={{
+                      position: 'absolute',
+                      inset: 0,
+                      background: 'var(--primary)',
+                      borderRadius: 999,
+                      zIndex: 0,
+                    }}
+                    transition={{ type: 'spring', stiffness: 500, damping: 35 }}
+                  />
+                )}
+                <span style={{ position: 'relative', zIndex: 1, color: isActive ? '#fff' : 'inherit' }}>
+                  {pos.label}
+                </span>
+              </motion.button>
+            );
+          })}
         </div>
       </div>
 
       {/* Vocabulary Table Card */}
-      <div className="card" style={{ padding: '20px 14px' }}>
+      <MotionCard className="card" style={{ padding: '20px 14px', position: 'relative', overflow: 'hidden' }}>
+        {/* Subtle loading pulse bar on top */}
+        {loading && (
+          <div
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              height: 3,
+              overflow: 'hidden',
+              background: 'rgba(21, 101, 192, 0.08)',
+              zIndex: 5,
+            }}
+          >
+            <div className="admin-loading-pulse-bar" />
+          </div>
+        )}
+
         <table className="atable">
           <thead>
             <tr>
+              <th style={{ width: 44, textAlign: 'center' }}>
+                <span
+                  className={'cb' + (words.length > 0 && selectedWordIds.length === words.length ? ' on' : '')}
+                  onClick={() => {
+                    if (selectedWordIds.length === words.length) {
+                      setSelectedWordIds([]);
+                    } else {
+                      setSelectedWordIds(words.map((w) => w.id));
+                    }
+                  }}
+                  style={{ cursor: 'pointer', display: 'inline-flex' }}
+                  title="Chọn tất cả từ trên trang này"
+                >
+                  {words.length > 0 && selectedWordIds.length === words.length && <Icon n="check" s={13} />}
+                </span>
+              </th>
               <th>Từ vựng</th>
               <th>Loại từ</th>
               <th>Nghĩa tiếng Việt</th>
@@ -331,64 +439,152 @@ export default function AdminWords() {
               <th style={{ textAlign: 'right' }}>Thao tác</th>
             </tr>
           </thead>
-          <tbody>
-            {loading ? (
-              <tr>
-                <td colSpan={5} style={{ padding: 40, textAlign: 'center', color: 'var(--muted)' }}>
-                  Đang tải danh sách từ vựng...
-                </td>
-              </tr>
+          <tbody
+            style={{
+              opacity: loading && words.length > 0 ? 0.45 : 1,
+              transition: 'opacity 0.22s ease',
+              pointerEvents: loading ? 'none' : 'auto',
+            }}
+          >
+            {loading && words.length === 0 ? (
+              Array.from({ length: 6 }).map((_, idx) => (
+                <tr key={`skel-${idx}`}>
+                  <td>
+                    <div className="skeleton-cell" style={{ width: 20, margin: 'auto' }} />
+                  </td>
+                  <td>
+                    <div className="skeleton-cell" style={{ width: '60%' }} />
+                  </td>
+                  <td>
+                    <div className="skeleton-cell" style={{ width: 50, borderRadius: 999 }} />
+                  </td>
+                  <td>
+                    <div className="skeleton-cell" style={{ width: '85%' }} />
+                  </td>
+                  <td>
+                    <div className="skeleton-cell" style={{ width: 36, borderRadius: 999 }} />
+                  </td>
+                  <td style={{ textAlign: 'right' }}>
+                    <div className="skeleton-cell" style={{ width: 70, marginLeft: 'auto' }} />
+                  </td>
+                </tr>
+              ))
             ) : words.length === 0 ? (
               <tr>
-                <td colSpan={5} style={{ padding: 40, textAlign: 'center', color: 'var(--muted)' }}>
+                <td colSpan={6} style={{ padding: 40, textAlign: 'center', color: 'var(--muted)' }}>
                   Không tìm thấy từ vựng nào phù hợp.
                 </td>
               </tr>
             ) : (
-              words.map((w) => (
-                <tr key={w.id}>
-                  <td>
-                    <b style={{ fontSize: 15.5 }}>{w.word}</b>{' '}
-                    {w.pronunciation && (
-                      <span className="sub">{w.pronunciation}</span>
-                    )}
-                  </td>
-                  <td>
-                    <span className="pill" style={{ fontSize: 11 }}>
-                      {w.partOfSpeech || 'NOUN'}
-                    </span>
-                  </td>
-                  <td style={{ color: 'var(--ink)' }}>
-                    {w.vietnameseMeaning || w.meaning || '—'}
-                  </td>
-                  <td>
-                    <span className="pill level">{w.cefr || 'A1'}</span>
-                  </td>
-                  <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
-                    <button
-                      type="button"
-                      className="link"
-                      onClick={() => openEdit(w)}
-                      style={{ fontSize: 13.5, marginRight: 8 }}
-                    >
-                      Sửa
-                    </button>
-                    ·
-                    <button
-                      type="button"
-                      className="link"
-                      onClick={() => handleDeleteWord(w)}
-                      style={{ fontSize: 13.5, color: 'var(--red-dark)', marginLeft: 8 }}
-                    >
-                      Xóa
-                    </button>
-                  </td>
-                </tr>
-              ))
+              words.map((w) => {
+                const isSelected = selectedWordIds.includes(w.id);
+                return (
+                  <tr
+                    key={w.id}
+                    className="table-row-fade"
+                    style={{ background: isSelected ? 'rgba(21, 101, 192, 0.04)' : undefined }}
+                  >
+                    <td style={{ width: 44, textAlign: 'center' }}>
+                      <span
+                        className={'cb' + (isSelected ? ' on' : '')}
+                        onClick={() => {
+                          if (isSelected) {
+                            setSelectedWordIds((prev) => prev.filter((id) => id !== w.id));
+                          } else {
+                            setSelectedWordIds((prev) => [...prev, w.id]);
+                          }
+                        }}
+                        style={{ cursor: 'pointer', display: 'inline-flex' }}
+                      >
+                        {isSelected && <Icon n="check" s={13} />}
+                      </span>
+                    </td>
+                    <td>
+                      <b style={{ fontSize: 15.5 }}>{w.word}</b>{' '}
+                      {w.pronunciation && (
+                        <span className="sub">{w.pronunciation}</span>
+                      )}
+                    </td>
+                    <td>
+                      <span className="pill" style={{ fontSize: 11 }}>
+                        {w.partOfSpeech || 'NOUN'}
+                      </span>
+                    </td>
+                    <td style={{ color: 'var(--ink)' }}>
+                      {w.vietnameseMeaning || w.meaning || '—'}
+                    </td>
+                    <td>
+                      <span className="pill level">{w.cefr || 'A1'}</span>
+                    </td>
+                    <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
+                      <button
+                        type="button"
+                        className="link"
+                        onClick={() => openEdit(w)}
+                        style={{ fontSize: 13.5, marginRight: 8 }}
+                      >
+                        Sửa
+                      </button>
+                      ·
+                      <button
+                        type="button"
+                        className="link"
+                        onClick={() => handleDeleteWord(w)}
+                        style={{ fontSize: 13.5, color: 'var(--red-dark)', marginLeft: 8 }}
+                      >
+                        Xóa
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })
             )}
           </tbody>
         </table>
-      </div>
+      </MotionCard>
+
+      {/* Floating Action Bar for Selected Words */}
+      {selectedWordIds.length > 0 && (
+        <div
+          style={{
+            position: 'fixed',
+            bottom: 24,
+            left: '50%',
+            transform: 'translateX(-50%)',
+            background: 'var(--ink)',
+            color: '#fff',
+            padding: '10px 22px',
+            borderRadius: 999,
+            boxShadow: '0 8px 30px rgba(0,0,0,0.3)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 16,
+            zIndex: 9999,
+            backdropFilter: 'blur(8px)',
+          }}
+        >
+          <span style={{ fontSize: 14 }}>
+            Đã chọn <b>{selectedWordIds.length}</b> từ vựng
+          </span>
+          <button
+            type="button"
+            className="btn ghost sm"
+            onClick={() => setSelectedWordIds([])}
+            style={{ color: '#fff', borderColor: 'rgba(255,255,255,0.35)', fontSize: 13 }}
+          >
+            Bỏ chọn
+          </button>
+          <button
+            type="button"
+            className="btn green sm"
+            onClick={handleBulkAiTag}
+            style={{ fontSize: 13, padding: '0 16px' }}
+          >
+            <Icon n="spark" s={14} />
+            ⚡ Gắn tag AI cho {selectedWordIds.length} từ
+          </button>
+        </div>
+      )}
 
       {/* Pagination Controls */}
       {totalPages > 1 && (

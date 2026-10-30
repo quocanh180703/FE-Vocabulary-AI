@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { authApi, errMsg } from '../api';
+import { authApi, placementApi, errMsg } from '../api';
 import { useAuth } from '../auth/AuthContext';
 import { Mascot, Icon } from '../components/icons';
 import { motion, AnimatePresence } from 'motion/react';
+import { motionTokens } from '../motion';
 import viHeroImg from '../assets/vi-hero.png';
 
 type AuthMode = 'login' | 'register' | 'forgot';
@@ -54,6 +55,15 @@ export default function Login() {
         const access = data.accessToken || data.access_token || '';
         const refresh = data.refreshToken || data.refresh_token || '';
         login(data.user, access, refresh);
+
+        try {
+          const { data: pStatus } = await placementApi.getStatus();
+          if (!pStatus.completed && !sessionStorage.getItem('placement_dismissed')) {
+            nav('/placement');
+            return;
+          }
+        } catch {}
+
         nav('/dashboard');
       } else if (mode === 'register') {
         await authApi.validate({ email, username, fullName, password: pw });
@@ -153,9 +163,12 @@ export default function Login() {
       <div className={'layout-route-bar' + (isNavigating ? ' active' : '')} />
       <motion.div
         className="auth"
-        initial={{ opacity: 0, y: 14, scale: 0.995 }}
-        animate={isNavigating ? { opacity: 0, y: -10, scale: 0.995 } : { opacity: 1, y: 0, scale: 1 }}
-        transition={{ duration: isNavigating ? 0.22 : 0.35, ease: [0.16, 1, 0.3, 1] }}
+        initial={{ opacity: 0, y: motionTokens.distance.pageOffsetY }}
+        animate={isNavigating ? { opacity: 0, y: -motionTokens.distance.pageOffsetY } : { opacity: 1, y: 0 }}
+        transition={{
+          duration: isNavigating ? motionTokens.duration.fast : motionTokens.duration.moderate,
+          ease: motionTokens.ease.gentleOut,
+        }}
         style={{ position: 'relative' }}
       >
         <button

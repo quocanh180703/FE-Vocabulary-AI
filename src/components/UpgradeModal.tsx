@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 import { useUsage } from '../context/UsageContext';
 import { paymentApi } from '../api';
 import { Icon } from './icons';
+import { modalVariants, backdropVariants } from '../motion';
 
 export const UpgradeModal: React.FC = () => {
   const { modalState, closeUpgradeModal, isVip, isAtLeastHalfFreeUsage } = useUsage();
@@ -9,9 +11,7 @@ export const UpgradeModal: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  if (!modalState.isOpen) return null;
-  // Bảng này chỉ xuất hiện khi người dùng gói miễn phí sử dụng được 50% của gói miễn phí mới hiện
-  if (!isVip && !isAtLeastHalfFreeUsage && !modalState.force) return null;
+  const isOpen = modalState.isOpen && (isVip || isAtLeastHalfFreeUsage || Boolean(modalState.force));
 
   const getFeatureHeadline = () => {
     const f = (modalState.feature || '').toUpperCase();
@@ -43,22 +43,31 @@ export const UpgradeModal: React.FC = () => {
   };
 
   return (
-    <div
-      style={{
-        position: 'fixed',
-        inset: 0,
-        zIndex: 9999,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: 'rgba(15, 23, 42, 0.75)',
-        backdropFilter: 'blur(6px)',
-        padding: '16px',
-        animation: 'fadeIn 0.2s ease-out',
-      }}
-      onClick={closeUpgradeModal}
-    >
-      <div
+    <AnimatePresence>
+      {isOpen && (
+        <motion.div
+          variants={backdropVariants}
+          initial="hidden"
+          animate="visible"
+          exit="exit"
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 9999,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: 'rgba(15, 23, 42, 0.75)',
+            backdropFilter: 'blur(6px)',
+            padding: '16px',
+          }}
+          onClick={closeUpgradeModal}
+        >
+          <motion.div
+            variants={modalVariants}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
         style={{
           maxWidth: '520px',
           width: '100%',
@@ -237,7 +246,9 @@ export const UpgradeModal: React.FC = () => {
             </button>
           </div>
         </div>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
+    )}
+  </AnimatePresence>
   );
 };

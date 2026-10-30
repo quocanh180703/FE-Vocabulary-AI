@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { PageTransition } from '../motion';
 
 export default function TermsOfService() {
   useEffect(() => {
@@ -8,13 +9,15 @@ export default function TermsOfService() {
   }, []);
 
   return (
-    <div style={{
-      fontFamily: "'Nunito', system-ui, sans-serif",
-      background: '#EAF1F8',
-      color: '#0A2540',
-      padding: '28px 16px 60px',
-      minHeight: '100vh',
-    }}>
+    <PageTransition
+      style={{
+        fontFamily: "'Nunito', system-ui, sans-serif",
+        background: '#EAF1F8',
+        color: '#0A2540',
+        padding: '28px 16px 60px',
+        minHeight: '100vh',
+      }}
+    >
       <div style={{
         maxWidth: '820px',
         margin: '0 auto',
@@ -43,24 +46,9 @@ export default function TermsOfService() {
         >
           ← Về trang chủ VocabularyAI
         </Link>
-        <div>
-          <span style={{
-            display: 'inline-block',
-            background: '#F8F0DC',
-            color: '#8A6115',
-            fontWeight: 900,
-            fontSize: '12.5px',
-            letterSpacing: '.05em',
-            padding: '6px 12px',
-            borderRadius: '999px',
-            marginBottom: '16px',
-          }}>
-            BẢN NHÁP — ĐANG CHỜ DUYỆT, CHƯA PHẢI VĂN BẢN CHÍNH THỨC
-          </span>
-        </div>
         <h1 style={{ fontSize: '32px', fontWeight: 900, lineHeight: 1.2, margin: 0 }}>Điều khoản sử dụng</h1>
         <p style={{ color: '#64748B', fontWeight: 700, fontSize: '14px', margin: '10px 0 8px' }}>
-          VocabularyAI · Cập nhật lần cuối: 22/10/2026 (bản nháp)
+          VocabularyAI · Cập nhật lần cuối: 22/10/2026
         </p>
 
         <h2 style={{ fontSize: '19px', fontWeight: 900, margin: '28px 0 8px', color: '#0D47A1' }}>
@@ -94,17 +82,10 @@ export default function TermsOfService() {
           <li style={{ margin: '4px 0' }}>
             Bạn có thể hủy gói trong mục gói cước của ứng dụng. Sau khi hủy, bạn vẫn dùng Premium đến hết thời hạn đã trả; gói không tự gia hạn tiếp sau thời điểm đó.
           </li>
+          <li style={{ margin: '4px 0' }}>
+            Chính sách hoàn tiền: Không hoàn lại phần thời gian đã sử dụng của gói; trường hợp lỗi hệ thống khiến Premium không kích hoạt được, hoàn 100% qua kênh thanh toán gốc.
+          </li>
         </ul>
-        <div style={{
-          background: '#EDF4FC',
-          borderRadius: '14px',
-          padding: '14px 18px',
-          marginTop: '14px',
-          fontSize: '14.5px',
-          lineHeight: 1.6,
-        }}>
-          <b>Điểm cần chủ dự án xác nhận trước khi công bố:</b> chính sách hoàn tiền. Bản nháp đề xuất: không hoàn lại phần thời gian đã sử dụng của gói; trường hợp lỗi hệ thống khiến Premium không kích hoạt được, hoàn 100% qua kênh thanh toán gốc.
-        </div>
 
         <h2 style={{ fontSize: '19px', fontWeight: 900, margin: '28px 0 8px', color: '#0D47A1' }}>
           4. Nội dung do AI tạo ra
@@ -176,6 +157,6 @@ export default function TermsOfService() {
           </Link>
         </div>
       </div>
-    </div>
+    </PageTransition>
   );
 }

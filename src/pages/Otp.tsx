@@ -2,6 +2,7 @@ import { useRef, useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { authApi, errMsg } from '../api';
 import { Icon } from '../components/icons';
+import { PageTransition } from '../motion';
 import vi3dImg from '../assets/vi-3d.webp';
 
 export default function Otp() {
@@ -81,7 +82,7 @@ export default function Otp() {
   };
 
   return (
-    <div className="auth" style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px', position: 'relative' }}>
+    <PageTransition className="auth" style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px', position: 'relative' }}>
       <button
         type="button"
         className="topbar-home-btn"
@@ -175,6 +176,6 @@ export default function Otp() {
           )}
         </div>
       </div>
-    </div>
+    </PageTransition>
   );
 }

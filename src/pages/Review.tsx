@@ -18,6 +18,7 @@ import { Mascot, Icon } from '../components/icons';
 import { AiExplanationBox } from '../components/AiExplanationBox';
 import { useAuth } from '../auth/AuthContext';
 import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
+import { AnimatedCounter, AnimatedProgressBar, MotionCard } from '../motion';
 import viAvatar from '../assets/vi-3d.webp';
 
 interface FlashcardWord {
@@ -479,10 +480,10 @@ export default function Review() {
               🎲 Đổi bộ ngẫu nhiên
             </button>
             <span className="pill green" style={{ fontSize: 12.5, fontWeight: 800, background: '#DCFCE7', color: '#15803D', border: '1px solid #BBF7D0', padding: '5px 12px' }}>
-              ✓ {remembered} nhớ
+              ✓ <AnimatedCounter value={remembered} /> nhớ
             </span>
             <span className="pill warn" style={{ fontSize: 12.5, fontWeight: 800, background: '#FEE2E2', color: '#DC2626', border: '1px solid #FECACA', padding: '5px 12px' }}>
-              ✗ {forgotten} chưa
+              ✗ <AnimatedCounter value={forgotten} /> chưa
             </span>
           </div>
         </div>
@@ -490,8 +491,7 @@ export default function Review() {
 
       {/* AI Recommendation Banner */}
       {recommendedLevel && (
-        <div
-          className="card"
+        <MotionCard
           style={{
             background: 'linear-gradient(135deg, #F5F3FF 0%, #EEF2FF 100%)',
             border: '1px solid #DDD6FE',
@@ -526,7 +526,7 @@ export default function Review() {
               Chọn theo gợi ý AI ({recommendedLevel})
             </button>
           )}
-        </div>
+        </MotionCard>
       )}
 
       {/* Mode / Level Selector Chips */}
@@ -566,8 +566,8 @@ export default function Review() {
 
       {/* Progress Bar */}
       {cards.length > 0 && (
-        <div className="progress" style={{ marginBottom: 16 }}>
-          <i style={{ width: `${((i + 1) / cards.length) * 100}%` }} />
+        <div style={{ marginBottom: 16 }}>
+          <AnimatedProgressBar value={((i + 1) / cards.length) * 100} />
         </div>
       )}
 

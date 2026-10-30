@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 import { adminApi } from '../../api';
 import type { AdminStudent, AdminStudentDetail } from '../../api';
 import { AutocompleteSearch } from '../../components/AutocompleteSearch';
 import { Icon } from '../../components/icons';
+import { MotionCard, AnimatedCounter, modalVariants, backdropVariants } from '../../motion';
 
 const STATUS_FILTERS = [
   { id: 'ALL', label: 'Tất cả' },
@@ -87,7 +89,7 @@ export default function AdminUsers() {
       <div className="pagehead">
         <h1>Quản lý Học viên</h1>
         <div className="sub">
-          {totalElements} học viên · tìm kiếm, lọc theo trạng thái và quản lý tài khoản
+          <AnimatedCounter value={totalElements} /> học viên · tìm kiếm, lọc theo trạng thái và quản lý tài khoản
         </div>
       </div>
 
@@ -131,7 +133,7 @@ export default function AdminUsers() {
       </div>
 
       {/* Users Table Card */}
-      <div className="card" style={{ padding: '20px 14px' }}>
+      <MotionCard className="card" style={{ padding: '20px 14px' }}>
         <table className="atable">
           <thead>
             <tr>
@@ -256,7 +258,7 @@ export default function AdminUsers() {
             )}
           </tbody>
         </table>
-      </div>
+      </MotionCard>
 
       {/* Pagination Controls */}
       {totalPages > 1 && (
@@ -299,10 +301,25 @@ export default function AdminUsers() {
       )}
 
       {/* User Detail Modal */}
-      {selectedUser && (
-        <>
-          <div className="scrim" onClick={() => setSelectedUser(null)} />
-          <div className="modal" style={{ maxWidth: 580 }}>
+      <AnimatePresence>
+        {selectedUser && (
+          <>
+            <motion.div
+              className="scrim"
+              variants={backdropVariants}
+              initial="hidden"
+              animate="visible"
+              exit="exit"
+              onClick={() => setSelectedUser(null)}
+            />
+            <motion.div
+              className="modal"
+              style={{ maxWidth: 580 }}
+              variants={modalVariants}
+              initial="hidden"
+              animate="visible"
+              exit="exit"
+            >
             <div className="row" style={{ alignItems: 'flex-start', marginBottom: 18 }}>
               <div>
                 <h2 style={{ fontSize: 20 }}>Hồ sơ Học viên #{selectedUser.userId}</h2>
@@ -412,9 +429,10 @@ export default function AdminUsers() {
                 Đóng
               </button>
             </div>
-          </div>
+          </motion.div>
         </>
       )}
-    </div>
+    </AnimatePresence>
+  </div>
   );
 }

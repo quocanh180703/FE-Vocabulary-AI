@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
+import { motion } from 'motion/react';
 import { adminApi, quizApi } from '../../api';
 import type { AdminQuiz, QuizDetail } from '../../api';
 import { Icon } from '../../components/icons';
+import { MotionCard, AnimatedCounter, staggerContainer, staggerItem } from '../../motion';
 
 const LEVELS = ['ALL', 'A1', 'A2', 'B1', 'B2', 'C1'];
 
@@ -194,7 +196,7 @@ export default function AdminQuizzes() {
         <div>
           <h1>Quản lý Trắc nghiệm</h1>
           <div className="sub">
-            {quizzes.length} bài trắc nghiệm theo chủ đề &amp; cấp độ · quản lý từng câu hỏi trong bài
+            <AnimatedCounter value={quizzes.length} /> bài trắc nghiệm theo chủ đề &amp; cấp độ · quản lý từng câu hỏi trong bài
           </div>
         </div>
         <button
@@ -248,11 +250,16 @@ export default function AdminQuizzes() {
           Không có bài trắc nghiệm nào phù hợp.
         </div>
       ) : (
-        <div className="cols2">
+        <motion.div
+          className="cols2"
+          variants={staggerContainer}
+          initial="hidden"
+          animate="visible"
+        >
           {filteredQuizzes.map((q) => {
             const isPub = q.status === 'PUBLISHED';
             return (
-              <div key={q.id} className="card">
+              <MotionCard key={q.id} className="card" variants={staggerItem}>
                 <div className="row" style={{ alignItems: 'flex-start' }}>
                   <b style={{ fontSize: 17.5, color: 'var(--ink)' }}>{q.title}</b>
                   <span className={isPub ? 'pill greensoft' : 'pill warn'}>
@@ -262,7 +269,7 @@ export default function AdminQuizzes() {
 
                 <div className="mt8" style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                   <span className="pill level">Cấp {q.level || 'A1'}</span>
-                  <span className="pill">{q.questionCount ?? 10} câu hỏi</span>
+                  <span className="pill"><AnimatedCounter value={q.questionCount ?? 10} /> câu hỏi</span>
                   <span className="pill">{Math.round((q.timeLimit || 600) / 60)} phút</span>
                 </div>
 
@@ -298,10 +305,10 @@ export default function AdminQuizzes() {
                     Xóa
                   </button>
                 </div>
-              </div>
+              </MotionCard>
             );
           })}
-        </div>
+        </motion.div>
       )}
 
       {/* Create / Edit Quiz Modal */}

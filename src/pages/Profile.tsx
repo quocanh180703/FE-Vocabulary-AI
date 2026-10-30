@@ -5,6 +5,7 @@ import { useUsage } from '../context/UsageContext';
 import { userApi, learnApi, paymentApi, errMsg } from '../api';
 import type { User, LearningStats } from '../api';
 import { Icon } from '../components/icons';
+import { AnimatedProgressBar, AnimatedCounter, MotionCard } from '../motion';
 import viAvatar from '../assets/vi-3d.webp';
 
 interface LearningPreferences {
@@ -532,17 +533,7 @@ export default function Profile() {
                           {isOut ? 'Hết lượt hôm nay' : `Còn ${remaining}/${limit}`}
                         </span>
                       </div>
-                      <div style={{ height: 6, background: '#e2e8f0', borderRadius: 999, overflow: 'hidden' }}>
-                        <div
-                          style={{
-                            height: '100%',
-                            width: `${pct}%`,
-                            background: barColor,
-                            borderRadius: 999,
-                            transition: 'width 0.3s ease',
-                          }}
-                        />
-                      </div>
+                      <AnimatedProgressBar value={pct} color={barColor} height={6} />
                     </div>
                   );
                 })}
@@ -640,7 +631,7 @@ export default function Profile() {
         {/* Right Column: Learning Stats & Security */}
         <div className="colstack">
           {/* Learning Stats */}
-          <div className="card">
+          <MotionCard>
             <h2>
               <span className="dot g" />
               Học tập của bạn
@@ -648,22 +639,22 @@ export default function Profile() {
             <div className="mt8">
               <div className="kv">
                 <span>Từ đã học</span>
-                {totalLearned} từ
+                <b><AnimatedCounter value={totalLearned} /> từ</b>
               </div>
               <div className="kv">
                 <span>Đã thành thạo</span>
-                {masteredCount} từ
+                <b><AnimatedCounter value={masteredCount} /> từ</b>
               </div>
               <div className="kv">
                 <span>Điểm quiz trung bình</span>
-                {accuracy > 0 ? `${accuracy}đ` : '82đ'}
+                <b><AnimatedCounter value={accuracy > 0 ? accuracy : 82} suffix="đ" /></b>
               </div>
               <div className="kv">
                 <span>Trình độ mục tiêu</span>
-                {prefs.targetLevel}
+                <b>{prefs.targetLevel}</b>
               </div>
             </div>
-          </div>
+          </MotionCard>
 
           {/* Security */}
           <div className="card">

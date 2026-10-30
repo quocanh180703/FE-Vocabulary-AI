@@ -1,13 +1,10 @@
 import { type ReactNode, forwardRef } from 'react';
-import { motion, useReducedMotion } from 'motion/react';
+import { motion, useReducedMotion, type HTMLMotionProps } from 'motion/react';
 import { motionTokens } from './tokens';
 
-interface MotionCardProps extends React.HTMLAttributes<HTMLDivElement> {
-  children: ReactNode;
+export interface MotionCardProps extends HTMLMotionProps<'div'> {
+  children?: ReactNode;
   interactive?: boolean;
-  className?: string;
-  style?: React.CSSProperties;
-  onClick?: (e: React.MouseEvent<HTMLDivElement>) => void;
 }
 
 export const MotionCard = forwardRef<HTMLDivElement, MotionCardProps>(
@@ -21,7 +18,7 @@ export const MotionCard = forwardRef<HTMLDivElement, MotionCardProps>(
           className={`card ${className}`}
           style={style}
           onClick={onClick}
-          {...props}
+          {...(props as any)}
         >
           {children}
         </div>
@@ -36,9 +33,10 @@ export const MotionCard = forwardRef<HTMLDivElement, MotionCardProps>(
         onClick={onClick}
         whileHover={{
           y: motionTokens.distance.hoverElevation,
+          scale: motionTokens.distance.hoverScale,
           transition: {
-            duration: motionTokens.duration.normal,
-            ease: motionTokens.ease.premium,
+            duration: motionTokens.duration.fast,
+            ease: motionTokens.ease.gentleOut,
           },
         }}
         whileTap={{

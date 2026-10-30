@@ -4,6 +4,7 @@ import { quizApi, aiApi } from '../api';
 import type { QuizResult as R, QuizAttemptAnswerDetail, QuizDetail } from '../api';
 import viAvatar from '../assets/vi-3d.webp';
 import { Icon } from '../components/icons';
+import { MotionCard, AnimatedCounter } from '../motion';
 
 interface LocationState {
   result: R;
@@ -110,7 +111,7 @@ function parseAiSections(rawText: string): AiSection[] {
 
     // Detect section header: e.g. "**1. 💡 Vì sao...", "### 2. ⚠️...", "1. ...", "💡 Vì sao..."
     const isHeading =
-      /(?:^(?:#{1,3}\s*)?\*{0,2}\s*[123]\.|\b[123]\.\s*[💡⚠️🎯]|^[💡⚠️🎯])/.test(line) &&
+      /(?:^(?:#{1,3}\s*)?\*{0,2}\s*[123]\.|\b[123]\.\s*(?:💡|⚠️|🎯)|^(?:💡|⚠️|🎯))/u.test(line) &&
       line.length < 120;
 
     if (isHeading) {
@@ -430,7 +431,7 @@ export default function QuizResult() {
       </div>
 
       {/* Score Summary Card */}
-      <div className="card" style={{ textAlign: 'center', padding: '34px 20px', borderRadius: 20 }}>
+      <MotionCard style={{ textAlign: 'center', padding: '34px 20px', borderRadius: 20 }}>
         <div style={{ position: 'relative', width: 190, margin: '0 auto' }}>
           <svg width="190" height="190" viewBox="0 0 190 190">
             <circle cx="95" cy="95" r="80" fill="none" stroke="#E7EEF5" strokeWidth="15" />
@@ -458,16 +459,18 @@ export default function QuizResult() {
               justifyContent: 'center',
             }}
           >
-            <span style={{ fontSize: 43, fontWeight: 900 }}>{pct}%</span>
+            <span style={{ fontSize: 43, fontWeight: 900 }}>
+              <AnimatedCounter value={pct} suffix="%" />
+            </span>
             <span className="sub">
-              {r.correctAnswers}/{r.totalQuestions} câu đúng
+              <AnimatedCounter value={r.correctAnswers} />/{r.totalQuestions} câu đúng
             </span>
           </div>
         </div>
 
         <p className="mt16" style={{ fontWeight: 800, fontSize: 17 }}>
-          Bạn đã trả lời đúng <b>{r.correctAnswers}/{r.totalQuestions}</b> câu trắc nghiệm · Đạt{' '}
-          <b>{r.score ?? pct} điểm</b>
+          Bạn đã trả lời đúng <b><AnimatedCounter value={r.correctAnswers} />/{r.totalQuestions}</b> câu trắc nghiệm · Đạt{' '}
+          <b><AnimatedCounter value={r.score ?? pct} /> điểm</b>
         </p>
 
         {/* 2 Clickable Interactive Cards for "Câu làm đúng" and "Câu làm sai" */}
@@ -516,7 +519,7 @@ export default function QuizResult() {
                 <span>✅</span> Câu làm đúng
               </div>
               <div style={{ fontSize: 26, fontWeight: 900, color: '#065F46', marginTop: 4 }}>
-                {correctCount} <span style={{ fontSize: 14, fontWeight: 600 }}>câu</span>
+                <AnimatedCounter value={correctCount} /> <span style={{ fontSize: 14, fontWeight: 600 }}>câu</span>
               </div>
               <div style={{ fontSize: 12, color: '#059669', marginTop: 2, fontWeight: 700 }}>
                 {filterMode === 'CORRECT' ? '● Đang hiển thị' : 'Nhấp xem danh sách →'}
@@ -576,7 +579,7 @@ export default function QuizResult() {
                 <span>❌</span> Câu làm sai
               </div>
               <div style={{ fontSize: 26, fontWeight: 900, color: '#991B1B', marginTop: 4 }}>
-                {wrongCount} <span style={{ fontSize: 14, fontWeight: 600 }}>câu</span>
+                <AnimatedCounter value={wrongCount} /> <span style={{ fontSize: 14, fontWeight: 600 }}>câu</span>
               </div>
               <div style={{ fontSize: 12, color: '#DC2626', marginTop: 2, fontWeight: 700 }}>
                 {filterMode === 'WRONG' ? '● Đang hiển thị' : 'Nhấp xem & phân tích AI →'}
@@ -617,12 +620,12 @@ export default function QuizResult() {
             Làm lại bài này
           </button>
         </div>
-      </div>
+      </MotionCard>
 
       {/* Vi AI Coach Feedback Box */}
       {r.feedback && (
-        <div
-          className="card mt16"
+        <MotionCard
+          className="mt16"
           style={{
             background: 'linear-gradient(135deg, #F0FDF4 0%, #E0F2FE 100%)',
             border: '1px solid #BAE6FD',
@@ -646,7 +649,7 @@ export default function QuizResult() {
               <b style={{ color: 'var(--primary)' }}>Nhận xét từ Vi AI:</b> {r.feedback}
             </div>
           </div>
-        </div>
+        </MotionCard>
       )}
 
       {/* Detailed Question Review & Answers Section */}

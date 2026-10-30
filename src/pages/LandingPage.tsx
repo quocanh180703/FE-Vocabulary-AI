@@ -108,7 +108,7 @@ export default function LandingPage() {
       moved = false;
       try {
         img.setPointerCapture(e.pointerId);
-      } catch (_) {}
+      } catch { }
     };
 
     const handlePointerMove = (e: PointerEvent) => {
@@ -151,11 +151,13 @@ export default function LandingPage() {
     };
   }, [poke]);
 
-  // Scroll to top handler
+  // Scroll to top handler: hiển thị từ trang/màn hình 2 trở đi
   useEffect(() => {
     const handleScroll = () => {
-      const limit = Math.max(560, window.innerHeight * 0.9);
-      setShowToTop(window.scrollY > limit);
+      // Khi cuộn qua màn hình đầu (Hero), bắt đầu vào trang 2 (~350px hoặc 45% chiều cao màn hình)
+      const threshold = Math.min(400, Math.max(250, Math.round(window.innerHeight * 0.45)));
+      const currentScroll = window.scrollY || window.pageYOffset || 0;
+      setShowToTop(currentScroll > threshold);
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });
@@ -200,9 +202,15 @@ export default function LandingPage() {
   }, []);
 
   const scrollToTop = useCallback(() => {
-    const startY = window.pageYOffset;
+    const startY = window.scrollY || window.pageYOffset || 0;
     if (startY === 0) return;
-    const duration = Math.min(750, Math.max(350, startY * 0.3));
+
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      window.scrollTo(0, 0);
+      return;
+    }
+
+    const duration = Math.min(700, Math.max(300, startY * 0.25));
     const startTime = performance.now();
     const easeInOutCubic = (t: number) =>
       t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
@@ -210,7 +218,7 @@ export default function LandingPage() {
     const step = (currentTime: number) => {
       const elapsed = currentTime - startTime;
       const progress = Math.min(elapsed / duration, 1);
-      window.scrollTo(0, startY * (1 - easeInOutCubic(progress)));
+      window.scrollTo(0, Math.round(startY * (1 - easeInOutCubic(progress))));
       if (progress < 1) {
         requestAnimationFrame(step);
       }
@@ -273,7 +281,8 @@ export default function LandingPage() {
   }, []);
 
   return (
-    <div className={'landing' + (isNavigating ? ' page-exiting' : '')}>
+    <>
+      <div className={'landing' + (isNavigating ? ' page-exiting' : '')}>
       <div className={'landing-route-bar' + (isNavigating ? ' active' : '')} />
       <div className="sheet">
         {/* Navigation Header */}
@@ -855,7 +864,7 @@ export default function LandingPage() {
                     <svg className="ic" viewBox="0 0 24 24">
                       <path d="M20 6 9 17l-5-5" />
                     </svg>
-                    Mở khóa toàn bộ 5.000+ từ Oxford A1–C1
+                    Mở khóa toàn bộ 4.900+ từ Oxford A1–C1
                   </li>
                   <li>
                     <svg className="ic" viewBox="0 0 24 24">
@@ -1011,19 +1020,21 @@ export default function LandingPage() {
           </div>
         </footer>
       </div>
-
-      {/* Nút cuộn lên đầu trang */}
-      <button
-        id="toTop"
-        className={showToTop ? 'show' : ''}
-        type="button"
-        aria-label="Cuộn lên đầu trang"
-        onClick={scrollToTop}
-      >
-        <svg viewBox="0 0 24 24">
-          <path d="M12 20V6m0 0-6 6m6-6 6 6" />
-        </svg>
-      </button>
     </div>
-  );
+
+    {/* Nút cuộn lên đầu trang (nằm ngoài .landing để luôn cố định chuẩn trên viewport) */}
+    <button
+      id="toTop"
+      className={showToTop && !isNavigating ? 'show' : ''}
+      type="button"
+      aria-label="Cuộn lên đầu trang"
+      title="Cuộn lên đầu trang"
+      onClick={scrollToTop}
+    >
+      <svg viewBox="0 0 24 24">
+        <path d="M12 20V6m0 0-6 6m6-6 6 6" />
+      </svg>
+    </button>
+  </>
+);
 }

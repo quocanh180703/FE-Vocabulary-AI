@@ -79,19 +79,19 @@ function detectMainSection(line: string): SectionKey | null {
 
   if (!isHeading) return null;
 
-  if (/(?:ví dụ thực tế|example sentence|câu ví dụ)/i.test(trimmed) || /^(?:#{1,4}\s*)?1[\.\)]/i.test(trimmed)) {
+  if (/(?:ví dụ thực tế|example sentence|câu ví dụ)/i.test(trimmed) || /^(?:#{1,4}\s*)?1[.)]/i.test(trimmed)) {
     return 'examples';
   }
-  if (/(?:synonym|antonym|đồng nghĩa|trái nghĩa)/i.test(trimmed) || /^(?:#{1,4}\s*)?2[\.\)]/i.test(trimmed)) {
+  if (/(?:synonym|antonym|đồng nghĩa|trái nghĩa)/i.test(trimmed) || /^(?:#{1,4}\s*)?2[.)]/i.test(trimmed)) {
     return 'synonyms_antonyms';
   }
-  if (/(?:ngữ cảnh sử dụng|ngữ cảnh|bối cảnh|context)/i.test(trimmed) || /^(?:#{1,4}\s*)?3[\.\)]/i.test(trimmed)) {
+  if (/(?:ngữ cảnh sử dụng|ngữ cảnh|bối cảnh|context)/i.test(trimmed) || /^(?:#{1,4}\s*)?3[.)]/i.test(trimmed)) {
     return 'context';
   }
-  if (/(?:lỗi thường gặp|lỗi hay gặp|sai lầm|mistake)/i.test(trimmed) || /^(?:#{1,4}\s*)?4[\.\)]/i.test(trimmed)) {
+  if (/(?:lỗi thường gặp|lỗi hay gặp|sai lầm|mistake)/i.test(trimmed) || /^(?:#{1,4}\s*)?4[.)]/i.test(trimmed)) {
     return 'mistakes';
   }
-  if (/(?:mẹo ghi nhớ|mẹo nhớ|memory tip)/i.test(trimmed) || /^(?:#{1,4}\s*)?5[\.\)]/i.test(trimmed)) {
+  if (/(?:mẹo ghi nhớ|mẹo nhớ|memory tip)/i.test(trimmed) || /^(?:#{1,4}\s*)?5[.)]/i.test(trimmed)) {
     return 'memory_tips';
   }
   return null;
@@ -109,7 +109,7 @@ function parseSynonymsAntonyms(lines: string[]): { antonyms: TableItem[]; synony
   const synonyms: TableItem[] = [];
 
   function extractItems(raw: string, targetList: TableItem[]) {
-    const clean = raw.replace(/^[-*•+\d\.\)]+\s*/, '').trim();
+    const clean = raw.replace(/^[-*•+\d.)]+\s*/, '').trim();
     if (!clean) return;
     if (clean.includes(':')) {
       const [w, ...rest] = clean.split(':');

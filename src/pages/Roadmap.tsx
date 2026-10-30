@@ -13,6 +13,7 @@ import { Mascot, Icon } from '../components/icons';
 import { useAuth } from '../auth/AuthContext';
 import { useUsage } from '../context/UsageContext';
 import { QuotaBadge } from '../components/QuotaBadge';
+import { AnimatedCounter, MotionCard } from '../motion';
 
 interface SavedRoadmapData {
   analyzedAt: string;
@@ -693,7 +694,7 @@ export default function Roadmap() {
 
           {/* 3 Core Benefits Cards */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 20 }}>
-            <div className="card" style={{ padding: 24, borderTop: '4px solid var(--primary)' }}>
+            <MotionCard style={{ padding: 24, borderTop: '4px solid var(--primary)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                 <div style={{ background: 'var(--tint-blue)', padding: 10, borderRadius: 10, color: 'var(--primary)' }}>
                   <Icon n="chart" s={24} />
@@ -703,9 +704,9 @@ export default function Roadmap() {
               <p className="sub mt8" style={{ fontSize: 14, lineHeight: 1.5 }}>
                 Đo lường năng lực thực tế qua điểm Vi Index (0-100) trên 3 kỹ năng: Từ vựng cốt lõi, Ngữ pháp văn bản và Khả năng phát âm trôi chảy.
               </p>
-            </div>
+            </MotionCard>
 
-            <div className="card" style={{ padding: 24, borderTop: '4px solid #f59e0b' }}>
+            <MotionCard style={{ padding: 24, borderTop: '4px solid #f59e0b' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                 <div style={{ background: '#fef3c7', padding: 10, borderRadius: 10, color: '#d97706' }}>
                   <Icon n="spark" s={24} />
@@ -715,9 +716,9 @@ export default function Roadmap() {
               <p className="sub mt8" style={{ fontSize: 14, lineHeight: 1.5 }}>
                 Chỉ ra chính xác các chủ đề từ vựng bạn hay quên, các âm đuôi (-s/-ed) phát âm chưa rõ và lỗi ngữ pháp lặp lại để tập trung sửa trước.
               </p>
-            </div>
+            </MotionCard>
 
-            <div className="card" style={{ padding: 24, borderTop: '4px solid #10b981' }}>
+            <MotionCard style={{ padding: 24, borderTop: '4px solid #10b981' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                 <div style={{ background: '#d1fae5', padding: 10, borderRadius: 10, color: '#059669' }}>
                   <Icon n="book" s={24} />
@@ -727,7 +728,7 @@ export default function Roadmap() {
               <p className="sub mt8" style={{ fontSize: 14, lineHeight: 1.5 }}>
                 Phân bổ thời gian khoa học chỉ 15-20 phút/ngày với 4 cột mốc quan trọng, giúp bạn tiến bộ vượt bậc mà không bao giờ bị nản lòng.
               </p>
-            </div>
+            </MotionCard>
           </div>
         </div>
       )}
@@ -757,7 +758,7 @@ export default function Roadmap() {
                     Chỉ số năng lực tổng hợp
                   </div>
                   <div style={{ fontSize: 36, fontWeight: 900, marginTop: 4, letterSpacing: -0.5 }}>
-                    {overallScore}/100 <span style={{ fontSize: 18, fontWeight: 600, color: '#94A3B8' }}>Điểm Vi Index</span>
+                    <AnimatedCounter value={overallScore} />/100 <span style={{ fontSize: 18, fontWeight: 600, color: '#94A3B8' }}>Điểm Vi Index</span>
                   </div>
                   <div style={{ fontSize: 14.5, color: '#CBD5E1', marginTop: 4, maxWidth: 520, lineHeight: 1.5 }}>
                     {analysis?.profileSummary || `Bạn đang ở cấp độ ${currentLevel}. Duy trì nhịp học đều để sớm bứt phá lên cấp độ tiếp theo!`}
@@ -768,16 +769,24 @@ export default function Roadmap() {
               <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
                 <div style={{ textAlign: 'center', background: 'rgba(255,255,255,0.08)', backdropFilter: 'blur(8px)', padding: '14px 22px', borderRadius: 16, border: '1px solid rgba(255,255,255,0.1)' }}>
                   <div style={{ fontSize: 12.5, color: '#94A3B8', fontWeight: 700 }}>📖 Từ vựng</div>
-                  <div style={{ fontSize: 26, fontWeight: 900, color: '#38BDF8', marginTop: 2 }}>{vocabScore}%</div>
+                  <div style={{ fontSize: 26, fontWeight: 900, color: '#38BDF8', marginTop: 2 }}>
+                    <AnimatedCounter value={vocabScore} suffix="%" />
+                  </div>
                 </div>
                 <div style={{ textAlign: 'center', background: 'rgba(255,255,255,0.08)', backdropFilter: 'blur(8px)', padding: '14px 22px', borderRadius: 16, border: '1px solid rgba(255,255,255,0.1)' }}>
                   <div style={{ fontSize: 12.5, color: '#94A3B8', fontWeight: 700 }}>✍️ Ngữ pháp</div>
-                  <div style={{ fontSize: 26, fontWeight: 900, color: '#4ADE80', marginTop: 2 }}>{grammarScore}%</div>
+                  <div style={{ fontSize: 26, fontWeight: 900, color: '#4ADE80', marginTop: 2 }}>
+                    <AnimatedCounter value={grammarScore} suffix="%" />
+                  </div>
                 </div>
                 <div style={{ textAlign: 'center', background: 'rgba(255,255,255,0.08)', backdropFilter: 'blur(8px)', padding: '14px 22px', borderRadius: 16, border: '1px solid rgba(255,255,255,0.1)' }}>
                   <div style={{ fontSize: 12.5, color: '#94A3B8', fontWeight: 700 }}>🎙️ Luyện nói</div>
                   <div style={{ fontSize: 24, fontWeight: 900, color: '#F59E0B', marginTop: 2 }}>
-                    {(profile?.speaking?.totalActivities && profile.speaking.totalActivities > 0) || speakingScore > 0 ? `${speakingScore}%` : 'Chưa luyện'}
+                    {(profile?.speaking?.totalActivities && profile.speaking.totalActivities > 0) || speakingScore > 0 ? (
+                      <AnimatedCounter value={speakingScore} suffix="%" />
+                    ) : (
+                      'Chưa luyện'
+                    )}
                   </div>
                 </div>
               </div>
@@ -801,7 +810,7 @@ export default function Roadmap() {
           {tab === 'today' && (
             <div className="cols2" style={{ alignItems: 'start' }}>
               {/* Daily Practice */}
-              <div className="card">
+              <MotionCard>
                 <div className="row" style={{ alignItems: 'center' }}>
                   <h2>
                     <span className="dot" style={{ background: 'var(--primary)' }} />
@@ -897,11 +906,11 @@ export default function Roadmap() {
                     );
                   })}
                 </div>
-              </div>
+              </MotionCard>
 
               {/* 4-Week Plan & Milestones */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
-                <div className="card">
+                <MotionCard>
                   <h2><Icon n="book" s={20} /> Kế hoạch học tập 4 tuần</h2>
                   <div className="sub mt8">
                     {plan?.planDescription || 'Kế hoạch được AI thiết kế tối ưu theo mô hình Microlearning (15-20 phút/ngày) để duy trì sự tập trung tối đa.'}
@@ -942,7 +951,7 @@ export default function Roadmap() {
                       </div>
                     ))}
                   </div>
-                </div>
+                </MotionCard>
               </div>
             </div>
           )}

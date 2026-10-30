@@ -30,6 +30,7 @@ import AdminQuizzes from './pages/admin/AdminQuizzes';
 import AdminReports from './pages/admin/AdminReports';
 import AdminAiAssistant from './pages/admin/AdminAiAssistant';
 import LandingPage from './pages/LandingPage';
+import PlacementTest from './pages/PlacementTest';
 import TermsOfService from './pages/TermsOfService';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 
@@ -65,6 +66,7 @@ export default function App() {
                 <Route path="/otp" element={<Otp />} />
               </Route>
               <Route element={<Protected />}>
+                <Route path="/placement" element={<PlacementTest />} />
                 <Route element={<Layout />}>
                   <Route path="/dashboard" element={<Dashboard />} />
                   <Route path="/words" element={<Words />} />

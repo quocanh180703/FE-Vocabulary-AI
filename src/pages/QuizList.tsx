@@ -5,6 +5,7 @@ import { quizApi, personalizedApi, errMsg } from '../api';
 import type { Quiz } from '../api';
 import { Mascot } from '../components/icons';
 import { useAuth } from '../auth/AuthContext';
+import { MotionCard, staggerContainer, staggerItem, AnimatedCounter } from '../motion';
 
 const LEVELS = ['Tất cả', '🎯 Đề xuất cho bạn', 'A1', 'A2', 'B1', 'B2', 'C1'];
 const PAGE_SIZE = 10;
@@ -188,7 +189,7 @@ export default function QuizList() {
                   color: level === l ? '#fff' : 'var(--ink)',
                 }}
               >
-                {count}
+                <AnimatedCounter value={count} />
               </span>
             </button>
           );
@@ -202,58 +203,45 @@ export default function QuizList() {
         <motion.div
           key={`${level}-${page}`}
           className="cols2"
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -8 }}
-          transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+          variants={staggerContainer}
+          initial="hidden"
+          animate="visible"
+          exit={{ opacity: 0, y: -8, transition: { duration: 0.15 } }}
         >
-          {paginatedQuizzes.map((qz, idx) => {
+          {paginatedQuizzes.map((qz) => {
             const recommended = isQuizRecommended(qz);
             return (
-              <motion.div
-                className="card"
-                key={qz.id}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{
-                  duration: 0.2,
-                  delay: Math.min(idx * 0.025, 0.18),
-                  ease: [0.16, 1, 0.3, 1],
-                }}
-                whileHover={{
-                  y: -3,
-                  boxShadow: '0 12px 28px rgba(10, 37, 64, 0.08)',
-                  transition: { duration: 0.18 },
-                }}
-              >
-                <div className="row">
-                  <b style={{ fontSize: '18.5px' }}>{qz.title}</b>
-                  <span className="pill level">Cấp {qz.level}</span>
-                </div>
-                {(() => {
-                  const mins = qz.timeLimit > 60 ? Math.round(qz.timeLimit / 60) : qz.timeLimit;
-                  return (
-                    <>
-                      <div className="sub mt8">
-                        {qz.questionCount} câu · giới hạn {mins} phút{qz.category ? ` · ${qz.category}` : ''}
-                      </div>
-                      <div className="row mt16">
-                        {recommended ? (
-                          <span className="pill" style={{ background: 'var(--primary)', color: '#fff' }}>✨ AI đề xuất</span>
-                        ) : (
-                          <span className="pill level">Bấm giờ {mins}p</span>
-                        )}
-                        <button
-                          className="btn"
-                          style={{ minHeight: 46, padding: '0 22px' }}
-                          onClick={() => nav(`/quiz/${qz.id}`)}
-                        >
-                          Bắt đầu làm
-                        </button>
-                      </div>
-                    </>
-                  );
-                })()}
+              <motion.div key={qz.id} variants={staggerItem}>
+                <MotionCard>
+                  <div className="row">
+                    <b style={{ fontSize: '18.5px' }}>{qz.title}</b>
+                    <span className="pill level">Cấp {qz.level}</span>
+                  </div>
+                  {(() => {
+                    const mins = qz.timeLimit > 60 ? Math.round(qz.timeLimit / 60) : qz.timeLimit;
+                    return (
+                      <>
+                        <div className="sub mt8">
+                          {qz.questionCount} câu · giới hạn {mins} phút{qz.category ? ` · ${qz.category}` : ''}
+                        </div>
+                        <div className="row mt16">
+                          {recommended ? (
+                            <span className="pill" style={{ background: 'var(--primary)', color: '#fff' }}>✨ AI đề xuất</span>
+                          ) : (
+                            <span className="pill level">Bấm giờ {mins}p</span>
+                          )}
+                          <button
+                            className="btn"
+                            style={{ minHeight: 46, padding: '0 22px' }}
+                            onClick={() => nav(`/quiz/${qz.id}`)}
+                          >
+                            Bắt đầu làm
+                          </button>
+                        </div>
+                      </>
+                    );
+                  })()}
+                </MotionCard>
               </motion.div>
             );
           })}

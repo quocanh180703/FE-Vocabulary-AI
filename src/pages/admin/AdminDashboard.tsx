@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { motion } from 'motion/react';
 import { adminApi } from '../../api';
 import type { AdminDashboardSummary, AdminCefrStats } from '../../api';
 import { Icon } from '../../components/icons';
 import { ActivityTrendChart, CefrDonutChart } from '../../components/admin/AdminCharts';
 import type { ActivityTrendData } from '../../components/admin/AdminCharts';
+import { MotionCard, AnimatedCounter, staggerContainer, staggerItem } from '../../motion';
 
 export default function AdminDashboard() {
   const [summary, setSummary] = useState<AdminDashboardSummary | null>(null);
@@ -125,57 +127,62 @@ export default function AdminDashboard() {
       )}
 
       {/* KPI Row */}
-      <div className="kpi-row">
-        <div className="kpi">
+      <motion.div
+        className="kpi-row"
+        variants={staggerContainer}
+        initial="hidden"
+        animate="visible"
+      >
+        <motion.div variants={staggerItem} className="kpi">
           <div className="kic" style={{ background: 'var(--tint)', color: 'var(--primary)' }}>
             <Icon n="user" s={22} />
           </div>
           <div className="lbl">Tổng học viên</div>
           <div className="num">
-            {summary?.totalUsers != null ? summary.totalUsers.toLocaleString('vi-VN') : '1.284'}
+            <AnimatedCounter value={summary?.totalUsers ?? 1284} />
           </div>
           <div className="delta up">+38 tuần này</div>
-        </div>
+        </motion.div>
 
-        <div className="kpi">
+        <motion.div variants={staggerItem} className="kpi">
           <div className="kic" style={{ background: 'var(--yellow-bg)', color: 'var(--yellow-dark)' }}>
             <Icon n="gem" s={22} />
           </div>
           <div className="lbl">Từ vựng trong kho</div>
           <div className="num">
-            {cefrStats?.totalCount != null ? cefrStats.totalCount.toLocaleString('vi-VN') : '4.962'}
+            <AnimatedCounter value={cefrStats?.totalCount ?? 4962} />
           </div>
           <div className="delta up">5 cấp độ CEFR (A1–C1)</div>
-        </div>
+        </motion.div>
 
-        <div className="kpi">
+        <motion.div variants={staggerItem} className="kpi">
           <div className="kic" style={{ background: 'var(--green-bg)', color: 'var(--green-dark)' }}>
             <Icon n="zap" s={22} />
           </div>
           <div className="lbl">Phiên học hôm nay</div>
           <div className="num">
-            {summary?.activeLearningSessionsToday != null ? summary.activeLearningSessionsToday : '142'}
+            <AnimatedCounter value={summary?.activeLearningSessionsToday ?? 142} />
           </div>
           <div className="delta up">Tích cực học tập</div>
-        </div>
+        </motion.div>
 
-        <div className="kpi">
+        <motion.div variants={staggerItem} className="kpi">
           <div className="kic" style={{ background: 'var(--red-bg)', color: 'var(--red-dark)' }}>
             <Icon n="spark" s={22} />
           </div>
           <div className="lbl">Lượt gọi AI (7 ngày)</div>
           <div className="num">
-            {aiSummary?.totalRequests != null ? aiSummary.totalRequests.toLocaleString('vi-VN') : '3.412'}
+            <AnimatedCounter value={aiSummary?.totalRequests ?? 3412} />
           </div>
           <div className="delta up">
             Uptime 99.98%
           </div>
-        </div>
-      </div>
+        </motion.div>
+      </motion.div>
 
       {/* Charts Row */}
       <div className="cols2">
-        <div className="card">
+        <MotionCard className="card">
           <div className="row" style={{ alignItems: 'center' }}>
             <h2>
               <span className="dot" />
@@ -186,9 +193,9 @@ export default function AdminDashboard() {
           <div className="mt16">
             <ActivityTrendChart data={activityTrend} loading={loading} />
           </div>
-        </div>
+        </MotionCard>
 
-        <div className="card">
+        <MotionCard className="card">
           <div className="row" style={{ alignItems: 'center' }}>
             <h2>
               <span className="dot g" />
@@ -201,7 +208,7 @@ export default function AdminDashboard() {
           <div className="mt16">
             <CefrDonutChart stats={cefrStats} />
           </div>
-        </div>
+        </MotionCard>
       </div>
 
       {/* Gemini AI Ops Banner */}
@@ -299,7 +306,7 @@ export default function AdminDashboard() {
       </div>
 
       {/* Top Students Table */}
-      <div className="card">
+      <MotionCard className="card">
         <div className="row" style={{ alignItems: 'center' }}>
           <h2>
             <span className="dot a" />
@@ -368,7 +375,7 @@ export default function AdminDashboard() {
             ))}
           </tbody>
         </table>
-      </div>
+      </MotionCard>
     </div>
   );
 }

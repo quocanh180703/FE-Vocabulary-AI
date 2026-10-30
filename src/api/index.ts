@@ -34,7 +34,61 @@ export interface Word {
   imageUrl?: string;
   vietnameseMeaning?: string;
   category?: Category;
+  topic?: string;
 }
+
+export type WordTopic =
+  | 'WORK'
+  | 'TRAVEL'
+  | 'ACADEMIC'
+  | 'TECHNOLOGY'
+  | 'HEALTH'
+  | 'FOOD'
+  | 'MONEY'
+  | 'FAMILY'
+  | 'SPORTS'
+  | 'ENVIRONMENT'
+  | 'SOCIETY'
+  | 'ARTS';
+
+export const TOPIC_MAP: Record<string, string> = {
+  WORK: 'Công việc & Văn phòng',
+  TRAVEL: 'Du lịch & Di chuyển',
+  ACADEMIC: 'Học thuật & Giáo dục',
+  TECHNOLOGY: 'Công nghệ',
+  HEALTH: 'Sức khỏe',
+  FOOD: 'Ăn uống',
+  MONEY: 'Mua sắm & Tiền bạc',
+  FAMILY: 'Gia đình & Bạn bè',
+  SPORTS: 'Thể thao & Giải trí',
+  ENVIRONMENT: 'Môi trường',
+  SOCIETY: 'Xã hội & Pháp luật',
+  ARTS: 'Nghệ thuật & Văn hóa',
+};
+export interface AiVocabTagBackfillStatus {
+  jobId: string;
+  scope?: string;
+  total: number;
+  processed: number;
+  autoSaved: number;
+  queued: number;
+  skipped: number;
+  skippedIntentional?: number;
+  failed: number;
+  lastError?: string;
+  status: string;
+  message: string;
+}
+
+export interface AiVocabTagBackfillPayload {
+  scope?: 'IDS' | 'IMPORT' | 'ALL';
+  wordIds?: string[];
+  createdAfter?: string;
+  source?: string;
+  batchSize?: number;
+  confidenceThreshold?: number;
+}
+
 export interface ReviewItem { wordId: number | string; word: string; daysOverdue: number; attemptCount: number }
 /** BE: LearningProgressResponse — item của GET /api/learning/review-queue (Spring Page) */
 export interface ProgressItem {
@@ -186,6 +240,7 @@ export const normalizeWord = (w: any): Word => {
     audioUrl: w.audioUrl,
     imageUrl: w.imageUrl,
     category: w.category,
+    topic: w.topic || undefined,
   };
 };
 
@@ -315,12 +370,13 @@ export const getFavStorageKeys = () => {
 };
 
 export const wordApi = {
-  list: (p: { page?: number; size?: number; level?: string; category?: string; search?: string }) => {
+  list: (p: { page?: number; size?: number; level?: string; topic?: string; search?: string }) => {
     const params: Record<string, any> = {
       page: p.page ?? 0,
       size: p.size ?? 20,
     };
     if (p.level && p.level !== 'Tất cả') params.level = p.level;
+    if (p.topic && p.topic !== 'Tất cả') params.topic = p.topic;
     if (p.search && p.search.trim()) params.query = p.search.trim();
 
     return api.get<any>('/cefr-words/search', { params }).then((res) => {
@@ -343,6 +399,11 @@ export const wordApi = {
         },
       };
     });
+  },
+  topicCounts: (level?: string) => {
+    const params: Record<string, any> = {};
+    if (level && level !== 'Tất cả') params.level = level;
+    return api.get<Array<{ topic: string; count: number }>>('/cefr-words/topic-counts', { params });
   },
   autocomplete: async (prefix: string, limit = 8): Promise<Word[]> => {
     const trimmed = (prefix || '').trim();
@@ -1372,6 +1433,36 @@ export const adminApi = {
       words,
       overwriteExisting,
     }),
+  aiVocabTagClassify: (lemmas: string[]) =>
+    api.post<Array<{ existingWordId?: string; word: string; topic?: string; confidence: number; reason?: string }>>(
+      '/api/admin/ai-vocabulary/tag-classify',
+      { lemmas }
+    ),
+  aiVocabTagApprove: (items: Array<{ wordId: string; topic: string }>, overwrite = true) =>
+    api.post<{ success: boolean; savedCount: number; message: string }>('/api/admin/ai-vocabulary/tag-approve', {
+      items,
+      overwrite,
+    }),
+  aiVocabTagBackfill: (payload: AiVocabTagBackfillPayload) =>
+    api.post<AiVocabTagBackfillStatus>(
+      '/api/admin/ai-vocabulary/tag-backfill',
+      payload
+    ),
+  aiVocabGetSources: () =>
+    api.get<string[]>('/api/admin/ai-vocabulary/sources'),
+  aiVocabTagBackfillStatus: (jobId: string) =>
+    api.get<AiVocabTagBackfillStatus>(
+      `/api/admin/ai-vocabulary/tag-backfill/${jobId}`
+    ),
+  aiVocabTagBackfillCancel: () =>
+    api.post<AiVocabTagBackfillStatus>(
+      '/api/admin/ai-vocabulary/tag-backfill/cancel'
+    ),
+  aiVocabTagQueue: (status = 'PENDING', page = 0, size = 20) =>
+    api.get<{ content: Array<{ id: number; cefrWordId: string; lemma: string; suggestedTopic: string; confidence: number; reason: string; status: string; createdAt: string }>; totalElements: number; totalPages: number }>(
+      '/api/admin/ai-vocabulary/tag-queue',
+      { params: { status, page, size } }
+    ),
 
   // Admin Copilot (Phase 3)
   copilotChat: (message: string, history: Array<{ sender: 'user' | 'ai'; text: string }>) =>
@@ -1555,6 +1646,52 @@ export interface AdminCopilotChatResponse {
   widgetData?: Record<string, any>;
   suggestedActions?: string[];
 }
+
+/* ---------- Placement Test ---------- */
+export interface PlacementStatus {
+  completed: boolean;
+  placementLevel: string | null;
+  attemptCount: number;
+  scoreByLevel?: Record<string, number>;
+}
+
+export interface PlacementQuestion {
+  id: number;
+  level: string;
+  content: string;
+  options: string[];
+}
+
+export interface PlacementSubmitRequest {
+  answers: {
+    questionId: number;
+    selectedIndex: number | null;
+  }[];
+}
+
+export interface PlacementSubmitResult {
+  level: string;
+  scoreByLevel: Record<string, number>;
+  feedback: string;
+}
+
+export const placementApi = {
+  getStatus: () =>
+    api.get<any>('/placement/status').then((res) => ({
+      ...res,
+      data: (res.data?.data || res.data) as PlacementStatus,
+    })),
+  getTest: () =>
+    api.get<any>('/placement/test').then((res) => ({
+      ...res,
+      data: (res.data?.data || res.data) as PlacementQuestion[],
+    })),
+  submit: (req: PlacementSubmitRequest) =>
+    api.post<any>('/placement/submit', req).then((res) => ({
+      ...res,
+      data: (res.data?.data || res.data) as PlacementSubmitResult,
+    })),
+};
 
 
 

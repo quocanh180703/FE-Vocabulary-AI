@@ -7,6 +7,7 @@ import {
   type AdminCopilotChatResponse,
 } from '../../api';
 import { Icon } from '../../components/icons';
+import { AnimatedCounter } from '../../motion';
 
 type MainTab = 'copilot' | 'optimizer';
 
@@ -233,7 +234,7 @@ export default function AdminAiAssistant() {
           </div>
           <div className="lbl">Lượt gọi AI hôm nay</div>
           <div className="num">
-            {summary ? summary.totalRequests.toLocaleString('vi-VN') : '3.412'}
+            <AnimatedCounter value={summary ? summary.totalRequests : 3412} />
           </div>
           <div className="delta up">+12% so với hôm qua</div>
         </div>
@@ -244,7 +245,7 @@ export default function AdminAiAssistant() {
           </div>
           <div className="lbl">Tỷ lệ thành công</div>
           <div className="num">
-            {summary ? `${summary.successRate}%` : '99,2%'}
+            <AnimatedCounter value={summary ? Math.round(summary.successRate) : 99} />%
           </div>
           <div className="delta up">
             {summary?.errorCount ?? 27} lượt lỗi
@@ -268,7 +269,7 @@ export default function AdminAiAssistant() {
           </div>
           <div className="lbl">Chi phí ước tính</div>
           <div className="num">
-            {summary ? `${summary.estimatedCostVnd.toLocaleString('vi-VN')}đ` : '86.000đ'}
+            <AnimatedCounter value={summary ? summary.estimatedCostVnd : 86000} />đ
           </div>
           <div className="delta up">Hôm nay</div>
         </div>

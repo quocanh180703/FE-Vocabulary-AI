@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { motion } from 'motion/react';
 import { quizApi, aiApi, errMsg } from '../api';
 import type { QuizDetail, Attempt } from '../api';
 import { Icon } from '../components/icons';
+import { AnimatedProgressBar, AnimatedCounter, MotionCard, staggerContainer, staggerItem } from '../motion';
 
 export default function QuizDo() {
   const { id } = useParams();
@@ -96,16 +98,16 @@ export default function QuizDo() {
       </div>
 
       {/* Flashnav with Timer matching quiz.html */}
-      <div className="flashnav" style={{ marginBottom: 18 }}>
-        <span className={'pill' + (secs < 180 ? ' warn' : '')} style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+      <div className="flashnav" style={{ marginBottom: 18, display: 'flex', alignItems: 'center', gap: 12 }}>
+        <span className={'pill' + (secs < 180 ? ' warn' : '')} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
           <svg viewBox="0 0 24 24" className="ic" style={{ width: 16, height: 16 }}><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
           {mm}:{ss}
         </span>
-        <div className="progress">
-          <i style={{ width: `${(Object.keys(answers).length / quiz.questions.length) * 100}%` }} />
+        <div style={{ flex: 1, minWidth: 100 }}>
+          <AnimatedProgressBar value={(Object.keys(answers).length / quiz.questions.length) * 100} />
         </div>
-        <span className="pill">
-          {Object.keys(answers).length}/{quiz.questions.length} câu
+        <span className="pill" style={{ flexShrink: 0 }}>
+          <AnimatedCounter value={Object.keys(answers).length} />/{quiz.questions.length} câu
         </span>
       </div>
 
@@ -113,8 +115,7 @@ export default function QuizDo() {
 
       {/* Reading Passage if available */}
       {quiz.description && (
-        <div
-          className="card"
+        <MotionCard
           style={{
             padding: '20px 24px',
             marginBottom: 20,
@@ -150,65 +151,72 @@ export default function QuizDo() {
           >
             {quiz.description}
           </div>
-        </div>
+        </MotionCard>
       )}
 
       {/* Question List */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+      <motion.div
+        variants={staggerContainer}
+        initial="hidden"
+        animate="visible"
+        style={{ display: 'flex', flexDirection: 'column', gap: 20 }}
+      >
         {quiz.questions.map((q, qi) => (
-          <div className="card" key={q.id} style={{ padding: 24 }}>
-            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 16 }}>
-              <span className="pill level" style={{ fontSize: 12 }}>
-                Câu {qi + 1}
-              </span>
-              <h2 style={{ fontSize: 18, margin: 0, lineHeight: 1.45 }}>{q.content}</h2>
-            </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 11 }}>
-              {q.options.map((op, oi) => {
-                const isSelected = answers[q.id] === oi;
-                return (
-                  <button
-                    key={oi}
-                    type="button"
-                    className={'opt' + (isSelected ? ' sel' : '')}
-                    onClick={() => setAnswers((a) => ({ ...a, [q.id]: oi }))}
-                  >
-                    <span className="k">{'ABCD'[oi]}</span>
-                    <span style={{ flex: 1 }}>{op}</span>
-                  </button>
-                );
-              })}
-            </div>
-
-            {hint[q.id] ? (
-              <div
-                style={{
-                  marginTop: 14,
-                  padding: '12px 16px',
-                  background: 'var(--yellow-bg)',
-                  border: '1px solid #FDE68A',
-                  borderRadius: 12,
-                  fontSize: 13.5,
-                  color: '#92400E',
-                  lineHeight: 1.5,
-                }}
-              >
-                <b>💡 Gợi ý từ Vi:</b> {hint[q.id]}
+          <motion.div key={q.id} variants={staggerItem}>
+            <MotionCard style={{ padding: 24 }}>
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 16 }}>
+                <span className="pill level" style={{ fontSize: 12 }}>
+                  Câu {qi + 1}
+                </span>
+                <h2 style={{ fontSize: 18, margin: 0, lineHeight: 1.45 }}>{q.content}</h2>
               </div>
-            ) : (
-              <button
-                type="button"
-                className="link mt8"
-                onClick={() => getHint(q.id)}
-                style={{ fontSize: 13, display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 14 }}
-              >
-                <Icon n="bulb" s={15} /> Xin gợi ý từ Vi AI
-              </button>
-            )}
-          </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 11 }}>
+                {q.options.map((op, oi) => {
+                  const isSelected = answers[q.id] === oi;
+                  return (
+                    <button
+                      key={oi}
+                      type="button"
+                      className={'opt' + (isSelected ? ' sel' : '')}
+                      onClick={() => setAnswers((a) => ({ ...a, [q.id]: oi }))}
+                    >
+                      <span className="k">{'ABCD'[oi]}</span>
+                      <span style={{ flex: 1 }}>{op}</span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {hint[q.id] ? (
+                <div
+                  style={{
+                    marginTop: 14,
+                    padding: '12px 16px',
+                    background: 'var(--yellow-bg)',
+                    border: '1px solid #FDE68A',
+                    borderRadius: 12,
+                    fontSize: 13.5,
+                    color: '#92400E',
+                    lineHeight: 1.5,
+                  }}
+                >
+                  <b>💡 Gợi ý từ Vi:</b> {hint[q.id]}
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  className="link mt8"
+                  onClick={() => getHint(q.id)}
+                  style={{ fontSize: 13, display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 14 }}
+                >
+                  <Icon n="bulb" s={15} /> Xin gợi ý từ Vi AI
+                </button>
+              )}
+            </MotionCard>
+          </motion.div>
         ))}
-      </div>
+      </motion.div>
 
       <button
         type="button"

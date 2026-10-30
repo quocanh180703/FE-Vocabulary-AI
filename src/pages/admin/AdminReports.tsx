@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { adminApi } from '../../api';
 import { Icon } from '../../components/icons';
 import { QuizPerformanceBarChart, SystemHealthGauges } from '../../components/admin/AdminCharts';
+import { AnimatedCounter } from '../../motion';
 
 export default function AdminReports() {
   const [activeTab, setActiveTab] = useState<'progress' | 'content' | 'revenue' | 'system'>('revenue');
@@ -107,7 +108,7 @@ export default function AdminReports() {
                   </div>
                   <div className="lbl">Doanh thu tích lũy</div>
                   <div className="num">
-                    {(revenueReport?.totalRevenue ?? 12200000).toLocaleString('vi-VN')} đ
+                    <AnimatedCounter value={revenueReport?.totalRevenue ?? 12200000} /> đ
                   </div>
                   <div className="delta up">
                     {revenueReport?.totalPayments ?? 99} giao dịch thành công
@@ -120,7 +121,7 @@ export default function AdminReports() {
                   </div>
                   <div className="lbl">Gói tháng (99k)</div>
                   <div className="num">
-                    {revenueReport?.monthlyCount ?? 96}
+                    <AnimatedCounter value={revenueReport?.monthlyCount ?? 96} />
                   </div>
                   <div className="delta up">
                     {((revenueReport?.monthlyCount ?? 96) * 99000).toLocaleString('vi-VN')}đ qua PayOS
@@ -133,7 +134,7 @@ export default function AdminReports() {
                   </div>
                   <div className="lbl">Gói năm (899k)</div>
                   <div className="num">
-                    {revenueReport?.yearlyCount ?? 3}
+                    <AnimatedCounter value={revenueReport?.yearlyCount ?? 3} />
                   </div>
                   <div className="delta up">
                     {((revenueReport?.yearlyCount ?? 3) * 899000).toLocaleString('vi-VN')}đ qua PayOS

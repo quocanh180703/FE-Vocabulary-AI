@@ -1,17 +1,37 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { wordApi, errMsg, getPartOfSpeechBadgeStyle, ttsApi } from '../api';
+import { motion } from 'motion/react';
+import { wordApi, errMsg, getPartOfSpeechBadgeStyle, ttsApi, TOPIC_MAP } from '../api';
 import type { Word } from '../api';
 import { Icon } from '../components/icons';
 import { AutocompleteSearch } from '../components/AutocompleteSearch';
 import { useUsage } from '../context/UsageContext';
+import { MotionCard, staggerContainer, staggerItem, AnimatedCounter } from '../motion';
 
 const LEVELS = ['Tất cả', 'A1', 'A2', 'B1', 'B2', 'C1'];
+
+const TOPICS = [
+  { code: 'ALL', label: 'Tất cả chủ đề' },
+  { code: 'WORK', label: 'Công việc & Văn phòng' },
+  { code: 'TRAVEL', label: 'Du lịch & Di chuyển' },
+  { code: 'ACADEMIC', label: 'Học thuật & Giáo dục' },
+  { code: 'TECHNOLOGY', label: 'Công nghệ' },
+  { code: 'HEALTH', label: 'Sức khỏe' },
+  { code: 'FOOD', label: 'Ăn uống' },
+  { code: 'MONEY', label: 'Mua sắm & Tiền bạc' },
+  { code: 'FAMILY', label: 'Gia đình & Bạn bè' },
+  { code: 'SPORTS', label: 'Thể thao & Giải trí' },
+  { code: 'ENVIRONMENT', label: 'Môi trường' },
+  { code: 'SOCIETY', label: 'Xã hội & Pháp luật' },
+  { code: 'ARTS', label: 'Nghệ thuật & Văn hóa' },
+];
 
 export default function Words() {
   const { isVip, openUpgradeModal, isAtLeastHalfFreeUsage } = useUsage();
   const [words, setWords] = useState<Word[]>([]);
   const [level, setLevel] = useState('Tất cả');
+  const [topic, setTopic] = useState('ALL');
+  const [topicCounts, setTopicCounts] = useState<Record<string, number>>({});
   const [search, setSearch] = useState('');
   const [q, setQ] = useState('');
   const [page, setPage] = useState(0);
@@ -29,6 +49,7 @@ export default function Words() {
       page,
       size: 20,
       level: level === 'Tất cả' ? undefined : level,
+      topic: topic === 'ALL' ? undefined : topic,
       search: q || undefined,
     })
       .then(({ data }) => {
@@ -42,7 +63,27 @@ export default function Words() {
 
   useEffect(() => {
     load();
-  }, [level, page, q]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [level, topic, page, q]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    const isLocked = !isVip && isAtLeastHalfFreeUsage && (level === 'B1' || level === 'B2' || level === 'C1');
+    if (isLocked) {
+      setTopicCounts({});
+      return;
+    }
+
+    wordApi.topicCounts(level === 'Tất cả' ? undefined : level)
+      .then(({ data }) => {
+        const counts: Record<string, number> = {};
+        if (Array.isArray(data)) {
+          data.forEach((item) => {
+            if (item.topic) counts[item.topic] = item.count;
+          });
+        }
+        setTopicCounts(counts);
+      })
+      .catch(() => {});
+  }, [level, isVip, isAtLeastHalfFreeUsage]);
 
   useEffect(() => {
     const loadFavs = (e?: Event) => {
@@ -201,14 +242,58 @@ export default function Words() {
           );
         })}
         <span className="pill" style={{ marginLeft: 'auto', alignSelf: 'center' }}>
-          {totalElements} từ
+          <AnimatedCounter value={totalElements} /> từ
         </span>
+      </div>
+
+      {/* Topic Filter Chips */}
+      <div
+        className="chiprow"
+        style={{
+          marginBottom: 16,
+          display: 'flex',
+          overflowX: 'auto',
+          flexWrap: 'wrap',
+          gap: 6,
+          paddingBottom: 2,
+        }}
+      >
+        {TOPICS.map((t) => {
+          const count = t.code === 'ALL' ? undefined : (topicCounts[t.code] ?? 0);
+          const isZero = t.code !== 'ALL' && count === 0;
+          return (
+            <button
+              key={t.code}
+              className={'fchip' + (topic === t.code ? ' on' : '')}
+              disabled={isZero}
+              onClick={() => {
+                setTopic(t.code);
+                setPage(0);
+              }}
+              style={{
+                opacity: isZero ? 0.38 : 1,
+                cursor: isZero ? 'not-allowed' : 'pointer',
+                fontSize: 13,
+                padding: '6px 12px',
+                borderRadius: 999,
+              }}
+              title={isZero ? 'Không có từ nào thuộc chủ đề này ở cấp độ đã chọn' : undefined}
+            >
+              {t.label}
+              {count !== undefined && (
+                <span style={{ marginLeft: 5, opacity: 0.75, fontSize: 11.5, fontWeight: 700 }}>
+                  ({count})
+                </span>
+              )}
+            </button>
+          );
+        })}
       </div>
 
       {err && <div className="error">{err}</div>}
 
       {/* Word List Card */}
-      <div className="card" style={{ padding: 12 }}>
+      <MotionCard style={{ padding: 12 }}>
         {loading && words.length === 0 ? (
           <div className="loading" style={{ padding: 48 }}>
             <Icon n="spark" s={20} /> Đang tải danh sách từ vựng chuẩn CEFR...
@@ -222,89 +307,114 @@ export default function Words() {
             </div>
           </div>
         ) : (
-          words.map((w) => {
-            const isSaved = fav.has(String(w.id));
-            const badge = w.partOfSpeech ? getPartOfSpeechBadgeStyle(w.partOfSpeech) : null;
-            return (
-              <div
-                className="wrow"
-                key={w.id}
-                onClick={() => nav(`/words/${w.id}`)}
-                style={{ cursor: 'pointer' }}
-              >
-                <span className="wchk">
-                  <svg viewBox="0 0 24 24" className="ic"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
-                </span>
+          <motion.div
+            variants={staggerContainer}
+            initial="hidden"
+            animate="visible"
+            key={`${level}-${page}-${q}`}
+          >
+            {words.map((w) => {
+              const isSaved = fav.has(String(w.id));
+              const badge = w.partOfSpeech ? getPartOfSpeechBadgeStyle(w.partOfSpeech) : null;
+              return (
+                <motion.div key={w.id} variants={staggerItem}>
+                  <div
+                    className="wrow"
+                    onClick={() => nav(`/words/${w.id}`)}
+                    style={{ cursor: 'pointer' }}
+                  >
+                    <span className="wchk">
+                      <svg viewBox="0 0 24 24" className="ic"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+                    </span>
 
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div className="w">
-                    {w.word || w.lemma}{' '}
-                    {w.pronunciation && (
-                      <span style={{ color: 'var(--muted)', fontSize: 13.5, fontWeight: 700 }}>
-                        {w.pronunciation}
-                      </span>
-                    )}
-                    <button
-                      onClick={(e) => playAudio(w, e)}
-                      title="Nghe phát âm chuẩn"
-                      className="speakbtn"
-                      style={{ width: 30, height: 30, marginLeft: 8, display: 'inline-flex' }}
-                    >
-                      <svg viewBox="0 0 24 24" className="ic" style={{ width: 16, height: 16 }}><path d="M11 5 6 9H2v6h4l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.4 5.6a9 9 0 0 1 0 12.8"/></svg>
-                    </button>
-                  </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div className="w">
+                        {w.word || w.lemma}{' '}
+                        {w.pronunciation && (
+                          <span style={{ color: 'var(--muted)', fontSize: 13.5, fontWeight: 700 }}>
+                            {w.pronunciation}
+                          </span>
+                        )}
+                        <button
+                          onClick={(e) => playAudio(w, e)}
+                          title="Nghe phát âm chuẩn"
+                          className="speakbtn"
+                          style={{ width: 30, height: 30, marginLeft: 8, display: 'inline-flex' }}
+                        >
+                          <svg viewBox="0 0 24 24" className="ic" style={{ width: 16, height: 16 }}><path d="M11 5 6 9H2v6h4l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.4 5.6a9 9 0 0 1 0 12.8"/></svg>
+                        </button>
+                      </div>
 
-                  <div className="m">
-                    {badge && (
+                      <div className="m">
+                        {badge && (
+                          <span
+                            className="pill"
+                            style={{
+                              fontSize: 11,
+                              padding: '1px 7px',
+                              background: badge.bg,
+                              color: badge.color,
+                              border: `1px solid ${badge.border}`,
+                              fontWeight: 800,
+                              marginRight: 6,
+                            }}
+                          >
+                            {badge.shortLabel}
+                          </span>
+                        )}
+                        <span>{w.meaning || w.vietnameseMeaning}</span>
+                      </div>
+                    </div>
+
+                    {w.topic && TOPIC_MAP[w.topic] && (
                       <span
                         className="pill"
                         style={{
                           fontSize: 11,
-                          padding: '1px 7px',
-                          background: badge.bg,
-                          color: badge.color,
-                          border: `1px solid ${badge.border}`,
-                          fontWeight: 800,
+                          padding: '2px 8px',
+                          background: 'rgba(28, 140, 75, 0.08)',
+                          color: '#166534',
+                          border: '1px solid rgba(28, 140, 75, 0.2)',
+                          fontWeight: 700,
                           marginRight: 6,
                         }}
                       >
-                        {badge.shortLabel}
+                        {TOPIC_MAP[w.topic]}
                       </span>
                     )}
-                    <span>{w.meaning || w.vietnameseMeaning}</span>
-                  </div>
-                </div>
 
-                {(() => {
-                  const wLevel = (w.level || w.cefrLevel || 'A1').toUpperCase();
-                  const isLockedLevel = !isVip && ['B1', 'B2', 'C1'].includes(wLevel) && !isSaved;
-                  return (
-                    <span
-                      className="pill level"
-                      style={isLockedLevel ? { opacity: 0.9, borderColor: '#f59e0b', color: '#b45309' } : undefined}
-                      title={isLockedLevel ? 'Cần tài khoản Premium hoặc đã lưu trong tiến độ để xem chi tiết' : undefined}
+                    {(() => {
+                      const wLevel = (w.level || w.cefrLevel || 'A1').toUpperCase();
+                      const isLockedLevel = !isVip && ['B1', 'B2', 'C1'].includes(wLevel) && !isSaved;
+                      return (
+                        <span
+                          className="pill level"
+                          style={isLockedLevel ? { opacity: 0.9, borderColor: '#f59e0b', color: '#b45309' } : undefined}
+                          title={isLockedLevel ? 'Cần tài khoản Premium hoặc đã lưu trong tiến độ để xem chi tiết' : undefined}
+                        >
+                          {isLockedLevel && <span style={{ marginRight: 3, fontSize: 10 }}>🔒</span>}
+                          {wLevel}
+                        </span>
+                      );
+                    })()}
+
+                    <button
+                      className={'heartbtn' + (isSaved ? ' on' : '')}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleFav(w.id, w);
+                      }}
+                      title={isSaved ? 'Bỏ lưu yêu thích' : 'Lưu vào từ yêu thích'}
                     >
-                      {isLockedLevel && <span style={{ marginRight: 3, fontSize: 10 }}>🔒</span>}
-                      {wLevel}
-                    </span>
-                  );
-                })()}
-
-                <button
-                  className={'heartbtn' + (isSaved ? ' on' : '')}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    toggleFav(w.id, w);
-                  }}
-                  title={isSaved ? 'Bỏ lưu yêu thích' : 'Lưu vào từ yêu thích'}
-                >
-                  <svg viewBox="0 0 24 24" className="ic"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
-                </button>
-              </div>
-            );
-          })
+                      <svg viewBox="0 0 24 24" className="ic"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
+                    </button>
+                  </div>
+                </motion.div>
+              );
+            })}
+          </motion.div>
         )}
-      </div>
+      </MotionCard>
 
       {/* Pagination matching words.html */}
       {totalPages > 1 && (

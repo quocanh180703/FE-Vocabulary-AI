@@ -1,8 +1,10 @@
 import { useState } from 'react';
+import { motion } from 'motion/react';
 import { aiApi, errMsg } from '../api';
 import type { GrammarResp } from '../api';
 import { useUsage } from '../context/UsageContext';
 import { QuotaBadge } from '../components/QuotaBadge';
+import { MotionCard, AnimatedCounter, staggerContainer, staggerItem } from '../motion';
 import viAvatar from '../assets/vi-3d.webp';
 
 export default function Grammar() {
@@ -49,7 +51,7 @@ export default function Grammar() {
 
       <div className="cols2" style={{ alignItems: 'start' }}>
         {/* Left Column: Input */}
-        <div className="card">
+        <MotionCard className="card">
           <h2>
             <span className="dot" />
             Câu của bạn
@@ -86,7 +88,7 @@ export default function Grammar() {
                     fontWeight: 700,
                     color: 'var(--muted)',
                     cursor: 'pointer',
-                    transition: 'all 0.15s ease',
+                    transition: 'all 0.15s var(--ease-gentle)',
                   }}
                   onMouseEnter={(e) => (e.currentTarget.style.borderColor = 'var(--primary)')}
                   onMouseLeave={(e) => (e.currentTarget.style.borderColor = 'var(--line)')}
@@ -111,7 +113,7 @@ export default function Grammar() {
           </div>
 
           {err && <div className="error mt8">{err}</div>}
-        </div>
+        </MotionCard>
 
         {/* Right Column: Output */}
         <div className="colstack">
@@ -142,7 +144,7 @@ export default function Grammar() {
 
           {res && (
             <>
-              <div className="card">
+              <MotionCard className="card">
                 <div className="row" style={{ alignItems: 'center' }}>
                   <h2>
                     <span className="dot g" />
@@ -150,7 +152,7 @@ export default function Grammar() {
                   </h2>
                   <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                     <span className="pill level" style={{ fontWeight: 800 }}>
-                      Điểm: {res.score}/100
+                      Điểm: <AnimatedCounter value={res.score} />/100
                     </span>
                     <span className={res.errors && res.errors.length > 0 ? 'pill redsoft' : 'pill greensoft'}>
                       {res.errors && res.errors.length > 0 ? `${res.errors.length} lỗi cần sửa` : 'Hoàn hảo'}
@@ -185,9 +187,15 @@ export default function Grammar() {
                 </div>
 
                 {res.errors && res.errors.length > 0 && (
-                  <div className="mt16" style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
+                  <motion.div
+                    className="mt16"
+                    style={{ display: 'flex', flexDirection: 'column', gap: 9 }}
+                    variants={staggerContainer}
+                    initial="hidden"
+                    animate="visible"
+                  >
                     {res.errors.map((e, idx) => (
-                      <div key={idx} className="taskrow">
+                      <motion.div key={idx} variants={staggerItem} className="taskrow">
                         <span className="tk" style={{ color: 'var(--primary)' }}>
                           <b>{idx + 1}</b>
                         </span>
@@ -204,13 +212,13 @@ export default function Grammar() {
                             💡 <b>Gợi ý:</b> {e.suggestion}
                           </div>
                         </div>
-                      </div>
+                      </motion.div>
                     ))}
-                  </div>
+                  </motion.div>
                 )}
-              </div>
+              </MotionCard>
 
-              <div className="card">
+              <MotionCard className="card">
                 <div className="coach">
                   <img src={viAvatar} alt="Vi" />
                   <div className="bubble">
@@ -220,7 +228,7 @@ export default function Grammar() {
                       : 'Tuyệt vời! Câu của bạn rất chuẩn ngữ pháp và tự nhiên. Tiếp tục phát huy nhé!'}
                   </div>
                 </div>
-              </div>
+              </MotionCard>
             </>
           )}
         </div>

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import { Icon } from '../components/icons';
+import { MotionCard, AnimatedCounter } from '../motion';
 
 export default function PaymentResult() {
   const [searchParams] = useSearchParams();
@@ -48,7 +49,7 @@ export default function PaymentResult() {
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}>
-      <div className="paycard">
+      <MotionCard className="paycard">
         {isSuccess ? (
           <>
             <div className="bigcheck">
@@ -83,7 +84,7 @@ export default function PaymentResult() {
               </div>
               <div className="kv">
                 <span>Thời hạn còn lại</span>
-                <b>{subscription?.remainingDays ? `${subscription.remainingDays} ngày` : '30 ngày'}</b>
+                <b><AnimatedCounter value={subscription?.remainingDays ?? 30} /> ngày</b>
               </div>
             </div>
 
@@ -138,7 +139,7 @@ export default function PaymentResult() {
             </div>
           </>
         )}
-      </div>
+      </MotionCard>
     </div>
   );
 }

@@ -1,9 +1,11 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { motion } from 'motion/react';
 import { wordApi, errMsg, getPartOfSpeechBadgeStyle } from '../api';
 import type { Word } from '../api';
 import { Icon } from '../components/icons';
 import { AutocompleteSearch } from '../components/AutocompleteSearch';
+import { MotionCard, AnimatedCounter, staggerContainer, staggerItem } from '../motion';
 
 const CEFR_LEVELS = ['ALL', 'A1', 'A2', 'B1', 'B2', 'C1', 'C2'] as const;
 
@@ -129,7 +131,7 @@ export default function Favorites() {
         <div>
           <h1>Từ yêu thích của bạn</h1>
           <div className="sub">
-            {words.length} từ đã lưu · bấm vào từ để xem chi tiết và giải thích AI
+            <AnimatedCounter value={words.length} /> từ đã lưu · bấm vào từ để xem chi tiết và giải thích AI
           </div>
         </div>
         <div style={{ display: 'flex', gap: 10 }}>
@@ -182,14 +184,14 @@ export default function Favorites() {
               onClick={() => setSelectedLevel(lvl)}
               className={'fchip' + (isSelected ? ' on' : '')}
             >
-              {label} ({count})
+              {label} (<AnimatedCounter value={count} />)
             </button>
           );
         })}
       </div>
 
       {/* Word List Card matching favorites.html */}
-      <div className="card" style={{ padding: 12 }}>
+      <MotionCard className="card" style={{ padding: 12 }}>
         {loading ? (
           <div className="loading" style={{ padding: 48 }}>
             <Icon n="spark" s={20} /> Đang tải danh sách từ yêu thích của bạn...
@@ -227,77 +229,80 @@ export default function Favorites() {
             </button>
           </div>
         ) : (
-          filteredWords.map((w) => {
-            const wordText = w.word || w.lemma || '';
-            const meaningText = w.vietnameseMeaning || w.meaning || '';
-            const posBadge = w.partOfSpeech ? getPartOfSpeechBadgeStyle(w.partOfSpeech) : null;
+          <motion.div variants={staggerContainer} initial="hidden" animate="visible">
+            {filteredWords.map((w) => {
+              const wordText = w.word || w.lemma || '';
+              const meaningText = w.vietnameseMeaning || w.meaning || '';
+              const posBadge = w.partOfSpeech ? getPartOfSpeechBadgeStyle(w.partOfSpeech) : null;
 
-            return (
-              <div
-                key={w.id}
-                className="wrow"
-                onClick={() => nav(`/words/${w.id}`)}
-                style={{ cursor: 'pointer' }}
-              >
-                <span className="wchk">
-                  <svg viewBox="0 0 24 24" className="ic"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
-                </span>
-
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div className="w">
-                    {wordText}{' '}
-                    {w.pronunciation && (
-                      <span style={{ color: 'var(--muted)', fontSize: 13.5, fontWeight: 700 }}>
-                        {w.pronunciation}
-                      </span>
-                    )}
-                    <button
-                      onClick={(e) => playAudio(w, e)}
-                      title="Nghe phát âm chuẩn"
-                      className={'speakbtn' + (playingId === w.id ? ' on' : '')}
-                      style={{ width: 30, height: 30, marginLeft: 8, display: 'inline-flex' }}
-                    >
-                      <svg viewBox="0 0 24 24" className="ic" style={{ width: 16, height: 16 }}><path d="M11 5 6 9H2v6h4l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.4 5.6a9 9 0 0 1 0 12.8"/></svg>
-                    </button>
-                  </div>
-
-                  <div className="m">
-                    {posBadge && (
-                      <span
-                        className="pill"
-                        style={{
-                          fontSize: 11,
-                          padding: '1px 7px',
-                          background: posBadge.bg,
-                          color: posBadge.color,
-                          border: `1px solid ${posBadge.border}`,
-                          fontWeight: 800,
-                          marginRight: 6,
-                        }}
-                      >
-                        {posBadge.shortLabel}
-                      </span>
-                    )}
-                    <span>{meaningText}</span>
-                  </div>
-                </div>
-
-                <span className="pill level">
-                  {w.level || w.cefrLevel || 'A1'}
-                </span>
-
-                <button
-                  className="heartbtn on"
-                  onClick={(e) => remove(w.id, e)}
-                  title="Bỏ lưu khỏi danh sách yêu thích"
+              return (
+                <motion.div
+                  key={w.id}
+                  variants={staggerItem}
+                  className="wrow"
+                  onClick={() => nav(`/words/${w.id}`)}
+                  style={{ cursor: 'pointer' }}
                 >
-                  <svg viewBox="0 0 24 24" className="ic"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
-                </button>
-              </div>
-            );
-          })
+                  <span className="wchk">
+                    <svg viewBox="0 0 24 24" className="ic"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+                  </span>
+
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div className="w">
+                      {wordText}{' '}
+                      {w.pronunciation && (
+                        <span style={{ color: 'var(--muted)', fontSize: 13.5, fontWeight: 700 }}>
+                          {w.pronunciation}
+                        </span>
+                      )}
+                      <button
+                        onClick={(e) => playAudio(w, e)}
+                        title="Nghe phát âm chuẩn"
+                        className={'speakbtn' + (playingId === w.id ? ' on' : '')}
+                        style={{ width: 30, height: 30, marginLeft: 8, display: 'inline-flex' }}
+                      >
+                        <svg viewBox="0 0 24 24" className="ic" style={{ width: 16, height: 16 }}><path d="M11 5 6 9H2v6h4l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.4 5.6a9 9 0 0 1 0 12.8"/></svg>
+                      </button>
+                    </div>
+
+                    <div className="m">
+                      {posBadge && (
+                        <span
+                          className="pill"
+                          style={{
+                            fontSize: 11,
+                            padding: '1px 7px',
+                            background: posBadge.bg,
+                            color: posBadge.color,
+                            border: `1px solid ${posBadge.border}`,
+                            fontWeight: 800,
+                            marginRight: 6,
+                          }}
+                        >
+                          {posBadge.shortLabel}
+                        </span>
+                      )}
+                      <span>{meaningText}</span>
+                    </div>
+                  </div>
+
+                  <span className="pill level">
+                    {w.level || w.cefrLevel || 'A1'}
+                  </span>
+
+                  <button
+                    className="heartbtn on"
+                    onClick={(e) => remove(w.id, e)}
+                    title="Bỏ lưu khỏi danh sách yêu thích"
+                  >
+                    <svg viewBox="0 0 24 24" className="ic"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
+                  </button>
+                </motion.div>
+              );
+            })}
+          </motion.div>
         )}
-      </div>
+      </MotionCard>
 
       <div className="sub mt16" style={{ textAlign: 'center' }}>
         Bấm biểu tượng trái tim đỏ để bỏ lưu từ khỏi danh sách yêu thích.

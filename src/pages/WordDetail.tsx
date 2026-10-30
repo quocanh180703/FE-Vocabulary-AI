@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { wordApi, aiApi, learnApi, errMsg, formatPartOfSpeech, analyzeWordRelations, ttsApi } from '../api';
+import { motion } from 'motion/react';
+import { wordApi, aiApi, learnApi, errMsg, formatPartOfSpeech, analyzeWordRelations, ttsApi, TOPIC_MAP } from '../api';
 import type { Word, Explain } from '../api';
 import { Icon } from '../components/icons';
 import { AiExplanationBox } from '../components/AiExplanationBox';
 import { useUsage } from '../context/UsageContext';
 import { QuotaBadge } from '../components/QuotaBadge';
+import { MotionCard, staggerContainer, staggerItem } from '../motion';
 import viAvatar from '../assets/vi-3d.webp';
 
 export default function WordDetail() {
@@ -155,9 +157,20 @@ export default function WordDetail() {
       {word && (
         <>
           {/* Word Hero Card matching word.html */}
-          <div className="wordhero" style={{ position: 'relative' }}>
-            <span className="pill level" style={{ position: 'absolute', top: 22, right: 26 }}>
-              {word.level || 'A1'}{word.category ? ` · ${word.category.name}` : ''}
+          <MotionCard className="wordhero" style={{ position: 'relative' }}>
+            <span className="pill level" style={{ position: 'absolute', top: 22, right: 26, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+              <span>{word.level || 'A1'}</span>
+              {word.topic && TOPIC_MAP[word.topic] ? (
+                <>
+                  <span style={{ opacity: 0.5 }}>·</span>
+                  <span>{TOPIC_MAP[word.topic]}</span>
+                </>
+              ) : word.category ? (
+                <>
+                  <span style={{ opacity: 0.5 }}>·</span>
+                  <span>{word.category.name}</span>
+                </>
+              ) : null}
             </span>
             <div className="big">{word.word}</div>
             <div style={{ fontSize: 18, color: 'var(--muted)', fontWeight: 700, marginTop: 4, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
@@ -174,13 +187,19 @@ export default function WordDetail() {
                 “{word.example}”
               </div>
             )}
-          </div>
+          </MotionCard>
 
           {/* 2 Columns */}
-          <div className="cols2" style={{ marginTop: 24 }}>
+          <motion.div
+            className="cols2"
+            style={{ marginTop: 24 }}
+            variants={staggerContainer}
+            initial="hidden"
+            animate="visible"
+          >
             {/* Left Column Stack */}
-            <div className="colstack">
-              <div className="card">
+            <motion.div className="colstack" variants={staggerItem}>
+              <MotionCard className="card">
                 <h2><span className="dot"></span>Nghĩa &amp; cách dùng</h2>
                 {word.definition ? (
                   <p className="mt8" style={{ fontWeight: 700, lineHeight: 1.65, color: '#33475C' }}>
@@ -206,10 +225,10 @@ export default function WordDetail() {
                     </div>
                   ) : null;
                 })()}
-              </div>
+              </MotionCard>
 
               {/* Coach Vi Card */}
-              <div className="card">
+              <MotionCard className="card">
                 <div className="coach">
                   <img src={viAvatar} alt="Vi" style={{ width: 54, height: 54, borderRadius: '50%', objectFit: 'cover' }} />
                   <div className="bubble">
@@ -227,18 +246,18 @@ export default function WordDetail() {
                     <Icon n="bulb" s={18} /> Bắt đầu học từ này
                   </button>
                 </div>
-              </div>
+              </MotionCard>
 
               {ex && (
                 <div style={{ marginTop: 12 }}>
                   <AiExplanationBox explanation={ex.meaning} />
                 </div>
               )}
-            </div>
+            </motion.div>
 
             {/* Right Column Stack */}
-            <div className="colstack">
-              <div className="card">
+            <motion.div className="colstack" variants={staggerItem}>
+              <MotionCard className="card">
                 <h2><span className="dot g"></span>Từ liên quan &amp; Ngữ cảnh</h2>
                 <div className="sub mt8" style={{ marginBottom: 7 }}>Loại từ</div>
                 <div className="chiprow">
@@ -255,9 +274,9 @@ export default function WordDetail() {
                     Chuẩn Oxford 3000
                   </span>
                 </div>
-              </div>
+              </MotionCard>
 
-              <div className="card">
+              <MotionCard className="card">
                 <h2><span className="dot a"></span>Trạng thái học của bạn</h2>
                 <div className="mt8">
                   <div className="kv"><span>Trạng thái</span>Đang ôn theo SRS</div>
@@ -265,9 +284,9 @@ export default function WordDetail() {
                   <div className="kv"><span>Lần ôn tiếp theo</span>Hôm nay</div>
                   <div className="kv"><span>Yêu thích</span>{isFav ? 'Đã lưu ♥' : 'Chưa lưu'}</div>
                 </div>
-              </div>
-            </div>
-          </div>
+              </MotionCard>
+            </motion.div>
+          </motion.div>
         </>
       )}
     </div>

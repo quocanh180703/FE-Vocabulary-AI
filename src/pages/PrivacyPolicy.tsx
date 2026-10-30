@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { PageTransition } from '../motion';
 
 export default function PrivacyPolicy() {
   useEffect(() => {
@@ -8,13 +9,15 @@ export default function PrivacyPolicy() {
   }, []);
 
   return (
-    <div style={{
-      fontFamily: "'Nunito', system-ui, sans-serif",
-      background: '#EAF1F8',
-      color: '#0A2540',
-      padding: '28px 16px 60px',
-      minHeight: '100vh',
-    }}>
+    <PageTransition
+      style={{
+        fontFamily: "'Nunito', system-ui, sans-serif",
+        background: '#EAF1F8',
+        color: '#0A2540',
+        padding: '28px 16px 60px',
+        minHeight: '100vh',
+      }}
+    >
       <div style={{
         maxWidth: '820px',
         margin: '0 auto',
@@ -43,24 +46,9 @@ export default function PrivacyPolicy() {
         >
           ← Về trang chủ VocabularyAI
         </Link>
-        <div>
-          <span style={{
-            display: 'inline-block',
-            background: '#F8F0DC',
-            color: '#8A6115',
-            fontWeight: 900,
-            fontSize: '12.5px',
-            letterSpacing: '.05em',
-            padding: '6px 12px',
-            borderRadius: '999px',
-            marginBottom: '16px',
-          }}>
-            BẢN NHÁP — ĐANG CHỜ DUYỆT, CHƯA PHẢI VĂN BẢN CHÍNH THỨC
-          </span>
-        </div>
         <h1 style={{ fontSize: '32px', fontWeight: 900, lineHeight: 1.2, margin: 0 }}>Chính sách bảo mật</h1>
         <p style={{ color: '#64748B', fontWeight: 700, fontSize: '14px', margin: '10px 0 8px' }}>
-          VocabularyAI · Cập nhật lần cuối: 22/10/2026 (bản nháp)
+          VocabularyAI · Cập nhật lần cuối: 22/10/2026
         </p>
 
         <h2 style={{ fontSize: '19px', fontWeight: 900, margin: '28px 0 8px', color: '#0D47A1' }}>
@@ -181,6 +169,6 @@ export default function PrivacyPolicy() {
           </Link>
         </div>
       </div>
-    </div>
+    </PageTransition>
   );
 }

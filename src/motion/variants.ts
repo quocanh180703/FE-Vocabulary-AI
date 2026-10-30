@@ -100,17 +100,25 @@ export const backdropVariants: Variants = {
 };
 
 /**
- * 4. Micro-interactions cho Cards & Buttons
+ * 4. Micro-interactions cho Cards & Buttons & Chips (Nguyên tắc 5)
  */
-export const cardHoverTransition = {
-  duration: motionTokens.duration.normal,
-  ease: motionTokens.ease.premium,
+export const buttonTapProps = {
+  whileHover: {
+    y: motionTokens.distance.hoverElevation,
+    scale: motionTokens.distance.hoverScale,
+  },
+  whileTap: {
+    scale: motionTokens.distance.tapScale,
+  },
+  transition: {
+    duration: motionTokens.duration.fast,
+    ease: motionTokens.ease.gentleOut,
+  },
 };
 
-export const buttonTapProps = {
-  whileTap: { scale: motionTokens.distance.tapScale },
-  whileHover: { y: -1.5 },
-  transition: { duration: motionTokens.duration.fast },
+export const cardHoverTransition = {
+  duration: motionTokens.duration.fast,
+  ease: motionTokens.ease.gentleOut,
 };
 
 /**

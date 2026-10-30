@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { speakApi, errMsg } from '../api';
 import type { SessionDetail, AttemptDetail } from '../api';
 import { Icon } from '../components/icons';
+import { AnimatedProgressBar, AnimatedCounter, MotionCard } from '../motion';
 import viAvatar from '../assets/vi-3d.webp';
 
 function parseList(val: any): string[] {
@@ -175,10 +176,10 @@ export default function SpeakingResult() {
       )}
 
       {/* Overall Score & 5 Criteria Card */}
-      <div className="card" style={{ display: 'flex', gap: 30, alignItems: 'center', flexWrap: 'wrap' }}>
+      <MotionCard style={{ display: 'flex', gap: 30, alignItems: 'center', flexWrap: 'wrap' }}>
         <div className="scorering">
           <svg width="168" height="168" viewBox="0 0 168 168">
-            <circle cx="84" cy="84" r="74" fill="none" stroke="#E7EEF6" strokeWidth="13" />
+            <circle cx="84" cy="84" r="74" fill="none" stroke="#E7EEF5" strokeWidth="13" />
             <circle
               cx="84"
               cy="84"
@@ -194,7 +195,7 @@ export default function SpeakingResult() {
             />
           </svg>
           <div className="sc">
-            <b>{overallScore}</b>
+            <b><AnimatedCounter value={overallScore} /></b>
             <span>/ 100 ĐIỂM</span>
           </div>
         </div>
@@ -202,53 +203,51 @@ export default function SpeakingResult() {
         <div style={{ flex: 1, minWidth: 280 }}>
           <div className="bar-row">
             <span className="lbl">Ngữ pháp</span>
-            <div className="progress">
-              <i style={{ width: `${grammarScore}%` }} />
+            <div style={{ flex: 1, margin: '0 10px' }}>
+              <AnimatedProgressBar value={grammarScore} />
             </div>
-            <b>{grammarScore}</b>
+            <b><AnimatedCounter value={grammarScore} /></b>
           </div>
 
           <div className="bar-row">
             <span className="lbl">Từ vựng</span>
-            <div className="progress">
-              <i style={{ width: `${vocabularyScore}%` }} />
+            <div style={{ flex: 1, margin: '0 10px' }}>
+              <AnimatedProgressBar value={vocabularyScore} />
             </div>
-            <b>{vocabularyScore}</b>
+            <b><AnimatedCounter value={vocabularyScore} /></b>
           </div>
 
           <div className="bar-row">
             <span className="lbl">Trôi chảy</span>
-            <div className="progress">
-              <i
-                style={{
-                  width: `${fluencyScore}%`,
-                  background: fluencyScore < 70 ? 'var(--yellow)' : 'var(--primary)',
-                }}
+            <div style={{ flex: 1, margin: '0 10px' }}>
+              <AnimatedProgressBar
+                value={fluencyScore}
+                color={fluencyScore < 70 ? 'var(--yellow)' : 'var(--primary)'}
               />
             </div>
-            <b>{fluencyScore}</b>
+            <b><AnimatedCounter value={fluencyScore} /></b>
           </div>
 
           <div className="bar-row">
             <span className="lbl">Nội dung</span>
-            <div className="progress">
-              <i style={{ width: `${contentScore}%` }} />
+            <div style={{ flex: 1, margin: '0 10px' }}>
+              <AnimatedProgressBar value={contentScore} />
             </div>
-            <b>{contentScore}</b>
+            <b><AnimatedCounter value={contentScore} /></b>
           </div>
 
           <div className="bar-row">
             <span className="lbl">Phát âm</span>
-            <div className="progress">
-              <i style={{ width: `${pronunciationScore}%` }} />
+            <div style={{ flex: 1, margin: '0 10px' }}>
+              <AnimatedProgressBar value={pronunciationScore} />
             </div>
-            <b>{pronunciationScore}</b>
+            <b><AnimatedCounter value={pronunciationScore} /></b>
           </div>
         </div>
-      </div>
+      </MotionCard>
 
       {/* Transcript Card */}
-      <div className="card">
+      <MotionCard className="mt16">
         <div className="row">
           <h2>
             <span className="dot" />
@@ -268,10 +267,10 @@ export default function SpeakingResult() {
         >
           {transcript ? `“${transcript}”` : 'Không nhận diện được nội dung hoặc âm lượng quá nhỏ.'}
         </p>
-      </div>
+      </MotionCard>
 
       {/* Vi Coach Feedback Card */}
-      <div className="card">
+      <MotionCard className="mt16">
         <div className="coach">
           <img src={viAvatar} alt="Vi" />
           <div className="bubble">
@@ -363,7 +362,7 @@ export default function SpeakingResult() {
             Nói lại lần nữa
           </button>
         </div>
-      </div>
+      </MotionCard>
     </div>
   );
 }

@@ -1,11 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { motion } from 'motion/react';
 import { speakApi, personalizedApi, errMsg } from '../api';
 import type { SpeakSession } from '../api';
 import { Icon } from '../components/icons';
 import { useAuth } from '../auth/AuthContext';
 import { useUsage } from '../context/UsageContext';
 import { QuotaBadge } from '../components/QuotaBadge';
+import { MotionCard, AnimatedCounter, staggerContainer, staggerItem } from '../motion';
 import viAvatar from '../assets/vi-3d.webp';
 
 interface TopicItem {
@@ -330,31 +332,38 @@ export default function Speaking() {
       <div className="cols2" style={{ alignItems: 'start' }}>
         {/* Left Column: Topics Grid */}
         <div className="colstack">
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+          <motion.div
+            variants={staggerContainer}
+            initial="hidden"
+            animate="visible"
+            key={selectedCategory}
+            style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}
+          >
             {filteredTopics.map((t) => {
               const isSelected = !isCustom && topic === t.name;
               return (
-                <button
-                  key={t.name}
-                  type="button"
-                  className={'topic' + (isSelected ? ' on' : '')}
-                  onClick={() => {
-                    setTopic(t.name);
-                    setIsCustom(false);
-                  }}
-                >
-                  <b style={{ fontSize: 15.5, display: 'block' }}>{t.name}</b>
-                  <div className="sub mt8" style={{ fontSize: 12.5 }}>{t.en}</div>
-                  <div className="mt8">
-                    <span className="pill level">Cấp {t.tag}</span>
-                  </div>
-                </button>
+                <motion.div key={t.name} variants={staggerItem}>
+                  <button
+                    type="button"
+                    className={'topic' + (isSelected ? ' on' : '')}
+                    onClick={() => {
+                      setTopic(t.name);
+                      setIsCustom(false);
+                    }}
+                  >
+                    <b style={{ fontSize: 15.5, display: 'block' }}>{t.name}</b>
+                    <div className="sub mt8" style={{ fontSize: 12.5 }}>{t.en}</div>
+                    <div className="mt8">
+                      <span className="pill level">Cấp {t.tag}</span>
+                    </div>
+                  </button>
+                </motion.div>
               );
             })}
-          </div>
+          </motion.div>
 
           {/* Custom Topic Input */}
-          <div className="card mt16" style={{ padding: 18 }}>
+          <MotionCard className="mt16" style={{ padding: 18 }}>
             <label style={{ fontSize: 13, fontWeight: 800, color: 'var(--ink)' }}>
               Hoặc tự nhập chủ đề theo ý bạn:
             </label>
@@ -379,13 +388,13 @@ export default function Speaking() {
                 </button>
               )}
             </div>
-          </div>
+          </MotionCard>
         </div>
 
         {/* Right Column: Recording card & History */}
         <div className="colstack">
           {/* Main Recording Card */}
-          <div className="card" style={{ textAlign: 'center', padding: 30 }}>
+          <MotionCard style={{ textAlign: 'center', padding: 30 }}>
             {rec ? (
               <span className="pill redsoft">● Đang ghi âm · {formatTime(recordSeconds)}</span>
             ) : (
@@ -440,11 +449,11 @@ export default function Speaking() {
                 {busy ? 'Đang kết nối micro...' : 'Bắt đầu nói ngay'}
               </button>
             )}
-          </div>
+          </MotionCard>
 
           {/* Recent sessions card */}
           {historySessions.length > 0 && (
-            <div className="card">
+            <MotionCard>
               <h2>
                 <span className="dot g" />
                 Các lần nói gần đây
@@ -471,24 +480,24 @@ export default function Speaking() {
                         </div>
                       </div>
                       <span className="pill level">
-                        {score != null ? `${score}đ` : 'Xem'}
+                        {score != null ? <><AnimatedCounter value={score} />đ</> : 'Xem'}
                       </span>
                     </div>
                   );
                 })}
               </div>
-            </div>
+            </MotionCard>
           )}
 
           {/* Mascot reminder */}
-          <div className="card">
+          <MotionCard>
             <div className="coach">
               <img src={viAvatar} alt="Vi" />
               <div className="bubble">
                 <b>Vi nhắc bạn:</b> Đừng ngại nói sai! Nói chậm, rõ ràng theo cụm ý (chunking) sẽ giúp điểm trôi chảy và phát âm tăng rất nhanh đấy.
               </div>
             </div>
-          </div>
+          </MotionCard>
         </div>
       </div>
     </div>

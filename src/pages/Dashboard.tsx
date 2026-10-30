@@ -1,10 +1,18 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { learnApi, wordApi, errMsg, daysOverdue } from '../api';
+import { learnApi, wordApi, placementApi, errMsg, daysOverdue } from '../api';
 import type { ProgressItem, LearningStats, Word } from '../api';
 import { useAuth } from '../auth/AuthContext';
 import { Icon } from '../components/icons';
 import viAvatar from '../assets/vi-3d.webp';
+import { motion } from 'motion/react';
+import {
+  AnimatedCounter,
+  AnimatedProgressBar,
+  MotionCard,
+  staggerContainer,
+  staggerItem,
+} from '../motion';
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -13,6 +21,7 @@ export default function Dashboard() {
   const [stats, setStats] = useState<LearningStats | null>(null);
   const [exploreWords, setExploreWords] = useState<Word[]>([]);
   const [favs, setFavs] = useState<Set<string>>(new Set());
+  const [placementCompleted, setPlacementCompleted] = useState<boolean>(true);
   const [err, setErr] = useState('');
   const nav = useNavigate();
 
@@ -64,8 +73,21 @@ export default function Dashboard() {
 
     loadFavs();
     window.addEventListener('vocab_favorites_changed', loadFavs);
+
+    placementApi.getStatus()
+      .then(({ data }) => {
+        setPlacementCompleted(!!data?.completed);
+      })
+      .catch(() => {});
+
+    const onPlacementUpdated = () => {
+      setPlacementCompleted(true);
+    };
+    window.addEventListener('vocab_placement_updated', onPlacementUpdated);
+
     return () => {
       window.removeEventListener('vocab_favorites_changed', loadFavs);
+      window.removeEventListener('vocab_placement_updated', onPlacementUpdated);
     };
   }, [user?.id]);
 
@@ -119,55 +141,127 @@ export default function Dashboard() {
 
       {err && <div className="error">{err}</div>}
 
+      {/* Placement Test Banner if not completed */}
+      {!placementCompleted && (
+        <div
+          style={{
+            background: 'linear-gradient(90deg, #EFF6FF 0%, #F0FDF4 100%)',
+            border: '1.5px solid #BFDBFE',
+            borderRadius: 18,
+            padding: '16px 20px',
+            marginBottom: 20,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: 12,
+            boxShadow: '0 4px 14px rgba(21, 101, 192, 0.06)',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+            <div
+              style={{
+                width: 44,
+                height: 44,
+                borderRadius: 12,
+                background: '#DBEAFE',
+                color: '#1565C0',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: 22,
+                flexShrink: 0,
+              }}
+            >
+              🎓
+            </div>
+            <div>
+              <div style={{ fontWeight: 800, fontSize: 15.5, color: 'var(--ink)' }}>
+                Làm bài kiểm tra 10 phút để Vi xếp lớp đúng cho bạn
+              </div>
+              <div style={{ fontSize: 13.5, color: 'var(--muted)', marginTop: 2 }}>
+                20 câu trắc nghiệm A1 → C1 giúp cá nhân hóa toàn bộ từ vựng, flashcard và lộ trình học.
+              </div>
+            </div>
+          </div>
+          <button
+            type="button"
+            className="btn"
+            style={{
+              background: 'var(--primary)',
+              color: '#fff',
+              padding: '10px 20px',
+              borderRadius: 12,
+              fontWeight: 800,
+              fontSize: 14,
+              border: 'none',
+              cursor: 'pointer',
+              boxShadow: '0 4px 12px rgba(21, 101, 192, 0.25)',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 6,
+            }}
+            onClick={() => nav('/placement')}
+          >
+            Làm bài ngay ▸
+          </button>
+        </div>
+      )}
+
       {/* 4 KPIs matching dashboard.html */}
-      <div className="kpi-row">
-        <div className="kpi" onClick={() => nav('/review')} style={{ cursor: 'pointer' }}>
+      <motion.div
+        className="kpi-row"
+        variants={staggerContainer}
+        initial="hidden"
+        animate="visible"
+      >
+        <motion.div variants={staggerItem} className="kpi" onClick={() => nav('/review')} style={{ cursor: 'pointer' }}>
           <div className="kic" style={{ background: 'var(--red-bg)', color: 'var(--red-dark)' }}>
             <svg viewBox="0 0 24 24" className="ic"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
           </div>
           <div className="lbl">Từ đến hạn ôn</div>
-          <div className="num">{dueCount}</div>
+          <div className="num"><AnimatedCounter value={dueCount} /></div>
           <div className={`delta ${dueCount > 0 ? 'down' : 'up'}`}>
             {dueCount > 0 ? `${dueCount} từ đang chờ` : 'Đã hoàn thành!'}
           </div>
-        </div>
+        </motion.div>
 
-        <div className="kpi" onClick={() => nav('/words')} style={{ cursor: 'pointer' }}>
+        <motion.div variants={staggerItem} className="kpi" onClick={() => nav('/words')} style={{ cursor: 'pointer' }}>
           <div className="kic" style={{ background: 'var(--tint)', color: 'var(--primary)' }}>
             <svg viewBox="0 0 24 24" className="ic"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
           </div>
           <div className="lbl">Từ đã học</div>
-          <div className="num">{totalLearned || 248}</div>
+          <div className="num"><AnimatedCounter value={totalLearned || 248} /></div>
           <div className="delta up">
             {stats ? `+${stats.masteredWords || 0} đã thành thạo` : '+12 tuần này'}
           </div>
-        </div>
+        </motion.div>
 
-        <div className="kpi" onClick={() => nav('/quiz')} style={{ cursor: 'pointer' }}>
+        <motion.div variants={staggerItem} className="kpi" onClick={() => nav('/quiz')} style={{ cursor: 'pointer' }}>
           <div className="kic" style={{ background: 'var(--yellow-bg)', color: 'var(--yellow-dark)' }}>
             <svg viewBox="0 0 24 24" className="ic"><path d="M13 2 3 14h7l-1 8 10-12h-7l1-8z"/></svg>
           </div>
           <div className="lbl">Điểm quiz TB</div>
-          <div className="num">{accuracyRate || 82}%</div>
+          <div className="num"><AnimatedCounter value={accuracyRate || 82} />%</div>
           <div className="delta up">+4 điểm tuần này</div>
-        </div>
+        </motion.div>
 
-        <div className="kpi">
+        <motion.div variants={staggerItem} className="kpi">
           <div className="kic" style={{ background: 'var(--green-bg)', color: 'var(--green-dark)' }}>
             <svg viewBox="0 0 24 24" className="ic"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>
           </div>
           <div className="lbl">Streak</div>
-          <div className="num">{streak || 1} <small style={{ fontSize: 16, fontWeight: 700 }}>ngày</small></div>
+          <div className="num"><AnimatedCounter value={streak || 1} /> <small style={{ fontSize: 16, fontWeight: 700 }}>ngày</small></div>
           <div className="delta up">Kỷ lục: {stats?.longestStreak ?? streak} ngày</div>
-        </div>
-      </div>
+        </motion.div>
+      </motion.div>
 
       {/* 2-Column Content */}
       <div className="cols2">
         {/* Left Column Stack */}
         <div className="colstack">
           {/* Card: Ôn tập hôm nay */}
-          <div className="card">
+          <MotionCard>
             <div className="row">
               <h2><span className="dot r"></span>Ôn tập hôm nay</h2>
               {dueCount > 0 ? (
@@ -234,10 +328,10 @@ export default function Dashboard() {
             >
               Bắt đầu ôn tập ({total} từ)
             </button>
-          </div>
+          </MotionCard>
 
           {/* Card: Hoạt động gần đây */}
-          <div className="card">
+          <MotionCard>
             <div className="row">
               <h2><span className="dot"></span>Hoạt động gần đây</h2>
             </div>
@@ -290,13 +384,13 @@ export default function Dashboard() {
                 ))}
               </div>
             )}
-          </div>
+          </MotionCard>
         </div>
 
         {/* Right Column Stack */}
         <div className="colstack">
           {/* Card: Luyện tập trắc nghiệm */}
-          <div className="card">
+          <MotionCard>
             <div className="row">
               <h2><span className="dot g"></span>Luyện tập trắc nghiệm</h2>
               <span className="pill level">B1 · Business</span>
@@ -305,14 +399,14 @@ export default function Dashboard() {
               <b style={{ fontSize: 17.5 }}>Business English — Trung cấp</b>
               <div className="sub mt8">Dở dang bài 4/12 · 24 câu hỏi kiểm tra tính giờ</div>
             </div>
-            <div className="progress mt8"><i style={{ width: '45%' }}></i></div>
+            <AnimatedProgressBar progress={45} className="mt8" />
             <button className="btn ghost block mt16" onClick={() => nav('/quiz')}>
               Tiếp tục làm quiz
             </button>
-          </div>
+          </MotionCard>
 
           {/* Card: Khám phá từ mới */}
-          <div className="card">
+          <MotionCard>
             <div className="row">
               <h2><span className="dot a"></span>Khám phá từ mới</h2>
               <span className="pill">Cấp B2</span>
@@ -360,26 +454,24 @@ export default function Dashboard() {
             <button className="btn ghost block mt16" onClick={() => nav('/words')}>
               Xem tất cả từ vựng
             </button>
-          </div>
+          </MotionCard>
 
           {/* Card: Mục tiêu hôm nay */}
-          <div className="card">
+          <MotionCard className="card">
             <div className="row">
               <h2><span className="dot"></span>Mục tiêu hôm nay</h2>
               <span className="pill">{dailyDone}/{dailyGoal}</span>
             </div>
-            <div className="progress green mt16">
-              <i style={{ width: `${goalPercent}%` }}></i>
-            </div>
+            <AnimatedProgressBar progress={goalPercent} className="mt16 green" />
             <div className="sub mt8">
               {dailyDone >= dailyGoal
                 ? 'Tuyệt vời! Bạn đã hoàn thành 100% mục tiêu hôm nay 🎉'
                 : `Còn ${dailyGoal - dailyDone} hoạt động nữa là hoàn thành. Cố lên!`}
             </div>
-          </div>
+          </MotionCard>
 
           {/* Mascot Coach Companion Card */}
-          <div className="card" style={{ background: 'linear-gradient(135deg, #EEF7F2 0%, #E6F3EA 100%)', border: '1px solid #C2E4D2' }}>
+          <MotionCard className="card" style={{ background: 'linear-gradient(135deg, #EEF7F2 0%, #E6F3EA 100%)', border: '1px solid #C2E4D2' }}>
             <div className="coach">
               <img src={viAvatar} alt="Vi" style={{ width: 54, height: 54, borderRadius: '50%', objectFit: 'cover' }} />
               <div className="bubble" style={{ background: '#FFFFFF', borderColor: '#C2E4D2' }}>
@@ -394,7 +486,7 @@ export default function Dashboard() {
                 <Icon n="spark" s={18} /> Sửa ngữ pháp
               </button>
             </div>
-          </div>
+          </MotionCard>
         </div>
       </div>
     </div>
