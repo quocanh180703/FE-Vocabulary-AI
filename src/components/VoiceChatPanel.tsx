@@ -62,6 +62,10 @@ export const VoiceChatPanel: React.FC<VoiceChatPanelProps> = ({
 
   // Settings
   const [voice, setVoice] = useState<string>(() => localStorage.getItem('vocab_ai_voice') || 'alloy');
+  const voiceRef = useRef(voice);
+  useEffect(() => {
+    voiceRef.current = voice;
+  }, [voice]);
 
   // Push-to-talk Recording state
   const [recordSeconds, setRecordSeconds] = useState(0);
@@ -83,6 +87,9 @@ export const VoiceChatPanel: React.FC<VoiceChatPanelProps> = ({
   const [isScoring, setIsScoring] = useState(false);
   const [scoreReport, setScoreReport] = useState<VoiceChatScoreResponse | null>(null);
   const [savedWords, setSavedWords] = useState<Set<string>>(new Set());
+
+  // Track if opening message was already requested for current topic & level
+  const loadedTopicRef = useRef<string | null>(null);
 
   // Scroll to bottom
   const scrollToBottom = useCallback(() => {
@@ -106,10 +113,8 @@ export const VoiceChatPanel: React.FC<VoiceChatPanelProps> = ({
     }
     isPlayingRef.current = false;
     setActiveSentence(null);
-    if (status === 'speaking') {
-      setStatus('idle');
-    }
-  }, [status]);
+    setStatus((prev) => (prev === 'speaking' ? 'idle' : prev));
+  }, []);
 
   // Play a sequence of sentences
   const playSentences = useCallback(
@@ -120,6 +125,7 @@ export const VoiceChatPanel: React.FC<VoiceChatPanelProps> = ({
       isPlayingRef.current = true;
       setStatus('speaking');
 
+      const currentVoice = voiceRef.current;
       for (let i = 0; i < sentences.length; i++) {
         if (!isPlayingRef.current) break;
 
@@ -133,7 +139,7 @@ export const VoiceChatPanel: React.FC<VoiceChatPanelProps> = ({
         if (i + 1 < sentences.length) {
           const nextClean = stripMarkdown(sentences[i + 1]);
           if (nextClean) {
-            const nextUrl = ttsApi.getStreamUrl(nextClean, voice);
+            const nextUrl = ttsApi.getStreamUrl(nextClean, currentVoice);
             if (!preloadedAudioMap.current.has(nextUrl)) {
               const audioObj = new Audio(nextUrl);
               preloadedAudioMap.current.set(nextUrl, audioObj);
@@ -141,7 +147,7 @@ export const VoiceChatPanel: React.FC<VoiceChatPanelProps> = ({
           }
         }
 
-        const streamUrl = ttsApi.getStreamUrl(cleanText, voice);
+        const streamUrl = ttsApi.getStreamUrl(cleanText, currentVoice);
         await new Promise<void>((resolve) => {
           let audio = preloadedAudioMap.current.get(streamUrl);
           if (!audio) {
@@ -185,9 +191,9 @@ export const VoiceChatPanel: React.FC<VoiceChatPanelProps> = ({
 
       isPlayingRef.current = false;
       setActiveSentence(null);
-      setStatus('idle');
+      setStatus((prev) => (prev === 'speaking' ? 'idle' : prev));
     },
-    [voice, stopAudio]
+    [stopAudio]
   );
 
   // Play individual sentence on user click
@@ -201,13 +207,14 @@ export const VoiceChatPanel: React.FC<VoiceChatPanelProps> = ({
       setStatus('speaking');
       isPlayingRef.current = true;
 
-      const streamUrl = ttsApi.getStreamUrl(cleanText, voice);
+      const currentVoice = voiceRef.current;
+      const streamUrl = ttsApi.getStreamUrl(cleanText, currentVoice);
       const audio = new Audio(streamUrl);
       currentAudioRef.current = audio;
 
       const finish = () => {
         setActiveSentence(null);
-        setStatus('idle');
+        setStatus((prev) => (prev === 'speaking' ? 'idle' : prev));
         isPlayingRef.current = false;
       };
 
@@ -225,11 +232,15 @@ export const VoiceChatPanel: React.FC<VoiceChatPanelProps> = ({
       };
       audio.play().catch(finish);
     },
-    [voice, stopAudio]
+    [stopAudio]
   );
 
   // Initial Opening message from Vi
   useEffect(() => {
+    const topicKey = `${effectiveTopic}-${level}`;
+    if (loadedTopicRef.current === topicKey) return;
+    loadedTopicRef.current = topicKey;
+
     let mounted = true;
     const loadOpening = async () => {
       setStatus('thinking');
