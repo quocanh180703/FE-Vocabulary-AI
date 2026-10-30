@@ -1092,23 +1092,34 @@ export interface VoiceChatScoreResponse {
   newWords: VoiceChatNewWord[];
 }
 
+export interface VoiceChatApiOptions {
+  signal?: AbortSignal;
+  timeout?: number;
+}
+
 export const voiceChatApi = {
-  transcribe: (audioFile: Blob | File) => {
+  transcribe: (audioFile: Blob | File, options?: VoiceChatApiOptions) => {
     const formData = new FormData();
     formData.append('audioFile', audioFile, 'voice-chat.webm');
     return api
       .post<VoiceChatTranscribeResponse>('/ai/speaking/voice-chat/transcribe', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
+        signal: options?.signal,
+        timeout: options?.timeout ?? 45000,
       })
       .then((res) => (res.data as any)?.data || res.data);
   },
-  reply: (data: VoiceChatReplyRequest) =>
+  reply: (data: VoiceChatReplyRequest, options?: VoiceChatApiOptions) =>
     api
-      .post<VoiceChatReplyResponse>('/ai/speaking/voice-chat/reply', data)
+      .post<VoiceChatReplyResponse>('/ai/speaking/voice-chat/reply', data, {
+        signal: options?.signal,
+        timeout: options?.timeout ?? 60000,
+      })
       .then((res) => (res.data as any)?.data || res.data),
   score: (
     audioFile: Blob | File | null,
-    payload: { topic: string; level: string; turns: Array<{ role: string; text: string }> }
+    payload: { topic: string; level: string; turns: Array<{ role: string; text: string }> },
+    options?: VoiceChatApiOptions
   ) => {
     const formData = new FormData();
     if (audioFile) {
@@ -1118,6 +1129,8 @@ export const voiceChatApi = {
     return api
       .post<VoiceChatScoreResponse>('/ai/speaking/voice-chat/score', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
+        signal: options?.signal,
+        timeout: options?.timeout ?? 90000,
       })
       .then((res) => (res.data as any)?.data || res.data);
   },

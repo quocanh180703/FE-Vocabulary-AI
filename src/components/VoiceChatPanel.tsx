@@ -91,6 +91,22 @@ export const VoiceChatPanel: React.FC<VoiceChatPanelProps> = ({
   // Track if opening message was already requested for current topic & level
   const loadedTopicRef = useRef<string | null>(null);
 
+  // AbortController & Timeout reference to prevent infinite pending requests
+  const abortControllerRef = useRef<AbortController | null>(null);
+  const timeoutTimerRef = useRef<any>(null);
+
+  // Clear pending request & timeout
+  const cleanupRequest = useCallback(() => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+    }
+    if (timeoutTimerRef.current) {
+      clearTimeout(timeoutTimerRef.current);
+      timeoutTimerRef.current = null;
+    }
+  }, []);
+
   // Scroll to bottom
   const scrollToBottom = useCallback(() => {
     if (chatScrollRef.current) {
@@ -236,52 +252,70 @@ export const VoiceChatPanel: React.FC<VoiceChatPanelProps> = ({
   );
 
   // Initial Opening message from Vi
+  const loadOpening = useCallback(async () => {
+    cleanupRequest();
+    setStatus('thinking');
+    setErrorMsg(null);
+
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
+    // Timeout 60s
+    timeoutTimerRef.current = setTimeout(() => {
+      if (!controller.signal.aborted) {
+        controller.abort();
+        setStatus('idle');
+        setErrorMsg('Quá thời gian chờ phản hồi từ AI (60 giây). Bạn hãy bấm "Thử lại" bên dưới.');
+      }
+    }, 60000);
+
+    try {
+      const resp = await voiceChatApi.reply(
+        {
+          topic: effectiveTopic,
+          level,
+          messages: [],
+          opening: true,
+        },
+        { signal: controller.signal, timeout: 60000 }
+      );
+
+      const replyText =
+        resp?.reply ||
+        `Hello! Welcome to our speaking session about ${effectiveTopic}. How are you feeling today?`;
+      const sentences = splitSentences(replyText);
+      const openingMsg: Message = {
+        id: 'msg-open-' + Date.now(),
+        role: 'assistant',
+        text: replyText,
+        sentences,
+      };
+      setMessages([openingMsg]);
+      setStatus('idle');
+
+      // Phát giọng câu mở đầu
+      playSentences(openingMsg.id, sentences);
+    } catch (err: any) {
+      if (controller.signal.aborted) return;
+      setStatus('idle');
+      setErrorMsg(errMsg(err, 'Không thể tải câu mở đầu từ AI. Hãy bấm "Thử lại" hoặc nói trực tiếp.'));
+    } finally {
+      cleanupRequest();
+    }
+  }, [effectiveTopic, level, playSentences, cleanupRequest]);
+
   useEffect(() => {
     const topicKey = `${effectiveTopic}-${level}`;
     if (loadedTopicRef.current === topicKey) return;
     loadedTopicRef.current = topicKey;
 
-    let mounted = true;
-    const loadOpening = async () => {
-      setStatus('thinking');
-      setErrorMsg(null);
-      try {
-        const resp = await voiceChatApi.reply({
-          topic: effectiveTopic,
-          level,
-          messages: [],
-          opening: true,
-        });
-
-        if (!mounted) return;
-
-        const replyText = resp?.reply || `Hello! Welcome to our speaking session about ${effectiveTopic}. How are you feeling today?`;
-        const sentences = splitSentences(replyText);
-        const openingMsg: Message = {
-          id: 'msg-open-' + Date.now(),
-          role: 'assistant',
-          text: replyText,
-          sentences,
-        };
-        setMessages([openingMsg]);
-        setStatus('idle');
-
-        // Phát giọng câu mở đầu
-        playSentences(openingMsg.id, sentences);
-      } catch (err: any) {
-        if (!mounted) return;
-        setStatus('idle');
-        setErrorMsg(errMsg(err, 'Không thể tải câu mở đầu từ AI. Hãy thử bấm bắt đầu lại.'));
-      }
-    };
-
     loadOpening();
 
     return () => {
-      mounted = false;
+      cleanupRequest();
       stopAudio();
     };
-  }, [effectiveTopic, level, playSentences, stopAudio]);
+  }, [effectiveTopic, level, loadOpening, cleanupRequest, stopAudio]);
 
   // Handle Voice Change
   const handleVoiceChange = (newVoice: string) => {
@@ -294,6 +328,7 @@ export const VoiceChatPanel: React.FC<VoiceChatPanelProps> = ({
   const startRecording = async () => {
     if (status !== 'idle' && status !== 'speaking') return;
     stopAudio();
+    cleanupRequest();
     setErrorMsg(null);
 
     try {
@@ -328,6 +363,68 @@ export const VoiceChatPanel: React.FC<VoiceChatPanelProps> = ({
     }
   };
 
+  // Request reply for history
+  const requestAiReply = useCallback(
+    async (history: Message[]) => {
+      cleanupRequest();
+      setStatus('thinking');
+      setErrorMsg(null);
+
+      const controller = new AbortController();
+      abortControllerRef.current = controller;
+
+      timeoutTimerRef.current = setTimeout(() => {
+        if (!controller.signal.aborted) {
+          controller.abort();
+          setStatus('idle');
+          setErrorMsg('Quá thời gian chờ phản hồi từ AI (60 giây). Bạn hãy bấm "Thử lại".');
+        }
+      }, 60000);
+
+      const historyForLLM = history.map((m) => ({
+        role: m.role,
+        content: m.text,
+      }));
+
+      try {
+        const replyRes = await voiceChatApi.reply(
+          {
+            topic: effectiveTopic,
+            level,
+            messages: historyForLLM,
+            opening: false,
+          },
+          { signal: controller.signal, timeout: 60000 }
+        );
+
+        // Trừ quota 1 lượt thành công
+        decrementQuota('voice');
+
+        const aiText = replyRes?.reply || "I didn't quite catch that. Could you say that again?";
+        const sentences = splitSentences(aiText);
+        const aiMsg: Message = {
+          id: 'ai-' + Date.now(),
+          role: 'assistant',
+          text: aiText,
+          sentences,
+        };
+
+        setMessages((prev: Message[]) => [...prev, aiMsg]);
+        setStatus('idle');
+
+        // Phát audio theo từng câu
+        playSentences(aiMsg.id, sentences);
+      } catch (err: any) {
+        if (controller.signal.aborted) return;
+        setErrorMsg(errMsg(err, 'Lỗi khi kết nối với AI. Bạn hãy bấm "Thử lại".'));
+        setStatus('idle');
+      } finally {
+        cleanupRequest();
+      }
+    },
+    [effectiveTopic, level, decrementQuota, playSentences, cleanupRequest]
+  );
+
   // Push-To-Talk: Stop Recording & Process
   const stopRecordingAndSend = () => {
     if (status !== 'recording' || !mediaRecorderRef.current) return;
@@ -355,64 +452,75 @@ export const VoiceChatPanel: React.FC<VoiceChatPanelProps> = ({
       }
 
       // 1. Gửi STT Whisper
+      cleanupRequest();
       setStatus('transcribing');
-      try {
-        const transcribeRes = await voiceChatApi.transcribe(audioBlob);
-        const transcript = transcribeRes?.transcript?.trim();
+      const transcribeController = new AbortController();
+      abortControllerRef.current = transcribeController;
 
-        if (!transcript) {
-          setErrorMsg('Không nghe thấy giọng nói rõ ràng. Bạn hãy thử nói lại nhé.');
+      timeoutTimerRef.current = setTimeout(() => {
+        if (!transcribeController.signal.aborted) {
+          transcribeController.abort();
           setStatus('idle');
-          return;
+          setErrorMsg('Quá thời gian xử lý giọng nói (45 giây). Vui lòng thử nói lại.');
         }
+      }, 45000);
 
-        // Thêm message của user vào timeline
-        const userMsg: Message = {
-          id: 'user-' + Date.now(),
-          role: 'user',
-          text: transcript,
-          durationSec: Math.round(duration),
-        };
-        const updatedMessages = [...messages, userMsg];
-        setMessages(updatedMessages);
-
-        // 2. Gửi LLM Reply
-        setStatus('thinking');
-        const historyForLLM = updatedMessages.map((m) => ({
-          role: m.role,
-          content: m.text,
-        }));
-
-        const replyRes = await voiceChatApi.reply({
-          topic: effectiveTopic,
-          level,
-          messages: historyForLLM,
-          opening: false,
+      let transcript = '';
+      try {
+        const transcribeRes = await voiceChatApi.transcribe(audioBlob, {
+          signal: transcribeController.signal,
+          timeout: 45000,
         });
-
-        // Trừ quota 1 lượt thành công
-        decrementQuota('voice');
-
-        const aiText = replyRes?.reply || "I didn't quite catch that. Could you say that again?";
-        const sentences = splitSentences(aiText);
-        const aiMsg: Message = {
-          id: 'ai-' + Date.now(),
-          role: 'assistant',
-          text: aiText,
-          sentences,
-        };
-
-        setMessages((prev: Message[]) => [...prev, aiMsg]);
-
-        // 3. Phát audio theo từng câu
-        playSentences(aiMsg.id, sentences);
+        transcript = transcribeRes?.transcript?.trim() || '';
       } catch (err: any) {
-        setErrorMsg(errMsg(err, 'Lỗi khi kết nối với AI. Bạn hãy thử lại.'));
+        if (transcribeController.signal.aborted) return;
+        setErrorMsg(errMsg(err, 'Lỗi khi nhận diện giọng nói. Bạn hãy thử nói lại.'));
         setStatus('idle');
+        cleanupRequest();
+        return;
+      } finally {
+        cleanupRequest();
       }
+
+      if (!transcript) {
+        setErrorMsg('Không nghe thấy giọng nói rõ ràng. Bạn hãy thử nói lại nhé.');
+        setStatus('idle');
+        return;
+      }
+
+      // Thêm message của user vào timeline
+      const userMsg: Message = {
+        id: 'user-' + Date.now(),
+        role: 'user',
+        text: transcript,
+        durationSec: Math.round(duration),
+      };
+      const updatedMessages = [...messages, userMsg];
+      setMessages(updatedMessages);
+
+      // 2. Gửi LLM Reply
+      requestAiReply(updatedMessages);
     };
 
     mr.stop();
+  };
+
+  // Cancel waiting state anytime
+  const handleCancelWaiting = () => {
+    cleanupRequest();
+    setStatus('idle');
+    setErrorMsg('Đã hủy lượt chờ. Bạn có thể bấm giữ micro để nói lại.');
+  };
+
+  // Retry last failed action
+  const handleRetry = () => {
+    setErrorMsg(null);
+    if (messages.length === 0) {
+      loadedTopicRef.current = null;
+      loadOpening();
+    } else {
+      requestAiReply(messages);
+    }
   };
 
   // End Session & Score
@@ -604,25 +712,63 @@ export const VoiceChatPanel: React.FC<VoiceChatPanelProps> = ({
         )}
 
         {status === 'thinking' && (
-          <div className="voice-status-box">
+          <div className="voice-status-box" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px' }}>
             <span className="grading-spin" style={{ display: 'inline-block' }}>✨</span>
             <span>Vi đang suy nghĩ câu trả lời…</span>
+            <button
+              onClick={handleCancelWaiting}
+              className="btn btn-outline"
+              style={{
+                padding: '2px 10px',
+                fontSize: '12px',
+                color: '#64748b',
+                borderColor: '#cbd5e1',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                background: '#fff',
+              }}
+              title="Hủy chờ và quay lại trạng thái nói"
+            >
+              Hủy chờ
+            </button>
           </div>
         )}
 
         {errorMsg && (
           <div
             style={{
-              padding: '12px 18px',
+              padding: '10px 16px',
               borderRadius: '12px',
               background: '#fef2f2',
               border: '1px solid #fecaca',
               color: '#b91c1c',
               fontSize: '13.5px',
               alignSelf: 'center',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px',
+              flexWrap: 'wrap',
+              justifyContent: 'center',
             }}
           >
-            ⚠️ {errorMsg}
+            <span>⚠️ {errorMsg}</span>
+            <button
+              onClick={handleRetry}
+              className="btn btn-primary"
+              style={{
+                padding: '4px 12px',
+                fontSize: '12px',
+                fontWeight: 700,
+                borderRadius: '8px',
+                background: '#dc2626',
+                border: 'none',
+                color: '#fff',
+                cursor: 'pointer',
+              }}
+              title="Thử lại request vừa rồi"
+            >
+              🔄 Thử lại
+            </button>
           </div>
         )}
       </div>
