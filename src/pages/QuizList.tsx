@@ -203,6 +203,7 @@ export default function QuizList() {
         <motion.div
           key={`${level}-${page}`}
           className="cols2"
+          style={{ gridTemplateColumns: '1fr 1fr' }}
           variants={staggerContainer}
           initial="hidden"
           animate="visible"
