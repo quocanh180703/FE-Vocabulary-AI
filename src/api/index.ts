@@ -1051,6 +1051,79 @@ export const ttsApi = {
     `${import.meta.env.VITE_API_URL || 'http://localhost:8080/api'}/ai/speaking/tts/stream?text=${encodeURIComponent(text)}&voice=${encodeURIComponent(voice)}`,
 };
 
+/* ---------- voice chat ---------- */
+export interface VoiceChatTranscribeResponse {
+  transcript: string;
+}
+
+export interface VoiceChatReplyRequest {
+  topic: string;
+  level: string;
+  messages: Array<{ role: string; content: string }>;
+  opening?: boolean;
+}
+
+export interface VoiceChatReplyResponse {
+  reply: string;
+}
+
+export interface VoiceChatCriterionScore {
+  score: number;
+  comment: string;
+  estimatedFromTranscript?: boolean;
+}
+
+export interface VoiceChatNewWord {
+  word: string;
+  meaning: string;
+  example: string;
+  wordId?: string | null;
+  inDictionary: boolean;
+}
+
+export interface VoiceChatScoreResponse {
+  grammar: VoiceChatCriterionScore;
+  vocabulary: VoiceChatCriterionScore;
+  fluency: VoiceChatCriterionScore;
+  content: VoiceChatCriterionScore;
+  pronunciation: VoiceChatCriterionScore;
+  overall: number;
+  summary: string;
+  newWords: VoiceChatNewWord[];
+}
+
+export const voiceChatApi = {
+  transcribe: (audioFile: Blob | File) => {
+    const formData = new FormData();
+    formData.append('audioFile', audioFile, 'voice-chat.webm');
+    return api
+      .post<VoiceChatTranscribeResponse>('/ai/speaking/voice-chat/transcribe', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      })
+      .then((res) => (res.data as any)?.data || res.data);
+  },
+  reply: (data: VoiceChatReplyRequest) =>
+    api
+      .post<VoiceChatReplyResponse>('/ai/speaking/voice-chat/reply', data)
+      .then((res) => (res.data as any)?.data || res.data),
+  score: (
+    audioFile: Blob | File | null,
+    payload: { topic: string; level: string; turns: Array<{ role: string; text: string }> }
+  ) => {
+    const formData = new FormData();
+    if (audioFile) {
+      formData.append('audioFile', audioFile, 'longest-turn.webm');
+    }
+    formData.append('payload', JSON.stringify(payload));
+    return api
+      .post<VoiceChatScoreResponse>('/ai/speaking/voice-chat/score', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      })
+      .then((res) => (res.data as any)?.data || res.data);
+  },
+};
+
+
 /* ---------- user ---------- */
 export const userApi = {
   me: () =>
@@ -1526,6 +1599,7 @@ export interface SubscriptionUsageResponse {
     grammar: FeatureQuota;
     explain: FeatureQuota;
     roadmap: FeatureQuota;
+    voice?: FeatureQuota;
   };
 }
 

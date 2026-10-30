@@ -9,6 +9,7 @@ import { useUsage } from '../context/UsageContext';
 import { QuotaBadge } from '../components/QuotaBadge';
 import { MotionCard, AnimatedCounter, staggerContainer, staggerItem } from '../motion';
 import viAvatar from '../assets/vi-3d.webp';
+import { VoiceChatPanel } from '../components/VoiceChatPanel';
 
 interface TopicItem {
   name: string;
@@ -118,6 +119,7 @@ export default function Speaking() {
 
   const initialLvl = getInitialLevel();
   const [level, setLevel] = useState(initialLvl);
+  const [mode, setMode] = useState<'practice' | 'voice'>('practice');
   const [session, setSession] = useState<SpeakSession | null>(null);
   const [rec, setRec] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -310,13 +312,42 @@ export default function Speaking() {
           <h1>Luyện nói phản xạ cùng AI</h1>
           <div className="sub">Chọn chủ đề, nói 1–2 phút — Vi nghe và chấm 5 tiêu chí ngay</div>
         </div>
-        <QuotaBadge featureKey="speaking" labelSuffix="lượt chấm hôm nay" />
+        <QuotaBadge featureKey={mode === 'voice' ? 'voice' : 'speaking'} labelSuffix={mode === 'voice' ? 'lượt thoại hôm nay' : 'lượt chấm hôm nay'} />
       </div>
 
-      {err && <div className="error">{err}</div>}
+      {/* Mode Switcher Tabs */}
+      <div style={{ display: 'flex', gap: '10px', margin: '20px 0' }}>
+        <button
+          type="button"
+          onClick={() => setMode('practice')}
+          className={'fchip' + (mode === 'practice' ? ' on' : '')}
+          style={{ fontSize: '14px', padding: '9px 20px', fontWeight: 800, cursor: 'pointer' }}
+        >
+          🎙️ Luyện nói & Chấm điểm
+        </button>
+        <button
+          type="button"
+          onClick={() => setMode('voice')}
+          className={'fchip' + (mode === 'voice' ? ' on' : '')}
+          style={{ fontSize: '14px', padding: '9px 20px', fontWeight: 800, cursor: 'pointer' }}
+        >
+          💬 Trò chuyện giọng nói với AI (Voice Chat)
+        </button>
+      </div>
 
-      {/* Chiprow categories */}
-      <div className="chiprow">
+      {mode === 'voice' ? (
+        <VoiceChatPanel
+          topic={isCustom && customTopic ? customTopic : topic}
+          level={level}
+          customTopic={isCustom ? customTopic : undefined}
+          onBackToPractice={() => setMode('practice')}
+        />
+      ) : (
+        <>
+          {err && <div className="error">{err}</div>}
+
+          {/* Chiprow categories */}
+          <div className="chiprow">
         {CATEGORIES.map((c) => (
           <button
             key={c.id}
@@ -500,6 +531,8 @@ export default function Speaking() {
           </MotionCard>
         </div>
       </div>
+        </>
+      )}
     </div>
   );
 }

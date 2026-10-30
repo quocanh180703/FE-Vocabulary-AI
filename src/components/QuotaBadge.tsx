@@ -2,7 +2,7 @@ import React from 'react';
 import { useUsage } from '../context/UsageContext';
 
 interface QuotaBadgeProps {
-  featureKey: 'chat' | 'speaking' | 'grammar' | 'explain' | 'roadmap';
+  featureKey: 'chat' | 'speaking' | 'grammar' | 'explain' | 'roadmap' | 'voice';
   labelSuffix?: string; // e.g. "lượt hôm nay", "lượt chấm hôm nay", "lượt kiểm tra hôm nay", "lượt tạo lộ trình hôm nay"
   showOnlyWhenLow?: boolean; // If true, only renders when remaining <= 3
   className?: string;
@@ -49,8 +49,8 @@ export const QuotaBadge: React.FC<QuotaBadgeProps> = ({
   }
 
   const featureQuota = usage?.features?.[featureKey];
-  const remaining = featureQuota?.remaining ?? (featureKey === 'explain' ? 10 : featureKey === 'roadmap' ? 2 : 5);
-  const limit = featureQuota?.limit ?? (featureKey === 'explain' ? 10 : featureKey === 'roadmap' ? 2 : 5);
+  const remaining = featureQuota?.remaining ?? (featureKey === 'explain' || featureKey === 'voice' ? 10 : featureKey === 'roadmap' ? 2 : 5);
+  const limit = featureQuota?.limit ?? (featureKey === 'explain' || featureKey === 'voice' ? 10 : featureKey === 'roadmap' ? 2 : 5);
 
   if (showOnlyWhenLow && remaining > 3) {
     return null;
