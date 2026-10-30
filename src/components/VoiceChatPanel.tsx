@@ -57,6 +57,35 @@ function splitSentences(text: string): string[] {
     });
 }
 
+function getInstantOpeningGreeting(topic: string, _level?: string): string {
+  const lower = (topic || '').toLowerCase();
+  if (lower.includes('giới thiệu') || lower.includes('introduce') || lower.includes('self')) {
+    return "Hello! I'm Vi, your English speaking partner. It's so nice to meet you! What is your name and where are you from?";
+  }
+  if (lower.includes('thói quen') || lower.includes('routine') || lower.includes('ngày')) {
+    return "Hi there! I'm Vi. Let's talk about daily routines today! What time do you usually wake up in the morning?";
+  }
+  if (lower.includes('cuối tuần') || lower.includes('weekend')) {
+    return "Hello! I'm Vi. Weekends are always fun to talk about! How was your last weekend?";
+  }
+  if (lower.includes('công việc') || lower.includes('career') || lower.includes('job') || lower.includes('work')) {
+    return "Hi! I'm Vi, your speaking partner. Let's talk about careers today! What is your dream job?";
+  }
+  if (lower.includes('du lịch') || lower.includes('travel') || lower.includes('journey') || lower.includes('trip')) {
+    return "Hello! I'm Vi. Traveling is one of my favorite topics! What is the most memorable place you have ever visited?";
+  }
+  if (lower.includes('món ăn') || lower.includes('food') || lower.includes('cooking') || lower.includes('ăn')) {
+    return "Hi there! I'm Vi. Let's talk about food and cooking today! What is your favorite food?";
+  }
+  if (lower.includes('trí tuệ nhân tạo') || lower.includes('ai') || lower.includes('tech') || lower.includes('công nghệ')) {
+    return "Hello! I'm Vi. Technology and AI are changing the world! How do you usually use AI in your daily life?";
+  }
+  if (lower.includes('sở thích') || lower.includes('hobby') || lower.includes('hobbies') || lower.includes('free time')) {
+    return "Hi! I'm Vi, your English practice partner. What do you like to do in your free time?";
+  }
+  return `Hello! I'm Vi, your English speaking partner. Welcome to our practice about ${topic}! How are you feeling today?`;
+}
+
 interface WordSpan {
   word: string;
   startRatio: number;
@@ -503,57 +532,24 @@ export const VoiceChatPanel: React.FC<VoiceChatPanelProps> = ({
     [stopAudio]
   );
 
-  // Initial Opening message from Vi
-  const loadOpening = useCallback(async () => {
+  // Initial Opening message from Vi (Instant, 0ms wait, 0 LLM requests)
+  const loadOpening = useCallback(() => {
     cleanupRequest();
-    setStatus('thinking');
     setErrorMsg(null);
 
-    const controller = new AbortController();
-    abortControllerRef.current = controller;
+    const replyText = getInstantOpeningGreeting(effectiveTopic, level);
+    const sentences = splitSentences(replyText);
+    const openingMsg: Message = {
+      id: 'msg-open-' + Date.now(),
+      role: 'assistant',
+      text: replyText,
+      sentences,
+    };
+    setMessages([openingMsg]);
+    setStatus('idle');
 
-    // Timeout 60s
-    timeoutTimerRef.current = setTimeout(() => {
-      if (!controller.signal.aborted) {
-        controller.abort();
-        setStatus('idle');
-        setErrorMsg('Quá thời gian chờ phản hồi từ AI (60 giây). Bạn hãy bấm "Thử lại" bên dưới.');
-      }
-    }, 60000);
-
-    try {
-      const resp = await voiceChatApi.reply(
-        {
-          topic: effectiveTopic,
-          level,
-          messages: [],
-          opening: true,
-        },
-        { signal: controller.signal, timeout: 60000 }
-      );
-
-      const replyText =
-        resp?.reply ||
-        `Hello! Welcome to our speaking session about ${effectiveTopic}. How are you feeling today?`;
-      const sentences = splitSentences(replyText);
-      const openingMsg: Message = {
-        id: 'msg-open-' + Date.now(),
-        role: 'assistant',
-        text: replyText,
-        sentences,
-      };
-      setMessages([openingMsg]);
-      setStatus('idle');
-
-      // Phát giọng câu mở đầu
-      playSentences(openingMsg.id, sentences);
-    } catch (err: any) {
-      if (controller.signal.aborted) return;
-      setStatus('idle');
-      setErrorMsg(errMsg(err, 'Không thể tải câu mở đầu từ AI. Hãy bấm "Thử lại" hoặc nói trực tiếp.'));
-    } finally {
-      cleanupRequest();
-    }
+    // Phát giọng câu mở đầu ngay lập tức
+    playSentences(openingMsg.id, sentences);
   }, [effectiveTopic, level, playSentences, cleanupRequest]);
 
   useEffect(() => {
