@@ -117,7 +117,7 @@ export default function WordDetail() {
   if (!word && !err) return <div className="content"><div className="loading">Đang tải chi tiết từ vựng...</div></div>;
 
   return (
-    <div className="content" style={{ maxWidth: 1180 }}>
+    <div className="content" style={{ maxWidth: 1600 }}>
       {/* Back button & Action Row */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', marginBottom: 16 }}>
         <button

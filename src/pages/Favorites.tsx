@@ -125,7 +125,7 @@ export default function Favorites() {
   }, [words, selectedLevel, search]);
 
   return (
-    <div className="content" style={{ maxWidth: 1180 }}>
+    <div className="content" style={{ maxWidth: 1600 }}>
       {/* Page Header matching favorites.html */}
       <div className="pagehead" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 14 }}>
         <div>

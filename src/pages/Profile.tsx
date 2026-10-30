@@ -342,7 +342,7 @@ export default function Profile() {
   const accuracy = stats ? Math.round(stats.averageAccuracy || stats.overallAccuracyRate || 0) : 0;
 
   return (
-    <div className="content" style={{ maxWidth: 1180 }}>
+    <div className="content" style={{ maxWidth: 1600 }}>
       {/* Page Header */}
       <div className="pagehead">
         <h1>Tài khoản cá nhân</h1>

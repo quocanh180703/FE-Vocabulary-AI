@@ -40,7 +40,7 @@ export default function Grammar() {
   ];
 
   return (
-    <div className="content" style={{ maxWidth: 1180 }}>
+    <div className="content" style={{ maxWidth: 1600 }}>
       <div className="pagehead" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
         <div>
           <h1>Kiểm tra &amp; Sửa ngữ pháp tiếng Anh</h1>

@@ -120,7 +120,7 @@ export default function Dashboard() {
   const goalPercent = Math.min(100, Math.round((dailyDone / dailyGoal) * 100));
 
   return (
-    <div className="content" style={{ maxWidth: 1180 }}>
+    <div className="content" style={{ maxWidth: 1600 }}>
       {/* Page Header */}
       <div className="pagehead" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 14 }}>
         <div>

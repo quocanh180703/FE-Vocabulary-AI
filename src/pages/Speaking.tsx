@@ -243,7 +243,7 @@ export default function Speaking() {
 
   if (isGrading) {
     return (
-      <div className="content" style={{ maxWidth: 1180 }}>
+      <div className="content" style={{ maxWidth: 1600 }}>
         <div className="card" style={{ textAlign: 'center', padding: '48px 34px', maxWidth: 680, margin: '40px auto 0' }}>
           <svg width="110" height="110" viewBox="0 0 110 110" style={{ margin: '0 auto' }}>
             <circle cx="55" cy="55" r="46" fill="none" stroke="#E7EEF5" strokeWidth="10" />
@@ -306,7 +306,7 @@ export default function Speaking() {
   }
 
   return (
-    <div className="content" style={{ maxWidth: 1180 }}>
+    <div className="content" style={{ maxWidth: 1600 }}>
       <div className="pagehead" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
         <div>
           <h1>Luyện nói phản xạ cùng AI</h1>
@@ -368,7 +368,7 @@ export default function Speaking() {
             initial="hidden"
             animate="visible"
             key={selectedCategory}
-            style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}
+            style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 14 }}
           >
             {filteredTopics.map((t) => {
               const isSelected = !isCustom && topic === t.name;

@@ -362,7 +362,7 @@ export default function Chat() {
   const isCurPinned = cur ? pinnedIds.includes(cur) : false;
 
   return (
-    <div className="content" style={{ maxWidth: 1180 }}>
+    <div className="content" style={{ maxWidth: 1600 }}>
       {/* Page Header */}
       <div className="pagehead">
         <h1>Trò chuyện với Vi</h1>

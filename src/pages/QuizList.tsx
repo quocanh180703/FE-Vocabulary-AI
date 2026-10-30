@@ -128,7 +128,7 @@ export default function QuizList() {
   };
 
   return (
-    <div className="content" style={{ maxWidth: 1180 }}>
+    <div className="content" style={{ maxWidth: 1600 }}>
       <div className="pagehead">
         <h1>Quiz luyện tập tính giờ</h1>
         <div className="sub">Chọn một bài để luyện — điểm được tính khi bạn nộp bài</div>
