@@ -369,7 +369,7 @@ export default function Chat() {
         <div className="sub">Hỏi nghĩa từ, luyện viết câu, giải thích ngữ pháp — Vi trả lời ngay</div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 18, alignItems: 'start' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '320px 1fr', gap: 18, alignItems: 'start' }}>
         {/* Left Sidebar: Conversations list */}
         <div className="card" style={{ padding: 14 }}>
           <button
