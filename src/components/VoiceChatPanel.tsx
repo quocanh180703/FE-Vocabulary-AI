@@ -110,6 +110,46 @@ function computeWordSpans(words: string[]): WordSpan[] {
   });
 }
 
+interface MessageSpan {
+  sentenceIdx: number;
+  wordIdx: number;
+  word: string;
+  startRatio: number;
+  endRatio: number;
+}
+
+function computeMessageSpans(sentences: string[]): MessageSpan[] {
+  const items: { sentenceIdx: number; wordIdx: number; word: string; weight: number }[] = [];
+
+  sentences.forEach((sent, sIdx) => {
+    const cleanSent = stripMarkdown(sent);
+    if (!cleanSent || isVietnameseText(cleanSent)) return;
+    const words = sent.trim().split(/\s+/).filter(Boolean);
+    words.forEach((w, wIdx) => {
+      const letters = w.replace(/[^a-zA-Z0-9]/g, '');
+      const weight = Math.max(letters.length, 2);
+      items.push({ sentenceIdx: sIdx, wordIdx: wIdx, word: w, weight });
+    });
+  });
+
+  if (items.length === 0) return [];
+  const totalWeight = items.reduce((acc, it) => acc + it.weight, 0);
+
+  let currentWeight = 0;
+  return items.map((it) => {
+    const startRatio = currentWeight / totalWeight;
+    currentWeight += it.weight;
+    const endRatio = currentWeight / totalWeight;
+    return {
+      sentenceIdx: it.sentenceIdx,
+      wordIdx: it.wordIdx,
+      word: it.word,
+      startRatio,
+      endRatio,
+    };
+  });
+}
+
 export const VoiceChatPanel: React.FC<VoiceChatPanelProps> = ({
   topic,
   level,
@@ -255,9 +295,9 @@ export const VoiceChatPanel: React.FC<VoiceChatPanelProps> = ({
     [stopAudio]
   );
 
-  // Play a sequence of sentences
+  // Play entire message in a SINGLE TTS request (Saves 3-4x cost and network calls)
   const playSentences = useCallback(
-    async (msgId: string, sentences: string[]) => {
+    async (msgId: string, sentences: string[], fullText?: string) => {
       stopAudio();
       if (!sentences || sentences.length === 0) return;
 
@@ -265,152 +305,142 @@ export const VoiceChatPanel: React.FC<VoiceChatPanelProps> = ({
       isPlayingRef.current = true;
       setStatus('speaking');
 
+      // Tạo nội dung hoàn chỉnh không chứa markdown/tiếng Việt
+      const rawText = fullText || sentences.join(' ');
+      const cleanFullText = stripMarkdown(rawText);
+      if (!cleanFullText || isVietnameseText(cleanFullText)) {
+        isPlayingRef.current = false;
+        setStatus('idle');
+        return;
+      }
+
+      const spans = computeMessageSpans(sentences);
       const currentVoice = voiceRef.current;
-      for (let i = 0; i < sentences.length; i++) {
-        // Nếu đã bị hủy hoặc bị phiên mới ghi đè -> dừng vòng lặp ngay lập tức
-        if (!isPlayingRef.current || playbackSessionRef.current !== currentSessionId) break;
+      const streamUrl = ttsApi.getStreamUrl(cleanFullText, currentVoice);
 
-        const sentence = sentences[i];
-        const cleanText = stripMarkdown(sentence);
-        if (!cleanText || isVietnameseText(cleanText)) continue;
-
-        const words = sentence.trim().split(/\s+/).filter(Boolean);
-        const spans = computeWordSpans(words);
-
-        // Prefetch next sentence in background
-        if (i + 1 < sentences.length) {
-          const nextClean = stripMarkdown(sentences[i + 1]);
-          if (nextClean && !isVietnameseText(nextClean)) {
-            const nextUrl = ttsApi.getStreamUrl(nextClean, currentVoice);
-            if (!preloadedAudioMap.current.has(nextUrl)) {
-              const audioObj = new Audio(nextUrl);
-              preloadedAudioMap.current.set(nextUrl, audioObj);
-            }
-          }
+      await new Promise<void>((resolve) => {
+        if (playbackSessionRef.current !== currentSessionId) {
+          resolve();
+          return;
         }
 
-        const streamUrl = ttsApi.getStreamUrl(cleanText, currentVoice);
-        await new Promise<void>((resolve) => {
+        let audio = preloadedAudioMap.current.get(streamUrl);
+        if (!audio) {
+          audio = new Audio(streamUrl);
+          preloadedAudioMap.current.set(streamUrl, audio);
+        }
+        currentAudioRef.current = audio;
+        audio.playbackRate = speedRef.current;
+
+        let animFrameId: number | null = null;
+
+        const cleanup = () => {
+          if (animFrameId) cancelAnimationFrame(animFrameId);
+          animFrameRef.current = null;
+          audio?.removeEventListener('playing', onPlaying);
+          audio?.removeEventListener('ended', onEnded);
+          audio?.removeEventListener('error', onError);
+        };
+
+        const onPlaying = () => {
           if (playbackSessionRef.current !== currentSessionId) {
+            cleanup();
             resolve();
             return;
           }
 
-          let audio = preloadedAudioMap.current.get(streamUrl);
-          if (!audio) {
-            audio = new Audio(streamUrl);
-            preloadedAudioMap.current.set(streamUrl, audio);
-          }
-          currentAudioRef.current = audio;
-          audio.playbackRate = speedRef.current;
-
-          let animFrameId: number | null = null;
-
-          const onPlaying = () => {
-            if (playbackSessionRef.current !== currentSessionId) {
-              cleanup();
-              resolve();
+          const trackProgress = () => {
+            if (
+              playbackSessionRef.current !== currentSessionId ||
+              !isPlayingRef.current ||
+              !audio ||
+              audio.paused ||
+              audio.ended
+            ) {
               return;
             }
-            setActiveSentence({ msgId, sentenceIdx: i });
-            setActiveWordIdx(0);
 
-            const trackProgress = () => {
-              if (
-                playbackSessionRef.current !== currentSessionId ||
-                !isPlayingRef.current ||
-                !audio ||
-                audio.paused ||
-                audio.ended
-              ) {
-                return;
+            const duration = audio.duration;
+            if (duration && isFinite(duration) && duration > 0) {
+              const progress = audio.currentTime / duration;
+              const curSpan = spans.find((s) => progress >= s.startRatio && progress < s.endRatio);
+              if (curSpan) {
+                setActiveSentence({ msgId, sentenceIdx: curSpan.sentenceIdx });
+                setActiveWordIdx(curSpan.wordIdx);
+              } else if (progress >= 1 && spans.length > 0) {
+                const last = spans[spans.length - 1];
+                setActiveSentence({ msgId, sentenceIdx: last.sentenceIdx });
+                setActiveWordIdx(last.wordIdx);
               }
-
-              const duration = audio.duration;
-              if (duration && isFinite(duration) && duration > 0) {
-                const progress = audio.currentTime / duration;
-                const curIdx = spans.findIndex((s) => progress >= s.startRatio && progress < s.endRatio);
-                if (curIdx !== -1) {
-                  setActiveWordIdx(curIdx);
-                } else if (progress >= 1) {
-                  setActiveWordIdx(spans.length - 1);
-                }
-              }
-
-              animFrameId = requestAnimationFrame(trackProgress);
-              animFrameRef.current = animFrameId;
-            };
+            }
 
             animFrameId = requestAnimationFrame(trackProgress);
             animFrameRef.current = animFrameId;
           };
 
-          const onEnded = () => {
-            cleanup();
-            setActiveWordIdx(-1);
+          animFrameId = requestAnimationFrame(trackProgress);
+          animFrameRef.current = animFrameId;
+        };
+
+        const onEnded = () => {
+          cleanup();
+          setActiveSentence(null);
+          setActiveWordIdx(-1);
+          resolve();
+        };
+
+        const onError = () => {
+          cleanup();
+          if (playbackSessionRef.current !== currentSessionId) {
             resolve();
-          };
+            return;
+          }
+          // Fallback to browser SpeechSynthesis (nếu API TTS bên thứ ba bị hết tiền / 402 hoặc lỗi mạng)
+          if ('speechSynthesis' in window) {
+            const utt = new SpeechSynthesisUtterance(cleanFullText);
+            utt.lang = 'en-US';
+            utt.rate = speedRef.current;
 
-          const onError = () => {
-            cleanup();
-            if (playbackSessionRef.current !== currentSessionId) {
-              resolve();
-              return;
-            }
-            // Fallback to browser SpeechSynthesis
-            if ('speechSynthesis' in window) {
-              const utt = new SpeechSynthesisUtterance(cleanText);
-              utt.lang = 'en-US';
-              utt.rate = speedRef.current;
-              setActiveSentence({ msgId, sentenceIdx: i });
-              setActiveWordIdx(0);
-
-              utt.onboundary = (e) => {
-                if (playbackSessionRef.current !== currentSessionId) return;
-                if (e.name === 'word') {
-                  const charIndex = e.charIndex;
-                  let runningChars = 0;
-                  for (let w = 0; w < words.length; w++) {
-                    if (runningChars + words[w].length >= charIndex) {
-                      setActiveWordIdx(w);
-                      break;
-                    }
-                    runningChars += words[w].length + 1;
+            utt.onboundary = (e) => {
+              if (playbackSessionRef.current !== currentSessionId) return;
+              if (e.name === 'word') {
+                const charIndex = e.charIndex;
+                let runningChars = 0;
+                for (let i = 0; i < spans.length; i++) {
+                  runningChars += spans[i].word.length + 1;
+                  if (runningChars >= charIndex) {
+                    setActiveSentence({ msgId, sentenceIdx: spans[i].sentenceIdx });
+                    setActiveWordIdx(spans[i].wordIdx);
+                    break;
                   }
                 }
-              };
+              }
+            };
 
-              utt.onend = () => {
-                setActiveWordIdx(-1);
-                resolve();
-              };
-              utt.onerror = () => {
-                setActiveWordIdx(-1);
-                resolve();
-              };
-              window.speechSynthesis.speak(utt);
-            } else {
+            utt.onend = () => {
+              setActiveSentence(null);
+              setActiveWordIdx(-1);
               resolve();
-            }
-          };
+            };
+            utt.onerror = () => {
+              setActiveSentence(null);
+              setActiveWordIdx(-1);
+              resolve();
+            };
+            window.speechSynthesis.speak(utt);
+          } else {
+            resolve();
+          }
+        };
 
-          const cleanup = () => {
-            if (animFrameId) cancelAnimationFrame(animFrameId);
-            animFrameRef.current = null;
-            audio?.removeEventListener('playing', onPlaying);
-            audio?.removeEventListener('ended', onEnded);
-            audio?.removeEventListener('error', onError);
-          };
+        audio.addEventListener('playing', onPlaying);
+        audio.addEventListener('ended', onEnded);
+        audio.addEventListener('error', onError);
 
-          audio.addEventListener('playing', onPlaying);
-          audio.addEventListener('ended', onEnded);
-          audio.addEventListener('error', onError);
-
-          audio.play().catch(() => {
-            onError();
-          });
+        audio.play().catch(() => {
+          onError();
         });
-      }
+      });
 
       if (playbackSessionRef.current === currentSessionId) {
         isPlayingRef.current = false;
@@ -548,8 +578,8 @@ export const VoiceChatPanel: React.FC<VoiceChatPanelProps> = ({
     setMessages([openingMsg]);
     setStatus('idle');
 
-    // Phát giọng câu mở đầu ngay lập tức
-    playSentences(openingMsg.id, sentences);
+    // Phát giọng câu mở đầu ngay lập tức (1 request duy nhất cho toàn bộ đoạn)
+    playSentences(openingMsg.id, sentences, replyText);
   }, [effectiveTopic, level, playSentences, cleanupRequest]);
 
   useEffect(() => {
@@ -653,8 +683,8 @@ export const VoiceChatPanel: React.FC<VoiceChatPanelProps> = ({
         setMessages((prev: Message[]) => [...prev, aiMsg]);
         setStatus('idle');
 
-        // Phát audio theo từng câu
-        playSentences(aiMsg.id, sentences);
+        // Phát audio cả đoạn trong 1 request duy nhất
+        playSentences(aiMsg.id, sentences, aiText);
       } catch (err: any) {
         if (controller.signal.aborted) return;
         setErrorMsg(errMsg(err, 'Lỗi khi kết nối với AI. Bạn hãy bấm "Thử lại".'));
@@ -946,7 +976,7 @@ export const VoiceChatPanel: React.FC<VoiceChatPanelProps> = ({
                   })}
                   <div style={{ marginTop: '8px', display: 'flex', justifyContent: 'flex-end' }}>
                     <button
-                      onClick={() => playSentences(m.id, m.sentences || [])}
+                      onClick={() => playSentences(m.id, m.sentences || [], m.text)}
                       style={{
                         background: 'none',
                         border: 'none',
