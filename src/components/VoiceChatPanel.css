@@ -113,20 +113,35 @@
 /* Sentence highlight when audio is playing */
 .voice-sentence {
   transition: all 0.2s ease;
-  padding: 1px 3px;
-  border-radius: 4px;
+  padding: 2px 4px;
+  border-radius: 6px;
   cursor: pointer;
+  display: inline;
 }
 
 .voice-sentence:hover {
-  background: rgba(59, 130, 246, 0.1);
+  background: rgba(59, 130, 246, 0.08);
 }
 
 .voice-sentence.active-sentence {
+  background: rgba(254, 240, 138, 0.25);
+}
+
+/* Word highlight (karaoke effect matching audio reading pace) */
+.voice-word {
+  display: inline;
+  padding: 1px 3px;
+  margin: 0 1px;
+  border-radius: 4px;
+  transition: background-color 0.1s ease, color 0.1s ease;
+}
+
+.voice-word.active-word {
   background: #fef08a !important;
   color: #854d0e !important;
-  font-weight: 600;
+  font-weight: 700;
   box-shadow: 0 0 0 2px #fef08a;
+  border-radius: 4px;
 }
 
 /* Typing / status indicator */

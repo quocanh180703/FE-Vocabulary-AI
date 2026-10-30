@@ -57,6 +57,30 @@ function splitSentences(text: string): string[] {
     });
 }
 
+interface WordSpan {
+  word: string;
+  startRatio: number;
+  endRatio: number;
+}
+
+function computeWordSpans(words: string[]): WordSpan[] {
+  if (words.length === 0) return [];
+  // Trọng số ước tính theo độ dài từ để khớp nhịp đọc tự nhiên của âm thanh
+  const weights = words.map((w) => {
+    const letters = w.replace(/[^a-zA-Z0-9]/g, '');
+    return Math.max(letters.length, 2);
+  });
+  const totalWeight = weights.reduce((acc, wt) => acc + wt, 0);
+
+  let currentWeight = 0;
+  return words.map((w, idx) => {
+    const startRatio = currentWeight / totalWeight;
+    currentWeight += weights[idx];
+    const endRatio = currentWeight / totalWeight;
+    return { word: w, startRatio, endRatio };
+  });
+}
+
 export const VoiceChatPanel: React.FC<VoiceChatPanelProps> = ({
   topic,
   level,
@@ -70,6 +94,7 @@ export const VoiceChatPanel: React.FC<VoiceChatPanelProps> = ({
   const [status, setStatus] = useState<'idle' | 'recording' | 'transcribing' | 'thinking' | 'speaking'>('idle');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [activeSentence, setActiveSentence] = useState<{ msgId: string; sentenceIdx: number } | null>(null);
+  const [activeWordIdx, setActiveWordIdx] = useState<number>(-1);
 
   // Settings
   const [voice, setVoice] = useState<string>(() => localStorage.getItem('vocab_ai_voice') || 'alloy');
@@ -77,6 +102,27 @@ export const VoiceChatPanel: React.FC<VoiceChatPanelProps> = ({
   useEffect(() => {
     voiceRef.current = voice;
   }, [voice]);
+
+  // Voice Speed (Default 1.15x for natural conversational speed)
+  const [speed, setSpeed] = useState<number>(() => {
+    const saved = localStorage.getItem('vocab_ai_voice_speed');
+    return saved ? parseFloat(saved) : 1.15;
+  });
+  const speedRef = useRef(speed);
+  useEffect(() => {
+    speedRef.current = speed;
+  }, [speed]);
+
+  const handleSpeedChange = (newSpeed: number) => {
+    setSpeed(newSpeed);
+    speedRef.current = newSpeed;
+    localStorage.setItem('vocab_ai_voice_speed', String(newSpeed));
+    if (currentAudioRef.current) {
+      currentAudioRef.current.playbackRate = newSpeed;
+    }
+  };
+
+  const animFrameRef = useRef<number | null>(null);
 
   // Push-to-talk Recording state
   const [recordSeconds, setRecordSeconds] = useState(0);
@@ -131,6 +177,10 @@ export const VoiceChatPanel: React.FC<VoiceChatPanelProps> = ({
 
   // Stop currently playing audio
   const stopAudio = useCallback(() => {
+    if (animFrameRef.current) {
+      cancelAnimationFrame(animFrameRef.current);
+      animFrameRef.current = null;
+    }
     if (currentAudioRef.current) {
       currentAudioRef.current.pause();
       currentAudioRef.current = null;
@@ -140,6 +190,7 @@ export const VoiceChatPanel: React.FC<VoiceChatPanelProps> = ({
     }
     isPlayingRef.current = false;
     setActiveSentence(null);
+    setActiveWordIdx(-1);
     setStatus((prev) => (prev === 'speaking' ? 'idle' : prev));
   }, []);
 
@@ -160,7 +211,8 @@ export const VoiceChatPanel: React.FC<VoiceChatPanelProps> = ({
         const cleanText = stripMarkdown(sentence);
         if (!cleanText || isVietnameseText(cleanText)) continue;
 
-        setActiveSentence({ msgId, sentenceIdx: i });
+        const words = sentence.trim().split(/\s+/).filter(Boolean);
+        const spans = computeWordSpans(words);
 
         // Prefetch next sentence
         if (i + 1 < sentences.length) {
@@ -182,9 +234,40 @@ export const VoiceChatPanel: React.FC<VoiceChatPanelProps> = ({
             preloadedAudioMap.current.set(streamUrl, audio);
           }
           currentAudioRef.current = audio;
+          audio.playbackRate = speedRef.current;
+
+          let animFrameId: number | null = null;
+
+          const onPlaying = () => {
+            // Chỉ làm nổi bật khi âm thanh THỰC SỰ bắt đầu phát ra loa (tránh lệch thời gian tải mạng)
+            setActiveSentence({ msgId, sentenceIdx: i });
+            setActiveWordIdx(0);
+
+            const trackProgress = () => {
+              if (!isPlayingRef.current || !audio || audio.paused || audio.ended) return;
+
+              const duration = audio.duration;
+              if (duration && isFinite(duration) && duration > 0) {
+                const progress = audio.currentTime / duration;
+                const curIdx = spans.findIndex((s) => progress >= s.startRatio && progress < s.endRatio);
+                if (curIdx !== -1) {
+                  setActiveWordIdx(curIdx);
+                } else if (progress >= 1) {
+                  setActiveWordIdx(spans.length - 1);
+                }
+              }
+
+              animFrameId = requestAnimationFrame(trackProgress);
+              animFrameRef.current = animFrameId;
+            };
+
+            animFrameId = requestAnimationFrame(trackProgress);
+            animFrameRef.current = animFrameId;
+          };
 
           const onEnded = () => {
             cleanup();
+            setActiveWordIdx(-1);
             resolve();
           };
 
@@ -194,8 +277,32 @@ export const VoiceChatPanel: React.FC<VoiceChatPanelProps> = ({
             if ('speechSynthesis' in window) {
               const utt = new SpeechSynthesisUtterance(cleanText);
               utt.lang = 'en-US';
-              utt.onend = () => resolve();
-              utt.onerror = () => resolve();
+              utt.rate = speedRef.current;
+              setActiveSentence({ msgId, sentenceIdx: i });
+              setActiveWordIdx(0);
+
+              utt.onboundary = (e) => {
+                if (e.name === 'word') {
+                  const charIndex = e.charIndex;
+                  let runningChars = 0;
+                  for (let w = 0; w < words.length; w++) {
+                    if (runningChars + words[w].length >= charIndex) {
+                      setActiveWordIdx(w);
+                      break;
+                    }
+                    runningChars += words[w].length + 1;
+                  }
+                }
+              };
+
+              utt.onend = () => {
+                setActiveWordIdx(-1);
+                resolve();
+              };
+              utt.onerror = () => {
+                setActiveWordIdx(-1);
+                resolve();
+              };
               window.speechSynthesis.speak(utt);
             } else {
               resolve();
@@ -203,10 +310,14 @@ export const VoiceChatPanel: React.FC<VoiceChatPanelProps> = ({
           };
 
           const cleanup = () => {
+            if (animFrameId) cancelAnimationFrame(animFrameId);
+            animFrameRef.current = null;
+            audio?.removeEventListener('playing', onPlaying);
             audio?.removeEventListener('ended', onEnded);
             audio?.removeEventListener('error', onError);
           };
 
+          audio.addEventListener('playing', onPlaying);
           audio.addEventListener('ended', onEnded);
           audio.addEventListener('error', onError);
 
@@ -218,6 +329,7 @@ export const VoiceChatPanel: React.FC<VoiceChatPanelProps> = ({
 
       isPlayingRef.current = false;
       setActiveSentence(null);
+      setActiveWordIdx(-1);
       setStatus((prev) => (prev === 'speaking' ? 'idle' : prev));
     },
     [stopAudio]
@@ -230,7 +342,9 @@ export const VoiceChatPanel: React.FC<VoiceChatPanelProps> = ({
       const cleanText = stripMarkdown(sentenceText);
       if (!cleanText || isVietnameseText(cleanText)) return;
 
-      setActiveSentence({ msgId, sentenceIdx });
+      const words = sentenceText.trim().split(/\s+/).filter(Boolean);
+      const spans = computeWordSpans(words);
+
       setStatus('speaking');
       isPlayingRef.current = true;
 
@@ -238,18 +352,69 @@ export const VoiceChatPanel: React.FC<VoiceChatPanelProps> = ({
       const streamUrl = ttsApi.getStreamUrl(cleanText, currentVoice);
       const audio = new Audio(streamUrl);
       currentAudioRef.current = audio;
+      audio.playbackRate = speedRef.current;
+
+      let animFrameId: number | null = null;
 
       const finish = () => {
+        if (animFrameId) cancelAnimationFrame(animFrameId);
+        animFrameRef.current = null;
         setActiveSentence(null);
+        setActiveWordIdx(-1);
         setStatus((prev) => (prev === 'speaking' ? 'idle' : prev));
         isPlayingRef.current = false;
       };
 
+      const onPlaying = () => {
+        setActiveSentence({ msgId, sentenceIdx });
+        setActiveWordIdx(0);
+
+        const trackProgress = () => {
+          if (!isPlayingRef.current || !audio || audio.paused || audio.ended) return;
+
+          const duration = audio.duration;
+          if (duration && isFinite(duration) && duration > 0) {
+            const progress = audio.currentTime / duration;
+            const curIdx = spans.findIndex((s) => progress >= s.startRatio && progress < s.endRatio);
+            if (curIdx !== -1) {
+              setActiveWordIdx(curIdx);
+            } else if (progress >= 1) {
+              setActiveWordIdx(spans.length - 1);
+            }
+          }
+
+          animFrameId = requestAnimationFrame(trackProgress);
+          animFrameRef.current = animFrameId;
+        };
+
+        animFrameId = requestAnimationFrame(trackProgress);
+        animFrameRef.current = animFrameId;
+      };
+
+      audio.addEventListener('playing', onPlaying);
       audio.onended = finish;
       audio.onerror = () => {
         if ('speechSynthesis' in window) {
           const utt = new SpeechSynthesisUtterance(cleanText);
           utt.lang = 'en-US';
+          utt.rate = speedRef.current;
+          setActiveSentence({ msgId, sentenceIdx });
+          setActiveWordIdx(0);
+
+          utt.onboundary = (e) => {
+            if (e.name === 'word') {
+              const charIndex = e.charIndex;
+              let runningChars = 0;
+              for (let w = 0; w < words.length; w++) {
+                if (runningChars + words[w].length >= charIndex) {
+                  setActiveWordIdx(w);
+                  break;
+                }
+                runningChars += words[w].length + 1;
+              }
+            }
+          };
+
           utt.onend = finish;
           utt.onerror = finish;
           window.speechSynthesis.speak(utt);
@@ -257,6 +422,7 @@ export const VoiceChatPanel: React.FC<VoiceChatPanelProps> = ({
           finish();
         }
       };
+
       audio.play().catch(finish);
     },
     [stopAudio]
@@ -632,6 +798,26 @@ export const VoiceChatPanel: React.FC<VoiceChatPanelProps> = ({
             ))}
           </select>
 
+          {/* Voice Speed Selector */}
+          <select
+            value={speed}
+            onChange={(e) => handleSpeedChange(parseFloat(e.target.value))}
+            style={{
+              padding: '6px 10px',
+              borderRadius: '10px',
+              border: '1px solid var(--border, #cbd5e1)',
+              background: '#fff',
+              fontSize: '13px',
+              fontWeight: 600,
+              cursor: 'pointer',
+            }}
+            title="Tốc độ nói của Vi"
+          >
+            <option value="1.0">⚡ 1.0x (Chậm)</option>
+            <option value="1.15">⚡ 1.15x (Chuẩn giao tiếp)</option>
+            <option value="1.25">⚡ 1.25x (Nhanh)</option>
+          </select>
+
           {status === 'speaking' && (
             <button
               onClick={stopAudio}
@@ -668,16 +854,29 @@ export const VoiceChatPanel: React.FC<VoiceChatPanelProps> = ({
               {m.role === 'assistant' && m.sentences ? (
                 <div>
                   {m.sentences.map((sent: string, sIdx: number) => {
-                    const isActive =
+                    const isSentenceActive =
                       activeSentence?.msgId === m.id && activeSentence?.sentenceIdx === sIdx;
+                    const words = sent.trim().split(/\s+/).filter(Boolean);
                     return (
                       <span
                         key={sIdx}
-                        className={`voice-sentence ${isActive ? 'active-sentence' : ''}`}
+                        className={`voice-sentence ${isSentenceActive ? 'active-sentence' : ''}`}
                         onClick={() => playSingleSentence(m.id, sIdx, sent)}
                         title="Bấm để nghe lại câu này"
                       >
-                        {sent}{' '}
+                        {words.map((word: string, wIdx: number) => {
+                          const isWordActive = isSentenceActive && activeWordIdx === wIdx;
+                          return (
+                            <span
+                              key={wIdx}
+                              className={`voice-word ${isWordActive ? 'active-word' : ''}`}
+                            >
+                              {word}
+                              {wIdx < words.length - 1 ? ' ' : ''}
+                            </span>
+                          );
+                        })}
+                        {' '}
                       </span>
                     );
                   })}
