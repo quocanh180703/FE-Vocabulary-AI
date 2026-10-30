@@ -31,19 +31,30 @@ const VOICES = [
   { id: 'shimmer', name: 'Shimmer (Rõ ràng, Tươi tắn)', desc: 'Giọng nữ êm' },
 ];
 
-function splitSentences(text: string): string[] {
-  if (!text) return [];
-  // Tách theo dấu chấm, hỏi, than nhưng bảo toàn không ngắt ở viết tắt phổ biến
-  const raw = text.split(/(?<=[.!?])\s+/);
-  return raw.map((s) => s.trim()).filter(Boolean);
+function isVietnameseText(text: string): boolean {
+  return /[\u00C0-\u1EF9]/i.test(text);
 }
 
 function stripMarkdown(text: string): string {
   return text
+    // Bỏ chú thích tiếng Việt trong ngoặc đơn ví dụ: (Chào bạn! Tôi là...)
+    .replace(/\([^)]*[\u00C0-\u1EF9][^)]*\)/g, '')
     .replace(/[*#_`~>\[\]()]/g, '')
     .replace(/^\s*[-•]\s*/gm, '')
     .replace(/\n+/g, ' ')
     .trim();
+}
+
+function splitSentences(text: string): string[] {
+  if (!text) return [];
+  // Tách theo dấu chấm, hỏi, than
+  const raw = text.split(/(?<=[.!?])\s+/);
+  return raw
+    .map((s) => s.trim())
+    .filter((s) => {
+      const clean = stripMarkdown(s);
+      return clean.length > 0;
+    });
 }
 
 export const VoiceChatPanel: React.FC<VoiceChatPanelProps> = ({
@@ -147,14 +158,14 @@ export const VoiceChatPanel: React.FC<VoiceChatPanelProps> = ({
 
         const sentence = sentences[i];
         const cleanText = stripMarkdown(sentence);
-        if (!cleanText) continue;
+        if (!cleanText || isVietnameseText(cleanText)) continue;
 
         setActiveSentence({ msgId, sentenceIdx: i });
 
         // Prefetch next sentence
         if (i + 1 < sentences.length) {
           const nextClean = stripMarkdown(sentences[i + 1]);
-          if (nextClean) {
+          if (nextClean && !isVietnameseText(nextClean)) {
             const nextUrl = ttsApi.getStreamUrl(nextClean, currentVoice);
             if (!preloadedAudioMap.current.has(nextUrl)) {
               const audioObj = new Audio(nextUrl);
@@ -217,7 +228,7 @@ export const VoiceChatPanel: React.FC<VoiceChatPanelProps> = ({
     (msgId: string, sentenceIdx: number, sentenceText: string) => {
       stopAudio();
       const cleanText = stripMarkdown(sentenceText);
-      if (!cleanText) return;
+      if (!cleanText || isVietnameseText(cleanText)) return;
 
       setActiveSentence({ msgId, sentenceIdx });
       setStatus('speaking');
