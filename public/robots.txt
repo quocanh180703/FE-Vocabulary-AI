@@ -1,0 +1,23 @@
+User-agent: *
+Allow: /
+Allow: /landing
+Allow: /dieu-khoan
+Allow: /chinh-sach-bao-mat
+
+# Chặn các trang yêu cầu đăng nhập, dashboard người dùng và admin
+Disallow: /dashboard
+Disallow: /admin
+Disallow: /admin/*
+Disallow: /words/*
+Disallow: /quiz/*
+Disallow: /chat
+Disallow: /speaking
+Disallow: /profile
+Disallow: /placement
+Disallow: /review
+Disallow: /favorites
+Disallow: /roadmap
+Disallow: /grammar
+Disallow: /payment/*
+
+Sitemap: https://vocabularyai.com/sitemap.xml

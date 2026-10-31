@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
+import { paymentApi } from '../api';
 import { Icon } from '../components/icons';
 import { MotionCard, AnimatedCounter } from '../motion';
 
@@ -23,7 +24,18 @@ export default function PaymentResult() {
 
   useEffect(() => {
     let timer: any;
-    if (isSuccess) {
+    if (isSuccess && orderCode) {
+      paymentApi
+        .verifyPayment(orderCode)
+        .catch((err) => {
+          console.warn('Payment verify fallback:', err);
+        })
+        .finally(() => {
+          refreshSubscription().finally(() => {
+            timer = setTimeout(() => setLoading(false), 500);
+          });
+        });
+    } else if (isSuccess) {
       refreshSubscription().finally(() => {
         timer = setTimeout(() => setLoading(false), 500);
       });
@@ -31,7 +43,7 @@ export default function PaymentResult() {
       setLoading(false);
     }
     return () => clearTimeout(timer);
-  }, [isSuccess]);
+  }, [isSuccess, orderCode]);
 
   if (loading) {
     return (

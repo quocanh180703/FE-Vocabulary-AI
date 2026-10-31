@@ -1553,6 +1553,40 @@ export const adminApi = {
   // Admin Copilot (Phase 3)
   copilotChat: (message: string, history: Array<{ sender: 'user' | 'ai'; text: string }>) =>
     api.post<AdminCopilotChatResponse>('/api/admin/copilot/chat', { message, history }),
+
+  // Payments & Orders (Phase 1)
+  payments: (page = 0, size = 20, status = '', search = '', sort = 'paidAt,desc') => {
+    const params = new URLSearchParams({ page: String(page), size: String(size), sort });
+    if (status && status !== 'ALL') params.append('status', status);
+    if (search) params.append('search', search);
+    return api.get<{ content: AdminPaymentItem[]; totalElements: number; totalPages: number }>(`/admin/payments?${params}`);
+  },
+  paymentDetail: (id: number) => api.get<AdminPaymentDetail>(`/admin/payments/${id}`),
+
+  // Subscriptions
+  subscriptions: (page = 0, size = 20, status = '', search = '', activeOnly = false) => {
+    const params = new URLSearchParams({ page: String(page), size: String(size), sort: 'createdAt,desc' });
+    if (status && status !== 'ALL') params.append('status', status);
+    if (search) params.append('search', search);
+    if (activeOnly) params.append('activeOnly', 'true');
+    return api.get<{ content: AdminSubscriptionItem[]; totalElements: number; totalPages: number }>(`/admin/subscriptions?${params}`);
+  },
+  subscriptionDetail: (id: number) => api.get<any>(`/admin/subscriptions/${id}`),
+
+  // Packages management
+  packages: (page = 0, size = 20, status = '', search = '') => {
+    const params = new URLSearchParams({ page: String(page), size: String(size) });
+    if (status && status !== 'ALL') params.append('status', status);
+    if (search) params.append('search', search);
+    return api.get<{ content: AdminPackageItem[]; totalElements: number; totalPages: number }>(`/api/admin/packages?${params}`);
+  },
+  packageDetail: (id: number) => api.get<AdminPackageItem>(`/api/admin/packages/${id}`),
+  packageStats: () => api.get<AdminPackageStats>('/api/admin/packages/stats/summary'),
+  createPackage: (data: { code: string; name: string; price: number; durationDays: number; status?: string; description?: string }) =>
+    api.post<AdminPackageItem>('/api/admin/packages', data),
+  updatePackage: (id: number, data: { name?: string; price?: number; durationDays?: number; status?: string; description?: string }) =>
+    api.put<AdminPackageItem>(`/api/admin/packages/${id}`, data),
+  deletePackage: (id: number) => api.delete(`/api/admin/packages/${id}`),
 };
 
 /* ---------- cefr & statistics ---------- */
@@ -1629,6 +1663,8 @@ export const paymentApi = {
     api.post<any>(`/payments/initiate?packageId=${packageId}`).then((res) => res.data?.data || res.data),
   getStatus: (orderId: number) =>
     api.get<any>(`/payments/${orderId}`).then((res) => res.data?.data || res.data),
+  verifyPayment: (orderCode: string | number) =>
+    api.post<any>(`/payments/verify/${orderCode}`).then((res) => res.data?.data || res.data),
   getSubscriptionStatus: () =>
     api.get<any>('/subscriptions/status').then((res) => {
       const d = res.data?.data || res.data;
@@ -1779,6 +1815,88 @@ export const placementApi = {
       data: (res.data?.data || res.data) as PlacementSubmitResult,
     })),
 };
+
+/* ---------- Admin Orders & Packages Types ---------- */
+export interface AdminPaymentItem {
+  paymentId: number;
+  transactionCode: string;
+  orderCode: string;
+  userId: number;
+  userEmail: string;
+  userFullName: string;
+  packageName: string;
+  amount: number;
+  status: 'SUCCESS' | 'PENDING' | 'CANCELLED' | 'FAILED';
+  paymentMethod: string;
+  paidAt?: string;
+  createdAt?: string;
+}
+
+export interface AdminPaymentDetail extends AdminPaymentItem {
+  updatedAt?: string;
+  paymentOrder?: {
+    orderId: number;
+    packageId: number;
+    packageName: string;
+    packagePrice: number;
+    packageDuration: number;
+    orderCode: string;
+    amount: number;
+    status: string;
+    paymentUrl?: string;
+    expiredAt?: string;
+    paidAt?: string;
+    createdAt?: string;
+  };
+  subscription?: {
+    subscriptionId: number;
+    userId: number;
+    packageId: number;
+    packageName: string;
+    packagePrice: number;
+    packageDuration: number;
+    status: string;
+    startAt: string;
+    endAt: string;
+    createdAt?: string;
+    updatedAt?: string;
+  };
+}
+
+export interface AdminSubscriptionItem {
+  subscriptionId: number;
+  userId: number;
+  userEmail: string;
+  userFullName: string;
+  packageId: number;
+  packageName: string;
+  status: 'ACTIVE' | 'EXPIRED' | 'CANCELLED' | 'SUSPENDED';
+  startAt: string;
+  endAt: string;
+  isExpired: boolean;
+  daysRemaining: number;
+  createdAt: string;
+}
+
+export interface AdminPackageItem {
+  id: number;
+  code: string;
+  name: string;
+  price: number;
+  durationDays: number;
+  status: 'ACTIVE' | 'INACTIVE' | 'ARCHIVED';
+  description?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface AdminPackageStats {
+  totalPackages: number;
+  activePackages: number;
+  inactivePackages: number;
+  archivedPackages: number;
+}
+
 
 
 

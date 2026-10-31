@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import './LandingPage.css';
 
-import viHeroImg from '../assets/landing/vi-hero.png';
+import viHeroImg from '../assets/landing/vi-hero.webp';
 import vi3dImg from '../assets/landing/vi-3d.webp';
 import books3dImg from '../assets/landing/books-3d.webp';
 import speak3dImg from '../assets/landing/speak-3d.webp';
@@ -18,13 +18,54 @@ const VI_MESSAGES = [
   'Mỗi ngày 15 phút là đủ: ôn từ đến hạn, học từ mới, rồi nói một chủ đề. Đều quan trọng hơn lâu!',
 ];
 
+const FAQ_ITEMS = [
+  {
+    q: 'Mỗi ngày tôi phải học bao lâu để có hiệu quả?',
+    a: 'Chỉ cần 15 phút mỗi ngày: mở ứng dụng ôn các từ đến hạn theo thuật toán SRS, học 5-10 từ mới, và hoàn thành 1 bài luyện nói theo chủ đề. Sự đều đặn quan trọng hơn rất nhiều so với việc học dồn 2-3 tiếng cuối tuần.',
+  },
+  {
+    q: '“Vi” là ai? Công nghệ AI đằng sau hoạt động như thế nào?',
+    a: 'Vi là trợ lý học tập AI thông minh của bạn. Hệ thống tích hợp mô hình Gemini tiên tiến để giải thích từ vựng ngữ cảnh, sửa lỗi ngữ pháp, và công nghệ Whisper của OpenAI để nhận diện giọng nói chuẩn xác 99% khi bạn luyện nói.',
+  },
+  {
+    q: 'Đăng ký tài khoản có cần nhập thẻ tín dụng không?',
+    a: 'Hoàn toàn không! Bạn chỉ cần đăng ký bằng email và mã OTP trong 1 phút là có thể trải nghiệm toàn bộ lộ trình và tính năng miễn phí vĩnh viễn. Khi muốn nâng cấp gói Premium, bạn thanh toán quét mã QR qua PayOS tiện lợi.',
+  },
+  {
+    q: 'Mua gói Premium rồi, tôi có thể hủy bất cứ lúc nào không?',
+    a: 'Có. Bạn có toàn quyền quản lý gói trong phần Thông tin tài khoản. Khi hủy, bạn vẫn được bảo lưu toàn bộ quyền lợi Premium cho đến ngày cuối cùng của chu kỳ đã thanh toán mà không phát sinh thêm bất kỳ chi phí nào.',
+  },
+  {
+    q: 'Dữ liệu học tập và tiến độ của tôi có được lưu lại không?',
+    a: 'Toàn bộ từ vựng đã học, lịch sử làm bài quiz, bản ghi âm luyện nói và điểm streak đều được đồng bộ thời gian thực lên máy chủ. Bạn có thể đăng nhập trên máy tính hay điện thoại mà không lo mất dữ liệu.',
+  },
+];
+
 export default function LandingPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [isNavigating, setIsNavigating] = useState(false);
+  const [openFaq, setOpenFaq] = useState<number | null>(0);
+  const [isPlayingAudio, setIsPlayingAudio] = useState(false);
   const ctaLink = user ? '/dashboard' : '/login';
   const displayName = user?.fullName?.trim() || user?.username || (user?.email ? user.email.split('@')[0] : 'bạn');
   const userInitial = (displayName || 'U').charAt(0).toUpperCase();
+
+  const playPronunciation = useCallback((wordText: string) => {
+    if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
+    try {
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(wordText);
+      utterance.lang = 'en-US';
+      utterance.rate = 0.9;
+      utterance.onstart = () => setIsPlayingAudio(true);
+      utterance.onend = () => setIsPlayingAudio(false);
+      utterance.onerror = () => setIsPlayingAudio(false);
+      window.speechSynthesis.speak(utterance);
+    } catch {
+      setIsPlayingAudio(false);
+    }
+  }, []);
 
   const handleTransitionNavigate = (to: string) => (e: React.MouseEvent) => {
     e.preventDefault();
@@ -229,7 +270,7 @@ export default function LandingPage() {
   // Scroll-reveal IntersectionObserver
   useEffect(() => {
     const sel =
-      '.landing .hero .pill, .landing .hero h1, .landing .hero .sub, .landing .hero .cta-row, .landing .hero .microproof, .landing .hero-visual, .landing .strip .cell, .landing .sec-head, .landing .head-img, .landing .step, .landing .feat > *, .landing .mini, .landing .price, .landing .faq .q, .landing .pay-note, .landing .final-in';
+      '.landing .hero .pill, .landing .hero h1, .landing .hero .sub, .landing .hero .cta-row, .landing .hero .microproof, .landing .hero-social-proof, .landing .hero-visual, .landing .strip .cell, .landing .sec-head, .landing .head-img, .landing .step, .landing .compare-col, .landing .feat > *, .landing .mini, .landing .testi-card, .landing .price, .landing .faq-item, .landing .pay-note, .landing .final-in';
     const els = Array.from(document.querySelectorAll<HTMLElement>(sel));
 
     els.forEach((el) => {
@@ -307,11 +348,17 @@ export default function LandingPage() {
               <a href="#cach-hoc" onClick={(e) => scrollToSection(e, 'cach-hoc')}>
                 Cách học
               </a>
+              <a href="#so-sanh" onClick={(e) => scrollToSection(e, 'so-sanh')}>
+                So sánh
+              </a>
               <a href="#tinh-nang" onClick={(e) => scrollToSection(e, 'tinh-nang')}>
                 Tính năng
               </a>
               <a href="#luyen-noi" onClick={(e) => scrollToSection(e, 'luyen-noi')}>
                 Luyện nói
+              </a>
+              <a href="#danh-gia" onClick={(e) => scrollToSection(e, 'danh-gia')}>
+                Đánh giá
               </a>
               <a href="#bang-gia" onClick={(e) => scrollToSection(e, 'bang-gia')}>
                 Bảng giá
@@ -364,8 +411,10 @@ export default function LandingPage() {
           </div>
         </header>
 
-        {/* Hero Section with Interactive 3D Vi */}
-        <div className="hero">
+        {/* Main Content Landmark for SEO & A11y */}
+        <main id="main-content">
+          {/* Hero Section with Interactive 3D Vi */}
+          <div className="hero">
           <div className="wrap hero-grid">
             <div>
               <span className="pill">Học tiếng Anh cùng Vi — AI coach của bạn</span>
@@ -412,6 +461,24 @@ export default function LandingPage() {
                   Đăng ký 1 phút bằng email
                 </span>
               </div>
+
+              {/* Hero Social Proof */}
+              <div className="hero-social-proof">
+                <div className="avatar-stack">
+                  <span className="av av-1">L</span>
+                  <span className="av av-2">M</span>
+                  <span className="av av-3">H</span>
+                  <span className="av av-4">T</span>
+                  <span className="av av-more">+5k</span>
+                </div>
+                <div className="proof-text">
+                  <div className="stars">
+                    <span>★</span><span>★</span><span>★</span><span>★</span><span>★</span>
+                    <b>4.9/5</b>
+                  </div>
+                  <p>từ hơn <strong>5.000+</strong> người học trên toàn quốc</p>
+                </div>
+              </div>
             </div>
 
             {/* Sân khấu tương tác Vi */}
@@ -424,6 +491,8 @@ export default function LandingPage() {
                     src={viHeroImg}
                     alt="Vi — mascot của VocabularyAI, bấm vào Vi để nghe mẹo học từ"
                     draggable="false"
+                    fetchPriority="high"
+                    decoding="async"
                   />
                 </div>
                 <div className="vi-shadow"></div>
@@ -496,7 +565,7 @@ export default function LandingPage() {
                   Ba bước, <b>một hàng đợi duy nhất</b> ở trang Tổng quan.
                 </p>
               </div>
-              <img className="img3d floaty-slow head-img" src={books3dImg} alt="Chồng sách, đồng hồ và flashcard 3D" />
+              <img className="img3d floaty-slow head-img" src={books3dImg} alt="Chồng sách, đồng hồ và flashcard 3D" loading="lazy" decoding="async" />
             </div>
             <div className="loop">
               <div className="step">
@@ -504,7 +573,21 @@ export default function LandingPage() {
                 <h3>Học từ trong ngữ cảnh</h3>
                 <p>Phiên âm, nghĩa, ví dụ — và “AI giải thích” khi muốn hiểu sâu.</p>
                 <div className="demo flashmini">
-                  <div className="w">resilient</div>
+                  <div className="w" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                    <span>resilient</span>
+                    <button
+                      type="button"
+                      className={`speaker-btn ${isPlayingAudio ? 'playing' : ''}`}
+                      onClick={() => playPronunciation('resilient')}
+                      title="Nghe phát âm chuẩn (US)"
+                      aria-label="Phát âm từ resilient"
+                    >
+                      <svg viewBox="0 0 24 24">
+                        <path d="M11 5L6 9H2v6h4l5 4V5z" />
+                        <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07" />
+                      </svg>
+                    </button>
+                  </div>
                   <div className="p">/rɪˈzɪliənt/ · kiên cường, dễ phục hồi</div>
                   <div className="p" style={{ fontStyle: 'italic' }}>
                     “Children are remarkably resilient.”
@@ -608,6 +691,94 @@ export default function LandingPage() {
           </div>
         </section>
 
+        {/* So Sánh Section: Phương pháp học cũ vs AI Vi */}
+        <section className="alt" id="so-sanh">
+          <div className="wrap">
+            <div className="sec-head" style={{ textAlign: 'center', margin: '0 auto 36px' }}>
+              <span className="pill red">Tại sao lại hiệu quả hơn?</span>
+              <h2 style={{ marginTop: '12px' }}>Cách học cũ vs Đồng hành cùng AI Vi</h2>
+              <p>
+                Bỏ cách học chép từ 20 lần rồi quên sạch sau 3 ngày. Chuyển sang phương pháp khoa học chuẩn Oxford.
+              </p>
+            </div>
+            <div className="compare-grid">
+              <div className="compare-col old">
+                <div className="compare-head">
+                  <span className="badge">Cách học truyền thống</span>
+                  <h3>Học vẹt, ghi chép rời rạc</h3>
+                </div>
+                <ul className="compare-list">
+                  <li>
+                    <svg viewBox="0 0 24 24" className="ic"><path d="M18 6 6 18M6 6l12 12" /></svg>
+                    <div>
+                      <b>Chép từ vào sổ tay</b>
+                      <span>Viết nhiều nhưng không có hệ thống nhắc lại, vài ngày sau quên sạch 80%.</span>
+                    </div>
+                  </li>
+                  <li>
+                    <svg viewBox="0 0 24 24" className="ic"><path d="M18 6 6 18M6 6l12 12" /></svg>
+                    <div>
+                      <b>Tra từ điển thụ động</b>
+                      <span>Chỉ biết nghĩa tiếng Việt rời rạc, không biết ghép câu và dùng trong ngữ cảnh nào.</span>
+                    </div>
+                  </li>
+                  <li>
+                    <svg viewBox="0 0 24 24" className="ic"><path d="M18 6 6 18M6 6l12 12" /></svg>
+                    <div>
+                      <b>Học từ không dám nói</b>
+                      <span>Sợ phát âm sai, không có người sửa ngữ pháp hay chấm điểm phản xạ thực tế.</span>
+                    </div>
+                  </li>
+                  <li>
+                    <svg viewBox="0 0 24 24" className="ic"><path d="M18 6 6 18M6 6l12 12" /></svg>
+                    <div>
+                      <b>Dễ nản và bỏ cuộc</b>
+                      <span>Thiếu lộ trình cá nhân hóa, học quá tải hoặc học từ không đúng mục tiêu.</span>
+                    </div>
+                  </li>
+                </ul>
+              </div>
+
+              <div className="compare-col new">
+                <div className="compare-head">
+                  <span className="badge">Học cùng VocabularyAI</span>
+                  <h3>Khoa học SRS + AI Đồng hành</h3>
+                </div>
+                <ul className="compare-list">
+                  <li>
+                    <svg viewBox="0 0 24 24" className="ic"><path d="M20 6 9 17l-5-5" /></svg>
+                    <div>
+                      <b>Ôn đúng đường cong quên (SRS)</b>
+                      <span>Tự động giãn cách 1-3-7-14-30 ngày. Chỉ ôn từ sắp quên, tiết kiệm 70% thời gian.</span>
+                    </div>
+                  </li>
+                  <li>
+                    <svg viewBox="0 0 24 24" className="ic"><path d="M20 6 9 17l-5-5" /></svg>
+                    <div>
+                      <b>AI Vi giải thích đa chiều</b>
+                      <span>Phân tích collocations, từ đồng nghĩa/trái nghĩa và mẹo nhớ trực quan trong 2 giây.</span>
+                    </div>
+                  </li>
+                  <li>
+                    <svg viewBox="0 0 24 24" className="ic"><path d="M20 6 9 17l-5-5" /></svg>
+                    <div>
+                      <b>Luyện nói chấm 5 tiêu chí</b>
+                      <span>Nhận diện phát âm bằng Whisper, AI phân tích ngữ pháp, từ vựng, trôi chảy tức thì.</span>
+                    </div>
+                  </li>
+                  <li>
+                    <svg viewBox="0 0 24 24" className="ic"><path d="M20 6 9 17l-5-5" /></svg>
+                    <div>
+                      <b>15 phút mỗi ngày, duy trì streak</b>
+                      <span>Giao diện trực quan, lộ trình tinh gọn, học đâu nhớ đó không áp lực.</span>
+                    </div>
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/* Tính năng Section */}
         <section id="tinh-nang" style={{ paddingTop: '24px' }}>
           <div className="wrap">
@@ -634,7 +805,21 @@ export default function LandingPage() {
               </div>
               <div className="card wordcard">
                 <span className="pill level">C1 · Tính từ</span>
-                <div className="w">resilient</div>
+                <div className="w" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                  <span>resilient</span>
+                  <button
+                    type="button"
+                    className={`speaker-btn ${isPlayingAudio ? 'playing' : ''}`}
+                    onClick={() => playPronunciation('resilient')}
+                    title="Nghe phát âm chuẩn (US)"
+                    aria-label="Phát âm từ resilient"
+                  >
+                    <svg viewBox="0 0 24 24">
+                      <path d="M11 5L6 9H2v6h4l5 4V5z" />
+                      <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07" />
+                    </svg>
+                  </button>
+                </div>
                 <div className="phon">/rɪˈzɪliənt/</div>
                 <div className="mean">kiên cường, dễ phục hồi</div>
                 <div className="ex">“Children are remarkably resilient.”</div>
@@ -672,6 +857,8 @@ export default function LandingPage() {
                   className="img3d floaty"
                   src={speak3dImg}
                   alt="Micro 3D với bong bóng trò chuyện"
+                  loading="lazy"
+                  decoding="async"
                   style={{ maxHeight: '290px', marginTop: '14px' }}
                 />
                 <div className="wave" style={{ marginTop: '6px' }}>
@@ -763,19 +950,75 @@ export default function LandingPage() {
             {/* Feature Minis */}
             <div className="minis">
               <div className="mini card">
-                <img className="mini-img" src={quiz3dImg} alt="Cúp vàng và đồng hồ bấm giờ 3D" />
+                <img className="mini-img" src={quiz3dImg} alt="Cúp vàng và đồng hồ bấm giờ 3D" loading="lazy" decoding="async" />
                 <h3>Quiz như thi thật</h3>
                 <p>Bấm giờ, nộp là có điểm. Vi chỉ ra điểm yếu và lỗi sai của bạn.</p>
               </div>
               <div className="mini card">
-                <img className="mini-img" src={grammar3dImg} alt="Bút chì và dấu tick 3D" />
+                <img className="mini-img" src={grammar3dImg} alt="Bút chì và dấu tick 3D" loading="lazy" decoding="async" />
                 <h3>Sửa ngữ pháp tức thì</h3>
                 <p>Dán câu vào — nhận câu đã sửa chuẩn xác, phân tích lỗi và cách hành văn tự nhiên.</p>
               </div>
               <div className="mini card">
-                <img className="mini-img" src={chat3dImg} alt="Hai bong bóng trò chuyện 3D" />
+                <img className="mini-img" src={chat3dImg} alt="Hai bong bóng trò chuyện 3D" loading="lazy" decoding="async" />
                 <h3>Chat với Vi 24/7</h3>
                 <p>Hỏi ngữ pháp, từ vựng, cách diễn đạt — Vi trả lời ngay lập tức.</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Testimonials / Đánh giá Section */}
+        <section id="danh-gia" style={{ paddingTop: '56px' }}>
+          <div className="wrap">
+            <div className="sec-head" style={{ textAlign: 'center', margin: '0 auto 40px' }}>
+              <span className="pill">Người học nói gì</span>
+              <h2 style={{ marginTop: '12px' }}>Hơn 5.000+ học viên đã bứt phá từ vựng</h2>
+              <p>
+                Từ sinh viên chuẩn bị thi IELTS/TOEIC đến người đi làm cần giao tiếp công việc mỗi ngày.
+              </p>
+            </div>
+            <div className="testi-grid">
+              <div className="testi-card">
+                <div className="testi-stars">★★★★★</div>
+                <p className="testi-text">
+                  “Trước đây mình cứ học trước quên sau, thi TOEIC mãi kẹt ở mức 550 từ vựng. Dùng thuật toán lặp lại ngắt quãng của VocabularyAI 2 tháng nay, mình nhớ được hơn 800 từ mới mà không hề thấy mệt mỏi.”
+                </p>
+                <div className="testi-author">
+                  <div className="testi-av">M</div>
+                  <div className="testi-meta">
+                    <b>Minh Hoàng</b>
+                    <span>Sinh viên ĐH Bách Khoa · Mục tiêu TOEIC 800</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="testi-card highlight">
+                <div className="testi-stars">★★★★★</div>
+                <p className="testi-text">
+                  “Tính năng luyện nói AI chấm 5 tiêu chí thực sự đỉnh. Mình hay bị ngập ngừng khi phỏng vấn tiếng Anh, Vi chỉ ra từng lỗi ngữ pháp và từ vựng lặp lại giúp mình tự tin nói trôi chảy hơn hẳn.”
+                </p>
+                <div className="testi-author">
+                  <div className="testi-av" style={{ background: '#2563EB' }}>T</div>
+                  <div className="testi-meta">
+                    <b>Thảo My</b>
+                    <span>Product Designer · Cần tiếng Anh làm việc Remote</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="testi-card">
+                <div className="testi-stars">★★★★★</div>
+                <p className="testi-text">
+                  “Vi giải thích từ vựng cực kỳ sâu và dễ hiểu, không khô cứng như từ điển truyền thống. Nút bấm nghe phát âm và ví dụ ngữ cảnh thực tế giúp mình áp dụng vào bài viết email công việc ngay lập tức.”
+                </p>
+                <div className="testi-author">
+                  <div className="testi-av" style={{ background: '#B57F1F' }}>Q</div>
+                  <div className="testi-meta">
+                    <b>Quốc Anh</b>
+                    <span>Lập trình viên Backend · Học tiếng Anh giao tiếp</span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -790,6 +1033,7 @@ export default function LandingPage() {
                 Miễn phí để bắt đầu. Premium rẻ hơn <b>một ly cà phê mỗi tuần</b>, thanh toán tiện lợi qua PayOS.
               </p>
             </div>
+
             <div className="price-grid">
               <div className="price">
                 <div className="pname">Miễn phí</div>
@@ -857,7 +1101,7 @@ export default function LandingPage() {
                   99.000đ<small> / tháng</small>
                 </div>
                 <p className="note">
-                  Gia hạn linh hoạt từng tháng. Hủy khi nào cũng được, dùng hết hạn đã trả.
+                  Gói 30 ngày linh hoạt. Gia hạn theo nhu cầu, dùng trọn vẹn đến hết hạn đã trả.
                 </p>
                 <ul>
                   <li>
@@ -903,40 +1147,56 @@ export default function LandingPage() {
               </div>
             </div>
             <p className="pay-note">Giá niêm yết chính thức · Cổng thanh toán bảo mật PayOS.</p>
+            <div className="payment-badges">
+              <span className="pay-badge-item">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                Bảo mật PayOS
+              </span>
+              <span className="pay-badge-item">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18"/><path d="M7 15h2"/></svg>
+                VietQR / Quét mã tức thì
+              </span>
+              <span className="pay-badge-item">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                Kích hoạt tự động 100%
+              </span>
+            </div>
           </div>
         </section>
 
         {/* FAQ Section */}
         <section className="alt" id="faq" style={{ paddingTop: '56px' }}>
-          <div className="wrap" style={{ maxWidth: '920px' }}>
+          <div className="wrap" style={{ maxWidth: '960px' }}>
             <div className="sec-head">
               <h2>Hỏi nhanh, đáp thẳng</h2>
             </div>
-            <div className="faq">
-              <div className="q">
-                <h4>
-                  <span style={{ color: 'var(--primary-dark)' }}>01</span>Mỗi ngày tôi phải học bao lâu?
-                </h4>
-                <p>15 phút mỗi ngày: ôn từ đến hạn, học từ mới, nói một chủ đề. Đều đặn quan trọng hơn học dồn.</p>
-              </div>
-              <div className="q">
-                <h4>
-                  <span style={{ color: 'var(--primary-dark)' }}>02</span>“Vi” là ai? AI đến từ đâu?
-                </h4>
-                <p>Trợ lý học tập thông minh của app: Gemini lo giải thích và ngữ pháp, Whisper lo nghe chép bài nói.</p>
-              </div>
-              <div className="q">
-                <h4>
-                  <span style={{ color: 'var(--primary-dark)' }}>03</span>Đăng ký có cần thẻ ngân hàng không?
-                </h4>
-                <p>Không. Bạn chỉ cần email và mã xác thực OTP. Mua gói Premium mới cần thanh toán qua PayOS.</p>
-              </div>
-              <div className="q">
-                <h4>
-                  <span style={{ color: 'var(--primary-dark)' }}>04</span>Mua Premium rồi, hủy thế nào?
-                </h4>
-                <p>Hủy bất cứ lúc nào trong mục quản lý tài khoản, vẫn dùng tiếp đến hết hạn đã trả.</p>
-              </div>
+            <div className="faq-accordion">
+              {FAQ_ITEMS.map((item, idx) => {
+                const isOpen = openFaq === idx;
+                return (
+                  <div key={idx} className={`faq-item ${isOpen ? 'open' : ''}`}>
+                    <button
+                      type="button"
+                      className="faq-btn"
+                      onClick={() => setOpenFaq(isOpen ? null : idx)}
+                      aria-expanded={isOpen}
+                    >
+                      <h4>
+                        <span className="faq-num">0{idx + 1}</span>
+                        {item.q}
+                      </h4>
+                      <span className="faq-chevron">
+                        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="6 9 12 15 18 9" />
+                        </svg>
+                      </span>
+                    </button>
+                    <div className="faq-answer">
+                      <p>{item.a}</p>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
         </section>
@@ -948,6 +1208,8 @@ export default function LandingPage() {
               className="floaty"
               src={vi3dImg}
               alt="Mascot Vi 3D"
+              loading="lazy"
+              decoding="async"
               style={{ width: '96px', height: '96px', objectFit: 'cover', borderRadius: '26px', border: '3px solid rgba(255,255,255,.25)' }}
             />
             <div>
@@ -959,6 +1221,7 @@ export default function LandingPage() {
             </Link>
           </div>
         </div>
+        </main>
 
         {/* Footer */}
         <footer>
@@ -988,11 +1251,17 @@ export default function LandingPage() {
               <a href="#cach-hoc" onClick={(e) => scrollToSection(e, 'cach-hoc')}>
                 Cách học
               </a>
+              <a href="#so-sanh" onClick={(e) => scrollToSection(e, 'so-sanh')}>
+                So sánh
+              </a>
               <a href="#tinh-nang" onClick={(e) => scrollToSection(e, 'tinh-nang')}>
                 Tính năng
               </a>
               <a href="#luyen-noi" onClick={(e) => scrollToSection(e, 'luyen-noi')}>
                 Luyện nói
+              </a>
+              <a href="#danh-gia" onClick={(e) => scrollToSection(e, 'danh-gia')}>
+                Đánh giá
               </a>
               <a href="#bang-gia" onClick={(e) => scrollToSection(e, 'bang-gia')}>
                 Bảng giá
@@ -1035,6 +1304,23 @@ export default function LandingPage() {
         <path d="M12 20V6m0 0-6 6m6-6 6 6" />
       </svg>
     </button>
+
+    {/* Mobile Sticky Bottom CTA Bar */}
+    <div className={`mobile-sticky-cta ${showToTop && !isNavigating ? 'visible' : ''}`}>
+      <div className="m-cta-in">
+        <div className="m-cta-text">
+          <b>Học tiếng Anh cùng Vi</b>
+          <span>Miễn phí · 15 phút mỗi ngày</span>
+        </div>
+        <Link
+          className="btn green"
+          to={ctaLink}
+          onClick={handleTransitionNavigate(ctaLink)}
+        >
+          Bắt đầu ngay
+        </Link>
+      </div>
+    </div>
   </>
 );
 }

@@ -56,6 +56,7 @@ const P: Record<string, string> = {
   chevronRight: '<path d="m9 18 6-6-6-6"/>',
   panelLeft: '<rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/><path d="m14 9-3 3 3 3"/>',
   panelLeftOpen: '<rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/><path d="m12 9 3 3-3 3"/>',
+  creditCard: '<rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/>',
 };
 export const Icon = ({ n, s = 20 }: { n: keyof typeof P; s?: number }) => (
   <span

@@ -8,6 +8,7 @@ import { ErrorBoundary } from './ErrorBoundary';
 
 const ADMIN_TABS = [
   { to: '/admin', label: 'Tổng quan Hệ thống', icon: 'home' as const, end: true },
+  { to: '/admin/orders', label: 'Đơn hàng & Gói cước', icon: 'creditCard' as const },
   { to: '/admin/users', label: 'Quản lý Học viên', icon: 'user' as const },
   { to: '/admin/words', label: 'Từ vựng & CEFR', icon: 'book' as const },
   { to: '/admin/quizzes', label: 'Quản lý Trắc nghiệm', icon: 'zap' as const },

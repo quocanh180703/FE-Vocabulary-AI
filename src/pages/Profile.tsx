@@ -25,7 +25,7 @@ const DEFAULT_PREFS: LearningPreferences = {
 };
 
 export default function Profile() {
-  const { user: authUser, logout, updateUser, subscription, refreshSubscription } = useAuth();
+  const { user: authUser, updateUser, subscription, refreshSubscription } = useAuth();
   const { usage } = useUsage();
   const [profile, setProfile] = useState<User | null>(authUser);
   const [stats, setStats] = useState<LearningStats | null>(null);
@@ -129,8 +129,6 @@ export default function Profile() {
     }
   });
 
-  // Logout confirm modal/state
-  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   useEffect(() => {
     userApi.me().then(({ data }) => {
@@ -772,17 +770,6 @@ export default function Profile() {
             </div>
           </div>
 
-          {/* Logout button */}
-          <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 4 }}>
-            <button
-              type="button"
-              className="btn ghost"
-              style={{ color: 'var(--red-dark)', borderColor: 'rgba(229,72,77,0.3)' }}
-              onClick={() => setShowLogoutConfirm(true)}
-            >
-              <Icon n="logout" s={18} /> Đăng xuất
-            </button>
-          </div>
         </div>
       </div>
 
@@ -1060,39 +1047,6 @@ export default function Profile() {
           document.body
         )}
 
-      {/* Logout Confirmation Modal - portaled to document.body */}
-      {showLogoutConfirm &&
-        createPortal(
-          <>
-            <div className="scrim" onClick={() => setShowLogoutConfirm(false)} />
-            <div className="modal" style={{ maxWidth: 420, textAlign: 'center', zIndex: 100000 }}>
-              <img src={viAvatar} alt="Vi" style={{ width: 68, height: 68, margin: '0 auto' }} />
-              <h2 style={{ marginTop: 14 }}>Bạn muốn đăng xuất?</h2>
-              <div className="sub mt8" style={{ fontSize: 13.5 }}>
-                Tiến độ học hôm nay của bạn đã được lưu an toàn trên hệ thống. Hẹn gặp lại bạn sớm!
-              </div>
-              <div style={{ display: 'flex', gap: 12, marginTop: 22 }}>
-                <button
-                  type="button"
-                  className="btn ghost"
-                  style={{ flex: 1 }}
-                  onClick={() => setShowLogoutConfirm(false)}
-                >
-                  Ở lại học
-                </button>
-                <button
-                  type="button"
-                  className="btn"
-                  style={{ flex: 1, background: 'var(--red)', color: '#fff', border: 'none' }}
-                  onClick={logout}
-                >
-                  Đăng xuất
-                </button>
-              </div>
-            </div>
-          </>,
-          document.body
-        )}
     </div>
   );
 }
