@@ -1228,7 +1228,7 @@ export default function LandingPage() {
           <div className="wrap foot">
             <div>
               <div className="brand">
-                <svg viewBox="0 0 72 72" width="34" height="34">
+                <svg viewBox="0 0 72 72" width="34" height="34" aria-hidden="true">
                   <ellipse cx="36" cy="40" rx="26" ry="24" fill="#359E7D" />
                   <ellipse cx="36" cy="50" rx="14" ry="11" fill="#C2E4D2" />
                   <rect x="30" y="8" width="5" height="12" rx="2.5" fill="#E5484D" transform="rotate(-15 32 14)" />
@@ -1240,45 +1240,71 @@ export default function LandingPage() {
                   <circle cx="45.5" cy="33" r="3.6" fill="#0A2540" />
                   <path d="M31 42 Q36 38 41 42 Q36 50 31 42" fill="#C96F2E" />
                 </svg>
-                VocabularyAI
+                <span>VocabularyAI</span>
               </div>
-              <p style={{ marginTop: '10px', maxWidth: '250px' }}>
-                Học tiếng Anh vui mỗi ngày — từ vựng, quiz, luyện nói cùng AI.
+              <p className="foot-tagline">
+                Học tiếng Anh vui mỗi ngày — từ vựng Oxford B1–C1, quiz thông minh và luyện nói phản xạ cùng trợ lý AI Vi.
               </p>
+              <div className="foot-status">
+                <span className="foot-status-dot" />
+                <span>Sẵn sàng học ngay · Miễn phí</span>
+              </div>
             </div>
+
             <nav>
               <b>Sản phẩm</b>
               <a href="#cach-hoc" onClick={(e) => scrollToSection(e, 'cach-hoc')}>
-                Cách học
+                Cách học (SRS)
               </a>
               <a href="#so-sanh" onClick={(e) => scrollToSection(e, 'so-sanh')}>
-                So sánh
+                So sánh tính năng
               </a>
               <a href="#tinh-nang" onClick={(e) => scrollToSection(e, 'tinh-nang')}>
-                Tính năng
+                Bộ tính năng chính
               </a>
               <a href="#luyen-noi" onClick={(e) => scrollToSection(e, 'luyen-noi')}>
-                Luyện nói
+                Luyện nói &amp; Chấm điểm AI
               </a>
               <a href="#danh-gia" onClick={(e) => scrollToSection(e, 'danh-gia')}>
-                Đánh giá
+                Đánh giá người học
               </a>
               <a href="#bang-gia" onClick={(e) => scrollToSection(e, 'bang-gia')}>
-                Bảng giá
+                Bảng giá gói học
               </a>
             </nav>
+
             <nav>
               <b>Bắt đầu</b>
-              <Link to="/login">Đăng nhập</Link>
-              <Link to="/login">Tạo tài khoản</Link>
+              <Link to="/login">Đăng nhập tài khoản</Link>
+              <Link to="/login">Tạo tài khoản miễn phí</Link>
+              <Link to="/placement">Kiểm tra trình độ</Link>
+              <Link to={ctaLink} onClick={handleTransitionNavigate(ctaLink)}>
+                Lộ trình học cá nhân
+              </Link>
               <a href="#faq" onClick={(e) => scrollToSection(e, 'faq')}>
                 Câu hỏi thường gặp
               </a>
             </nav>
-            <div className="sp">
-              Mọi tính năng trên trang đều có thật trong hệ thống. Hãy bắt đầu chinh phục tiếng Anh ngay hôm nay.
+
+            <div className="foot-sp-card">
+              <div className="foot-sp-head">
+                <span className="foot-sp-icon">✨</span>
+                <b>Trải nghiệm thực tế</b>
+              </div>
+              <p>
+                Mọi tính năng trên trang đều có thật trong hệ thống. Hãy bắt đầu chinh phục tiếng Anh ngay hôm nay cùng Vi.
+              </p>
+              <Link
+                to={ctaLink}
+                className="foot-sp-btn"
+                onClick={handleTransitionNavigate(ctaLink)}
+              >
+                <span>Bắt đầu học ngay</span>
+                <span className="foot-sp-arrow">→</span>
+              </Link>
             </div>
           </div>
+
           <div className="wrap legal">
             <span>© 2026 VocabularyAI — Học tiếng Anh mỗi ngày cùng Vi.</span>
             <div className="legal-links">
@@ -1288,6 +1314,23 @@ export default function LandingPage() {
             </div>
           </div>
         </footer>
+      </div>
+
+      {/* Mobile Sticky Bottom CTA Bar (chỉ hiển thị trên mobile <= 820px khi cuộn) */}
+      <div className={`mobile-sticky-cta ${showToTop && !isNavigating ? 'visible' : ''}`}>
+        <div className="m-cta-in">
+          <div className="m-cta-text">
+            <b>Học tiếng Anh cùng Vi</b>
+            <span>Miễn phí · 15 phút mỗi ngày</span>
+          </div>
+          <Link
+            className="btn green"
+            to={ctaLink}
+            onClick={handleTransitionNavigate(ctaLink)}
+          >
+            Bắt đầu ngay
+          </Link>
+        </div>
       </div>
     </div>
 
@@ -1304,23 +1347,6 @@ export default function LandingPage() {
         <path d="M12 20V6m0 0-6 6m6-6 6 6" />
       </svg>
     </button>
-
-    {/* Mobile Sticky Bottom CTA Bar */}
-    <div className={`mobile-sticky-cta ${showToTop && !isNavigating ? 'visible' : ''}`}>
-      <div className="m-cta-in">
-        <div className="m-cta-text">
-          <b>Học tiếng Anh cùng Vi</b>
-          <span>Miễn phí · 15 phút mỗi ngày</span>
-        </div>
-        <Link
-          className="btn green"
-          to={ctaLink}
-          onClick={handleTransitionNavigate(ctaLink)}
-        >
-          Bắt đầu ngay
-        </Link>
-      </div>
-    </div>
   </>
 );
 }
