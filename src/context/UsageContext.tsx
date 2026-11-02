@@ -170,7 +170,7 @@ export function UsageProvider({ children }: { children: ReactNode }) {
 
   const openUpgradeModal = useCallback(
     (options?: Partial<ModalOptions> & { force?: boolean }) => {
-      // Free users only see modal if they have used >= 50% of the free package (unless forced or VIP)
+      // Free users only see modal if they have used >= 50% of the free package (unless forced or PRO)
       if (!isVip && !isAtLeastHalfFreeUsage && !options?.force) {
         return;
       }

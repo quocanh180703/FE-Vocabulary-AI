@@ -543,7 +543,7 @@ export default function Profile() {
             </div>
           )}
 
-          {/* If VIP active: display active VIP benefits banner */}
+          {/* If PRO active: display active PRO benefits banner */}
           {isVipActive && (
             <div
               style={{
@@ -557,7 +557,7 @@ export default function Profile() {
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, color: '#b45309', fontWeight: 800 }}>
                 <span style={{ fontSize: 22 }}>💎</span>
                 <div>
-                  <div style={{ fontSize: 15, color: '#92400e' }}>Đặc quyền VIP đang kích hoạt</div>
+                  <div style={{ fontSize: 15, color: '#92400e' }}>Đặc quyền PRO đang kích hoạt</div>
                   <div style={{ fontSize: 12.5, fontWeight: 500, color: '#78350f', marginTop: 2 }}>
                     Không giới hạn Chat AI, Luyện nói, Sửa ngữ pháp, Lộ trình học và toàn bộ 5.000+ từ Oxford B1–C1.
                   </div>
@@ -619,11 +619,21 @@ export default function Profile() {
               disabled={initiatingUpgrade !== null}
               onClick={() => handleUpgrade(1)}
             >
-              {initiatingUpgrade === 1 ? 'Đang kết nối PayOS...' : isVipActive ? 'Gia hạn thêm gói VIP' : 'Nâng cấp qua PayOS'}
+              {initiatingUpgrade === 1 ? 'Đang kết nối PayOS...' : isVipActive ? 'Gia hạn thêm gói PRO' : 'Nâng cấp qua PayOS'}
             </button>
           </div>
 
           {upgradeNotice && <div className="error mt8">{upgradeNotice}</div>}
+
+          {/* Vi Companion Motivation */}
+          <div className="card">
+            <div className="coach">
+              <img src={viAvatar} alt="Vi" />
+              <div className="bubble">
+                <b>Vi nhắc bạn:</b> Duy trì thói quen học 15 phút mỗi ngày hiệu quả hơn học dồn vào cuối tuần rất nhiều đấy!
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Right Column: Learning Stats & Security */}
@@ -645,7 +655,7 @@ export default function Profile() {
               </div>
               <div className="kv">
                 <span>Điểm quiz trung bình</span>
-                <b><AnimatedCounter value={accuracy > 0 ? accuracy : 82} suffix="đ" /></b>
+                <b><AnimatedCounter value={accuracy > 0 ? accuracy : 82} />đ</b>
               </div>
               <div className="kv">
                 <span>Trình độ mục tiêu</span>
@@ -663,11 +673,11 @@ export default function Profile() {
             <div className="mt8">
               <div className="kv">
                 <span>Email đăng nhập</span>
-                {user.email}
+                <b>{user.email}</b>
               </div>
               <div className="kv">
                 <span>Mật khẩu</span>
-                ••••••••••
+                <b>••••••••••</b>
               </div>
             </div>
             <button
@@ -759,17 +769,6 @@ export default function Profile() {
               </div>
             </div>
           </div>
-
-          {/* Vi Companion Motivation */}
-          <div className="card">
-            <div className="coach">
-              <img src={viAvatar} alt="Vi" />
-              <div className="bubble">
-                <b>Vi nhắc bạn:</b> Duy trì thói quen học 15 phút mỗi ngày hiệu quả hơn học dồn vào cuối tuần rất nhiều đấy!
-              </div>
-            </div>
-          </div>
-
         </div>
       </div>
 

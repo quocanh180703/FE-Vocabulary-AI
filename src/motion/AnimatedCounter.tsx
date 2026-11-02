@@ -75,7 +75,7 @@ export function AnimatedCounter({
   const formatted = formatter ? formatter(displayValue) : displayValue.toLocaleString('vi-VN');
 
   return (
-    <span className={className} style={style}>
+    <span className={className} style={{ color: 'inherit', ...style }}>
       {prefix}{formatted}{suffix}
     </span>
   );

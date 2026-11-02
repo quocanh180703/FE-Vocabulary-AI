@@ -417,7 +417,7 @@ export default function AdminOrders() {
                 <div className="num" style={{ color: '#15803D' }}>
                   <AnimatedCounter value={payments.filter((p) => p.status === 'SUCCESS').length} />
                 </div>
-                <div className="delta up">Tài khoản VIP đã kích hoạt</div>
+                <div className="delta up">Tài khoản PRO đã kích hoạt</div>
               </motion.div>
 
               <motion.div variants={staggerItem} className="kpi">

@@ -40,10 +40,10 @@ export const QuotaBadge: React.FC<QuotaBadgeProps> = ({
           verticalAlign: 'middle',
           ...style,
         }}
-        title="Tài khoản VIP - Không giới hạn tính năng AI"
+        title="Tài khoản PRO - Không giới hạn tính năng AI"
       >
         <span style={{ color: '#D97706', fontSize: '11px' }}>◆</span>
-        <span>VIP · Không giới hạn</span>
+        <span>PRO · Không giới hạn</span>
       </div>
     );
   }

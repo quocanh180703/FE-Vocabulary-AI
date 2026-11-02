@@ -71,7 +71,7 @@ export default function PaymentResult() {
             </div>
             <div className="mt16">
               <span className="pill level" style={{ fontSize: '13.5px', padding: '7px 14px' }}>
-                <Icon n="gem" s={15} /> Gói VIP Đã Kích Hoạt
+                <Icon n="gem" s={15} /> Gói PRO Đã Kích Hoạt
               </span>
             </div>
             <h1>Thanh toán thành công!</h1>

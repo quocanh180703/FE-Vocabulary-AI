@@ -153,7 +153,7 @@ export const UpgradeModal: React.FC = () => {
                     border: '1px solid #bfdbfe',
                   }}
                 >
-                  Gói chuẩn VIP
+                  Gói chuẩn PRO
                 </span>
               </div>
               <div style={{ fontSize: '13px', color: '#475569' }}>

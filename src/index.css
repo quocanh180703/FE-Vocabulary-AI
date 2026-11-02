@@ -1785,15 +1785,30 @@ textarea.input {
   border-bottom: 1.5px dashed var(--line);
   font-weight: 800;
   font-size: 15px;
+  color: var(--ink);
 }
 
 .kv:last-child {
   border: none;
 }
 
-.kv span {
+.kv > span:first-child {
   color: var(--muted);
   font-weight: 700;
+}
+
+.kv b,
+.kv strong,
+.kv > :last-child {
+  color: var(--ink);
+  font-weight: 800;
+}
+
+.kv b *,
+.kv strong *,
+.kv > :last-child * {
+  color: inherit !important;
+  font-weight: inherit;
 }
 
 .herocard {

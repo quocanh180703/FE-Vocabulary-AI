@@ -281,10 +281,10 @@ export function Layout() {
                 background: '#F1F5F9',
                 color: '#475569',
               }}
-              title="Bạn đang dùng gói Miễn Phí. Bấm để xem ưu đãi nâng cấp VIP!"
+              title="Bạn đang dùng gói Miễn Phí. Bấm để xem ưu đãi nâng cấp PRO!"
             >
               <Icon n="spark" s={15} />
-              <span style={{ fontSize: '13px', fontWeight: 900 }}>VIP</span>
+              <span style={{ fontSize: '13px', fontWeight: 900 }}>PRO</span>
             </button>
           )}
 
