@@ -19,45 +19,61 @@ interface TopicItem {
   en: string;
   category: 'daily' | 'hobbies' | 'work' | 'travel' | 'tech';
   tag: string;
+  icon: string;
   desc: string;
 }
 
 const CATEGORIES = [
-  { id: 'all', name: 'Tất cả' },
-  { id: 'daily', name: 'Đời sống' },
-  { id: 'hobbies', name: 'Sở thích' },
-  { id: 'work', name: 'Công việc & Học tập' },
-  { id: 'travel', name: 'Du lịch & Văn hóa' },
-  { id: 'tech', name: 'Công nghệ & Xã hội' },
+  { id: 'all', name: 'Tất cả', icon: '🌟' },
+  { id: 'daily', name: 'Đời sống', icon: '☕' },
+  { id: 'hobbies', name: 'Sở thích', icon: '🎨' },
+  { id: 'work', name: 'Công việc & Học tập', icon: '💼' },
+  { id: 'travel', name: 'Du lịch & Văn hóa', icon: '✈️' },
+  { id: 'tech', name: 'Công nghệ & Xã hội', icon: '💡' },
 ];
 
 const TOPICS: TopicItem[] = [
+  // 1. Đời sống (daily)
   {
     name: 'Giới thiệu bản thân',
     en: 'Introduce Yourself',
     category: 'daily',
     tag: 'A2',
-    desc: 'Nghe đoạn giới thiệu tên tuổi, nghề nghiệp, nơi sống và sở thích.',
+    icon: '👤',
+    desc: 'Nghe đoạn giới thiệu tên tuổi, nghề nghiệp, nơi sống và sở thích cá nhân.',
   },
   {
     name: 'Kể về cuối tuần vừa qua',
     en: 'My Last Weekend',
     category: 'daily',
     tag: 'A2',
-    desc: 'Lắng nghe các hoạt động thư giãn, giải trí và sinh hoạt cuối tuần.',
+    icon: '🗓️',
+    desc: 'Lắng nghe các hoạt động thư giãn, giải trí và sinh hoạt cuối tuần cùng bạn bè.',
   },
   {
     name: 'Thói quen một ngày của bạn',
     en: 'My Daily Routine',
     category: 'daily',
     tag: 'A2',
-    desc: 'Lịch trình từ sáng thức dậy, bữa ăn đến giờ làm việc và nghỉ ngơi.',
+    icon: '⏰',
+    desc: 'Lịch trình từ sáng thức dậy, bữa ăn đến giờ làm việc và nghỉ ngơi buổi tối.',
   },
+  {
+    name: 'Thời tiết & Bốn mùa',
+    en: 'Weather & Four Seasons',
+    category: 'daily',
+    tag: 'A2',
+    icon: '🌤️',
+    desc: 'Mô tả thời tiết yêu thích, sự thay đổi của khí hậu và các hoạt động theo mùa.',
+  },
+
+  // 2. Công việc & Học tập (work)
   {
     name: 'Công việc mơ ước',
     en: 'My Dream Career',
     category: 'work',
     tag: 'B1',
+    icon: '💼',
     desc: 'Mô tả nghề nghiệp lý tưởng, môi trường làm việc và các kỹ năng cần thiết.',
   },
   {
@@ -65,38 +81,82 @@ const TOPICS: TopicItem[] = [
     en: 'Remote vs Office Work',
     category: 'work',
     tag: 'B2',
-    desc: 'So sánh ưu nhược điểm giữa làm việc từ xa và văn phòng truyền thống.',
+    icon: '💻',
+    desc: 'So sánh ưu nhược điểm giữa làm việc từ xa online và văn phòng truyền thống.',
   },
+
+  // 3. Du lịch & Văn hóa (travel)
   {
     name: 'Chuyến du lịch đáng nhớ',
     en: 'A Memorable Journey',
     category: 'travel',
     tag: 'B1',
-    desc: 'Kỷ niệm du lịch, khám phá danh lam thắng cảnh và ẩm thực địa phương.',
+    icon: '✈️',
+    desc: 'Kỷ niệm du lịch, khám phá danh lam thắng cảnh, con người và ẩm thực địa phương.',
   },
+  {
+    name: 'Khám phá văn hóa cà phê',
+    en: 'Coffee Culture & Cafes',
+    category: 'travel',
+    tag: 'A2',
+    icon: '☕',
+    desc: 'Thói quen thưởng thức cà phê, không gian quán xá và phong cách sống hiện đại.',
+  },
+
+  // 4. Sở thích (hobbies)
   {
     name: 'Món ăn yêu thích',
     en: 'Favorite Food & Cooking',
     category: 'hobbies',
     tag: 'A2',
-    desc: 'Mô tả hương vị món ăn yêu thích, nguyên liệu và cách chế biến.',
+    icon: '🍜',
+    desc: 'Mô tả hương vị món ăn khoái khẩu, nguyên liệu tươi ngon và cách chế biến.',
   },
+  {
+    name: 'Thói quen đọc sách',
+    en: 'Reading & Books',
+    category: 'hobbies',
+    tag: 'B1',
+    icon: '📚',
+    desc: 'Lợi ích của việc đọc sách mỗi ngày, thể loại yêu thích và kỹ năng tự học.',
+  },
+
+  // 5. Công nghệ & Xã hội (tech)
   {
     name: 'Trí tuệ nhân tạo (AI)',
     en: 'AI in Daily Life',
     category: 'tech',
     tag: 'B2',
-    desc: 'Những lợi ích và ứng dụng thực tế của AI trong công việc và đời sống.',
+    icon: '🤖',
+    desc: 'Những lợi ích và ứng dụng thực tế của AI trong công việc và đời sống hàng ngày.',
+  },
+  {
+    name: 'Mạng xã hội trong đời sống',
+    en: 'Social Media & Modern Life',
+    category: 'tech',
+    tag: 'B1',
+    icon: '📱',
+    desc: 'Sự kết nối, chia sẻ thông tin và cách cân bằng thời gian trên mạng xã hội.',
   },
 ];
 
 const LEVELS = [
-  { id: 'A1', name: 'A1 - Căn bản (25-35 từ)' },
-  { id: 'A2', name: 'A2 - Sơ cấp (40-55 từ)' },
-  { id: 'B1', name: 'B1 - Trung cấp (60-80 từ)' },
-  { id: 'B2', name: 'B2 - Khá (85-110 từ)' },
-  { id: 'C1', name: 'C1 - Nâng cao (115-140 từ)' },
+  { id: 'A1', name: 'A1 · Căn bản', desc: '25–35 từ' },
+  { id: 'A2', name: 'A2 · Sơ cấp', desc: '40–55 từ' },
+  { id: 'B1', name: 'B1 · Trung cấp', desc: '60–80 từ' },
+  { id: 'B2', name: 'B2 · Khá', desc: '85–110 từ' },
+  { id: 'C1', name: 'C1 · Nâng cao', desc: '115–140 từ' },
 ];
+
+const VOICE_DETAILS = [
+  { id: 'coral', name: 'Coral', tone: 'Trong trẻo, Dễ nghe', gender: 'Nữ', avatar: '👩', badge: 'Khuyên dùng' },
+  { id: 'nova', name: 'Nova', tone: 'Trẻ trung, Năng động', gender: 'Nữ', avatar: '👩' },
+  { id: 'alloy', name: 'Alloy', tone: 'Tự nhiên, Chuẩn phát âm', gender: 'Chuẩn', avatar: '🎙️' },
+  { id: 'echo', name: 'Echo', tone: 'Ấm áp, Điềm tĩnh', gender: 'Nam', avatar: '👨' },
+  { id: 'onyx', name: 'Onyx', tone: 'Trầm ấm, Chững chạc', gender: 'Nam', avatar: '👨' },
+  { id: 'fable', name: 'Fable', tone: 'Biểu cảm, Kể chuyện', gender: 'Truyền cảm', avatar: '🎭' },
+];
+
 
 export default function Listening() {
   const { decrementQuota } = useUsage();
@@ -108,6 +168,18 @@ export default function Listening() {
   const [isCustom, setIsCustom] = useState<boolean>(false);
   const [level, setLevel] = useState<string>('B1');
   const [voice, setVoice] = useState<string>(() => localStorage.getItem('vocab_ai_voice') || 'alloy');
+  const [isVoiceOpen, setIsVoiceOpen] = useState(false);
+  const voiceDropdownRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (voiceDropdownRef.current && !voiceDropdownRef.current.contains(e.target as Node)) {
+        setIsVoiceOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   // Exercise states
   const [view, setView] = useState<'select' | 'practice' | 'result'>('select');
@@ -265,10 +337,13 @@ export default function Listening() {
     selectedCategory === 'all' ? true : t.category === selectedCategory
   );
 
+  const selectedVoiceDetail = VOICE_DETAILS.find((v) => v.id === voice) || VOICE_DETAILS[0];
   const selectedVoiceObj = VOICES.find((v) => v.id === voice) || VOICES[0];
+  const selectedLevelObj = LEVELS.find((l) => l.id === level) || LEVELS[2];
+  const activeTopicObj = TOPICS.find((t) => t.name === topic);
 
   return (
-    <div className="listening-page">
+    <div className="listening-page" style={{ maxWidth: 1520, margin: '0 auto' }}>
       {/* Hidden Audio Player */}
       {audioUrl && (
         <audio
@@ -345,7 +420,7 @@ export default function Listening() {
               justifyContent: 'space-between',
               flexWrap: 'wrap',
               gap: 12,
-              marginBottom: 16,
+              marginBottom: 18,
             }}
           >
             {/* Category tabs */}
@@ -356,8 +431,10 @@ export default function Listening() {
                   type="button"
                   className={'fchip' + (selectedCategory === c.id ? ' on' : '')}
                   onClick={() => setSelectedCategory(c.id)}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: '13.5px', padding: '7px 15px' }}
                 >
-                  {c.name}
+                  <span>{c.icon}</span>
+                  <span>{c.name}</span>
                 </button>
               ))}
             </div>
@@ -375,7 +452,7 @@ export default function Listening() {
                 boxShadow: '0 2px 6px rgba(0,0,0,0.03)',
               }}
             >
-              <span style={{ fontSize: '13px', fontWeight: 700, color: '#64748b', marginRight: 2 }}>
+              <span style={{ fontSize: '13px', fontWeight: 700, color: '#64748b', marginRight: 4 }}>
                 Trình độ:
               </span>
               {LEVELS.map((lvl) => (
@@ -384,12 +461,12 @@ export default function Listening() {
                   type="button"
                   className={'fchip' + (level === lvl.id ? ' on' : '')}
                   style={{
-                    padding: '4px 12px',
+                    padding: '5px 13px',
                     fontSize: '12.5px',
                     fontWeight: 800,
                     cursor: 'pointer',
                   }}
-                  title={lvl.name}
+                  title={`${lvl.name} (${lvl.desc})`}
                   onClick={() => setLevel(lvl.id)}
                 >
                   {lvl.id}
@@ -398,15 +475,15 @@ export default function Listening() {
             </div>
           </div>
 
-          <div className="cols2" style={{ alignItems: 'start' }}>
-            {/* Left Column: Topics Grid */}
-            <div className="colstack">
+          <div className="cols2" style={{ alignItems: 'start', gap: 22 }}>
+            {/* Left Column: Topics Grid & Custom Topic */}
+            <div className="colstack" style={{ flex: '1 1 63%' }}>
               <motion.div
                 variants={staggerContainer}
                 initial="hidden"
                 animate="visible"
                 key={selectedCategory}
-                style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 14 }}
+                className="listening-topics-grid"
               >
                 {filteredTopics.map((t) => {
                   const isSelected = !isCustom && topic === t.name;
@@ -414,18 +491,26 @@ export default function Listening() {
                     <motion.div key={t.name} variants={staggerItem}>
                       <button
                         type="button"
-                        className={'topic' + (isSelected ? ' on' : '')}
-                        style={{ height: '100%' }}
+                        className={'listening-topic-card' + (isSelected ? ' on' : '')}
                         onClick={() => {
                           setTopic(t.name);
                           setIsCustom(false);
                         }}
                       >
-                        <b style={{ fontSize: 15, display: 'block', color: 'var(--ink)' }}>{t.name}</b>
-                        <div className="sub mt8" style={{ fontSize: 12.5 }}>{t.en}</div>
-                        <p style={{ margin: '8px 0 0', fontSize: '12px', color: '#64748b', lineHeight: 1.4 }}>
-                          {t.desc}
-                        </p>
+                        <div className="listening-topic-card-top">
+                          <span className="listening-topic-icon">{t.icon}</span>
+                          <span className="listening-topic-tag">Cấp {t.tag}</span>
+                        </div>
+                        <div className="listening-topic-body">
+                          <b className="listening-topic-title">{t.name}</b>
+                          <div className="listening-topic-en">{t.en}</div>
+                          <p className="listening-topic-desc">{t.desc}</p>
+                        </div>
+                        {isSelected && (
+                          <div className="listening-topic-selected-badge">
+                            <Icon n="check" s={13} /> Đang chọn luyện tập
+                          </div>
+                        )}
                       </button>
                     </motion.div>
                   );
@@ -433,11 +518,28 @@ export default function Listening() {
               </motion.div>
 
               {/* Custom Topic Input */}
-              <MotionCard className="mt16" style={{ padding: 18 }}>
-                <label style={{ fontSize: 13, fontWeight: 800, color: 'var(--ink)' }}>
-                  Hoặc tự nhập chủ đề theo ý bạn:
-                </label>
-                <div style={{ display: 'flex', gap: 10, marginTop: 8 }}>
+              <div
+                style={{
+                  marginTop: 18,
+                  padding: '16px 20px',
+                  borderRadius: 18,
+                  background: '#ffffff',
+                  border: isCustom ? '2px solid var(--primary, #1565C0)' : '1.5px solid var(--border, #e2e8f0)',
+                  boxShadow: isCustom ? '0 6px 20px rgba(21, 101, 192, 0.12)' : '0 2px 8px rgba(15, 23, 42, 0.02)',
+                  transition: 'all 0.22s ease',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                  <label style={{ fontSize: 13.5, fontWeight: 800, color: 'var(--ink)', display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <span style={{ fontSize: 16 }}>✏️</span> Hoặc tự nhập chủ đề theo ý bạn:
+                  </label>
+                  {isCustom && (
+                    <span className="pill greensoft" style={{ fontSize: 11, padding: '2px 8px' }}>
+                      Đang dùng chủ đề tự nhập
+                    </span>
+                  )}
+                </div>
+                <div style={{ display: 'flex', gap: 10 }}>
                   <input
                     type="text"
                     value={customTopic}
@@ -445,42 +547,58 @@ export default function Listening() {
                       setCustomTopic(e.target.value);
                       setIsCustom(true);
                     }}
-                    onFocus={() => setIsCustom(true)}
-                    placeholder="Ví dụ: Lợi ích của việc đọc sách mỗi ngày..."
+                    onFocus={() => {
+                      if (customTopic.trim()) setIsCustom(true);
+                    }}
+                    placeholder="Ví dụ: Lợi ích của việc đọc sách mỗi ngày, Trải nghiệm phỏng vấn đầu tiên..."
                     style={{
                       flex: 1,
                       padding: '10px 14px',
-                      borderRadius: 10,
-                      border: isCustom ? '2px solid var(--primary)' : '1px solid #cbd5e1',
+                      borderRadius: 12,
+                      border: '1.5px solid #cbd5e1',
                       outline: 'none',
                       fontSize: 14,
+                      background: '#fff',
                     }}
                   />
                   {isCustom && (
                     <button
                       type="button"
-                      className="btn sec"
-                      style={{ padding: '0 14px', fontSize: 13 }}
+                      className="btn ghost sm"
                       onClick={() => {
                         setIsCustom(false);
                         setCustomTopic('');
                       }}
+                      style={{ padding: '0 14px', fontSize: 13, borderRadius: 12 }}
                     >
                       Bỏ chọn
                     </button>
                   )}
                 </div>
-              </MotionCard>
+              </div>
             </div>
 
-            {/* Right Column: Setup Summary & Start Button */}
-            <div className="colstack">
-              <MotionCard style={{ padding: 24 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 18 }}>
-                  <img src={viAvatar} alt="Vi AI" style={{ width: 56, height: 56, borderRadius: '50%' }} />
+            {/* Right Column: Setup Summary, Dictation Guide, & History / Mascot Tip */}
+            <div className="colstack" style={{ flex: '1 1 37%', display: 'flex', flexDirection: 'column', gap: 16 }}>
+              {/* Card 1: Setup Summary & Start Button */}
+              <MotionCard style={{ padding: 22, borderRadius: 20 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 16 }}>
+                  <img
+                    src={viAvatar}
+                    alt="Vi AI"
+                    style={{
+                      width: 52,
+                      height: 52,
+                      borderRadius: '50%',
+                      objectFit: 'cover',
+                      boxShadow: '0 4px 12px rgba(21, 101, 192, 0.2)',
+                    }}
+                  />
                   <div>
-                    <h3 style={{ margin: 0, fontSize: 17, fontWeight: 800 }}>Sẵn sàng luyện nghe!</h3>
-                    <p className="sub" style={{ margin: '4px 0 0', fontSize: 13 }}>
+                    <h3 style={{ margin: 0, fontSize: 17, fontWeight: 900, color: 'var(--ink)' }}>
+                      Sẵn sàng luyện nghe!
+                    </h3>
+                    <p className="sub" style={{ margin: '3px 0 0', fontSize: 12.5 }}>
                       AI sẽ tạo đoạn văn độc quyền và đọc giọng chuẩn bản xứ cho bạn.
                     </p>
                   </div>
@@ -488,52 +606,119 @@ export default function Listening() {
 
                 <div
                   style={{
-                    background: '#f8fafc',
-                    borderRadius: 14,
-                    padding: '14px 16px',
+                    background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)',
+                    borderRadius: 16,
+                    padding: '16px',
                     border: '1px solid #e2e8f0',
                     display: 'flex',
                     flexDirection: 'column',
-                    gap: 10,
-                    marginBottom: 20,
+                    gap: 12,
+                    marginBottom: 18,
                   }}
                 >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13.5 }}>
-                    <span style={{ color: '#64748b' }}>Chủ đề:</span>
-                    <b style={{ color: 'var(--ink)', textAlign: 'right', maxWidth: '60%' }}>
-                      {isCustom && customTopic ? customTopic : topic}
-                    </b>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13.5 }}>
-                    <span style={{ color: '#64748b' }}>Trình độ:</span>
-                    <span className="pill" style={{ fontSize: '12px', fontWeight: 800 }}>
-                      Cấp {level}
-                    </span>
-                  </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 13.5 }}>
-                    <span style={{ color: '#64748b' }}>Giọng đọc:</span>
-                    <select
-                      value={voice}
-                      onChange={(e) => {
-                        setVoice(e.target.value);
-                        localStorage.setItem('vocab_ai_voice', e.target.value);
-                      }}
+                    <span style={{ color: '#64748b', fontWeight: 600 }}>Chủ đề:</span>
+                    <b
                       style={{
-                        padding: '5px 10px',
-                        borderRadius: 8,
-                        border: '1px solid #cbd5e1',
-                        fontSize: 13,
-                        fontWeight: 600,
-                        outline: 'none',
-                        background: '#fff',
+                        color: 'var(--ink)',
+                        textAlign: 'right',
+                        maxWidth: '65%',
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 5,
                       }}
                     >
-                      {VOICES.map((v) => (
-                        <option key={v.id} value={v.id}>
-                          {v.name}
-                        </option>
-                      ))}
-                    </select>
+                      <span>{isCustom ? '✏️' : activeTopicObj?.icon || '💡'}</span>
+                      <span>{isCustom && customTopic ? customTopic : topic}</span>
+                    </b>
+                  </div>
+
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 13.5 }}>
+                    <span style={{ color: '#64748b', fontWeight: 600 }}>Trình độ:</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <span className="pill" style={{ fontSize: '12px', fontWeight: 800 }}>
+                        Cấp {level}
+                      </span>
+                      <span style={{ fontSize: 12, color: '#64748b' }}>
+                        ({selectedLevelObj?.desc || 'Chuẩn CEFR'})
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Custom Modern Voice Selector */}
+                  <div className="custom-voice-select-wrap" ref={voiceDropdownRef} style={{ marginTop: 2 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                      <span style={{ color: '#64748b', fontWeight: 600, fontSize: 13 }}>Giọng đọc bản xứ:</span>
+                      <span className="pill" style={{ fontSize: 11, padding: '2px 8px', background: '#eff6ff', color: '#1d4ed8', fontWeight: 800 }}>
+                        {selectedVoiceDetail.gender} · {selectedVoiceDetail.tone}
+                      </span>
+                    </div>
+
+                    <button
+                      type="button"
+                      className={'custom-voice-trigger' + (isVoiceOpen ? ' active' : '')}
+                      onClick={() => setIsVoiceOpen(!isVoiceOpen)}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <span className="voice-avatar-badge">{selectedVoiceDetail.avatar}</span>
+                        <div style={{ textAlign: 'left' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <b style={{ fontSize: 13.5, color: 'var(--ink)' }}>{selectedVoiceDetail.name}</b>
+                            {selectedVoiceDetail.badge && (
+                              <span className="voice-recommend-badge">{selectedVoiceDetail.badge}</span>
+                            )}
+                          </div>
+                          <span style={{ fontSize: 11.5, color: '#64748b' }}>{selectedVoiceDetail.tone}</span>
+                        </div>
+                      </div>
+                      <span className={'voice-chevron' + (isVoiceOpen ? ' open' : '')}>
+                        <Icon n="chevronDown" s={16} />
+                      </span>
+                    </button>
+
+                    <AnimatePresence>
+                      {isVoiceOpen && (
+                        <motion.div
+                          className="custom-voice-dropdown-menu"
+                          initial={{ opacity: 0, y: -6, scale: 0.98 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          exit={{ opacity: 0, y: -6, scale: 0.98 }}
+                          transition={{ duration: 0.15 }}
+                        >
+                          {VOICE_DETAILS.map((v) => {
+                            const isCurrent = v.id === voice;
+                            return (
+                              <button
+                                key={v.id}
+                                type="button"
+                                className={'custom-voice-option' + (isCurrent ? ' selected' : '')}
+                                onClick={() => {
+                                  setVoice(v.id);
+                                  localStorage.setItem('vocab_ai_voice', v.id);
+                                  setIsVoiceOpen(false);
+                                }}
+                              >
+                                <span className="voice-avatar-badge">{v.avatar}</span>
+                                <div style={{ flex: 1, textAlign: 'left' }}>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                    <b style={{ fontSize: 13, color: isCurrent ? 'var(--primary)' : 'var(--ink)' }}>
+                                      {v.name}
+                                    </b>
+                                    <span className="voice-gender-tag">{v.gender}</span>
+                                    {v.badge && <span className="voice-recommend-badge">{v.badge}</span>}
+                                  </div>
+                                  <div style={{ fontSize: 11.5, color: '#64748b' }}>{v.tone}</div>
+                                </div>
+                                {isCurrent && <Icon n="check" s={16} style={{ color: 'var(--primary)' }} />}
+                              </button>
+                            );
+                          })}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
                   </div>
                 </div>
 
@@ -545,12 +730,13 @@ export default function Listening() {
                     width: '100%',
                     padding: '14px',
                     borderRadius: 14,
-                    fontSize: 16,
+                    fontSize: 15.5,
                     fontWeight: 800,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     gap: 10,
+                    boxShadow: '0 8px 24px rgba(21, 101, 192, 0.28)',
                   }}
                   onClick={handleCreateExercise}
                 >
@@ -568,24 +754,123 @@ export default function Listening() {
                 </button>
               </MotionCard>
 
-              {/* History list preview */}
-              {historyList.length > 0 && (
-                <div className="listening-history-card mt16">
-                  <h4 style={{ margin: '0 0 14px', fontSize: 15, fontWeight: 800, color: 'var(--ink)' }}>
-                    🕒 Bài đã làm gần đây
-                  </h4>
+              {/* Card 2: Dictation Method Guide */}
+              <div
+                style={{
+                  background: '#ffffff',
+                  border: '1px solid var(--border, #e2e8f0)',
+                  borderRadius: 20,
+                  padding: '18px 20px',
+                  boxShadow: '0 2px 10px rgba(15, 23, 42, 0.03)',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                  <span style={{ fontSize: 18 }}>💡</span>
+                  <b style={{ fontSize: 14.5, color: 'var(--ink)' }}>Phương pháp Dictation 3 bước</b>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10, fontSize: 13 }}>
+                  <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+                    <span
+                      style={{
+                        width: 22,
+                        height: 22,
+                        borderRadius: '50%',
+                        background: '#eff6ff',
+                        color: '#1d4ed8',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: 11,
+                        fontWeight: 800,
+                        flexShrink: 0,
+                      }}
+                    >
+                      1
+                    </span>
+                    <div>
+                      <b style={{ color: '#1e293b' }}>Nghe tổng thể:</b>
+                      <span style={{ color: '#64748b' }}> Nghe lướt 1 lần để nắm ý chính, chủ đề và ngữ cảnh đoạn văn.</span>
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+                    <span
+                      style={{
+                        width: 22,
+                        height: 22,
+                        borderRadius: '50%',
+                        background: '#eff6ff',
+                        color: '#1d4ed8',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: 11,
+                        fontWeight: 800,
+                        flexShrink: 0,
+                      }}
+                    >
+                      2
+                    </span>
+                    <div>
+                      <b style={{ color: '#1e293b' }}>Chép chính tả:</b>
+                      <span style={{ color: '#64748b' }}> Vừa nghe vừa gõ lại; có thể tua lùi -5s hoặc chỉnh tốc độ 0.75x.</span>
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+                    <span
+                      style={{
+                        width: 22,
+                        height: 22,
+                        borderRadius: '50%',
+                        background: '#eff6ff',
+                        color: '#1d4ed8',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: 11,
+                        fontWeight: 800,
+                        flexShrink: 0,
+                      }}
+                    >
+                      3
+                    </span>
+                    <div>
+                      <b style={{ color: '#1e293b' }}>Đối chiếu &amp; Sửa sai:</b>
+                      <span style={{ color: '#64748b' }}> Nộp bài để AI so từ từng chữ, nhận diện các từ nối âm hoặc nuốt âm.</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Card 3: Recent History OR Mascot Coach Tip */}
+              {historyList.length > 0 ? (
+                <div className="listening-history-card">
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                    <h4 style={{ margin: 0, fontSize: 14.5, fontWeight: 800, color: 'var(--ink)' }}>
+                      🕒 Bài đã làm gần đây
+                    </h4>
+                    <span style={{ fontSize: 12, color: '#64748b' }}>{historyList.length} bài</span>
+                  </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                    {historyList.slice(0, 5).map((item) => (
+                    {historyList.slice(0, 4).map((item) => (
                       <div
                         key={item.id}
                         className="history-item-row"
                         onClick={() => handleReviewHistoryItem(item)}
                       >
-                        <div style={{ overflow: 'hidden' }}>
-                          <b style={{ fontSize: 13.5, color: 'var(--ink)', display: 'block', textOverflow: 'ellipsis', whiteSpace: 'nowrap', overflow: 'hidden' }}>
+                        <div style={{ overflow: 'hidden', flex: 1, minWidth: 0, marginRight: 8 }}>
+                          <b
+                            style={{
+                              fontSize: 13,
+                              color: 'var(--ink)',
+                              display: 'block',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap',
+                              overflow: 'hidden',
+                            }}
+                          >
                             {item.topic}
                           </b>
-                          <span style={{ fontSize: 12, color: '#64748b' }}>
+                          <span style={{ fontSize: 11.5, color: '#64748b' }}>
                             Cấp {item.level} · {new Date(item.createdAt).toLocaleDateString('vi-VN')}
                           </span>
                         </div>
@@ -593,10 +878,13 @@ export default function Listening() {
                           <span
                             className="pill"
                             style={{
-                              fontSize: 12,
+                              fontSize: 11.5,
                               fontWeight: 800,
+                              padding: '3px 8px',
+                              borderRadius: 8,
                               background: item.score >= 80 ? '#dcfce7' : item.score >= 50 ? '#fef3c7' : '#fee2e2',
                               color: item.score >= 80 ? '#15803d' : item.score >= 50 ? '#b45309' : '#b91c1c',
+                              flexShrink: 0,
                             }}
                           >
                             {item.score}/100
@@ -604,6 +892,27 @@ export default function Listening() {
                         )}
                       </div>
                     ))}
+                  </div>
+                </div>
+              ) : (
+                <div
+                  style={{
+                    background: 'linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%)',
+                    borderRadius: 20,
+                    border: '1px solid #bbf7d0',
+                    padding: '18px 20px',
+                    display: 'flex',
+                    gap: 14,
+                    alignItems: 'center',
+                  }}
+                >
+                  <img
+                    src={viAvatar}
+                    alt="Vi"
+                    style={{ width: 44, height: 44, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }}
+                  />
+                  <div style={{ fontSize: 12.8, color: '#166534', lineHeight: 1.5 }}>
+                    <b>Vi mách nhỏ:</b> Đừng ngại nếu lần đầu chưa nghe kịp hết! Bạn có thể nghe đi nghe lại thoải mái và giảm tốc độ để luyện phản xạ tai tốt hơn nhé.
                   </div>
                 </div>
               )}
