@@ -2,7 +2,7 @@ import { api } from './client';
 export { api, errMsg } from './client';
 
 /* ---------- types ---------- */
-export interface User { id: number; email: string; username: string; fullName?: string; role: 'ADMIN' | 'STUDENT'; status: string; avatarUrl?: string; emailRemindersEnabled?: boolean; createdAt?: string }
+export interface User { id: number; email: string; username: string; fullName?: string; role: 'ADMIN' | 'STUDENT'; status: string; avatarUrl?: string; emailRemindersEnabled?: boolean; createdAt?: string; provider?: string }
 export interface AuthResp {
   accessToken?: string;
   access_token?: string;
@@ -248,10 +248,12 @@ export const normalizeWord = (w: any): Word => {
 export const authApi = {
   validate: (d: { email: string; username: string; fullName: string; password: string }) =>
     api.post('/auth/register/validate', d),
-  verifyOtp: (d: { email: string; otp: string; username: string; password: string; fullName: string }) =>
-    api.post<RegisterSuccess>('/auth/register/verify-otp', d),
+  verifyOtp: (d: { email: string; otp: string; username?: string; password?: string; fullName?: string }) =>
+    api.post<RegisterSuccess>('/auth/register/verify-otp', { email: d.email, otp: d.otp }),
   login: (d: { emailOrUsername: string; password: string }) =>
     api.post<AuthResp>('/auth/login', d),
+  googleLogin: (d: { idToken: string }) =>
+    api.post<AuthResp>('/auth/google', d),
   // BE POST /auth/logout yêu cầu body { refreshToken } — không gửi là 400
   logout: () => {
     const rt = localStorage.getItem('vocab_refresh');

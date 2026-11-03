@@ -1708,23 +1708,92 @@ textarea.input {
 }
 
 /* ---------- OTP ---------- */
+.otp-card {
+  width: 100%;
+  max-width: 460px;
+  background: #ffffff;
+  border-radius: 28px;
+  padding: 38px 34px 34px;
+  box-shadow: 0 20px 60px rgba(10, 37, 64, 0.10), 0 2px 10px rgba(10, 37, 64, 0.04);
+  border: 1px solid rgba(227, 237, 246, 0.85);
+  text-align: center;
+  margin: 0 auto;
+  position: relative;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.otp-card .otp-mascot {
+  width: 108px;
+  height: 108px;
+  object-fit: contain;
+  margin: 0 auto 14px;
+  display: block;
+  filter: drop-shadow(0 10px 20px rgba(21, 101, 192, 0.16));
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  user-select: none;
+}
+
+.otp-card .otp-mascot:hover {
+  transform: translateY(-4px) scale(1.05);
+}
+
+.otp-card h1 {
+  font-size: 23px;
+  font-weight: 900;
+  color: var(--ink);
+  letter-spacing: -0.02em;
+  margin: 0;
+}
+
+.otp-card .sub {
+  color: var(--muted);
+  font-size: 14.5px;
+  line-height: 1.55;
+  margin-top: 8px;
+}
+
+.otp-card .email-badge {
+  display: inline-block;
+  background: var(--tint);
+  color: var(--primary-dark);
+  font-weight: 800;
+  padding: 3px 10px;
+  border-radius: 8px;
+  margin-top: 5px;
+  word-break: break-all;
+}
+
 .otp-row {
   display: flex;
   gap: 10px;
   justify-content: center;
+  width: 100%;
 }
 
 .otpbox {
-  width: 54px;
-  height: 62px;
+  width: 52px;
+  height: 60px;
   border: 2px solid var(--line);
-  border-radius: 16px;
+  border-radius: 14px;
   text-align: center;
-  font-size: 25px;
+  font-size: 24px;
   font-weight: 900;
   font-family: inherit;
   background: #FBFDFE;
   color: var(--ink);
+  transition: all 0.18s ease;
+  outline: none;
+}
+
+.otpbox:focus,
+.otpbox.cur {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 4px rgba(21, 101, 192, .13);
+  background: #fff;
+  transform: translateY(-2px);
 }
 
 .otpbox.fill {
@@ -1732,10 +1801,17 @@ textarea.input {
   background: #fff;
 }
 
-.otpbox.cur {
-  border-color: var(--primary);
-  box-shadow: 0 0 0 4px rgba(21, 101, 192, .13);
-  background: #fff;
+.otp-expiry-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--muted);
+  background: #F8FAFC;
+  padding: 5px 14px;
+  border-radius: 20px;
+  border: 1px solid var(--line);
 }
 
 /* ---------- Gói / thẻ dịch vụ ---------- */
@@ -2304,6 +2380,11 @@ select.input {
 
 .grading-spin {
   animation: spin 1.4s linear infinite;
+  transform-origin: center;
+}
+
+.spin {
+  animation: spin 0.8s linear infinite;
   transform-origin: center;
 }
 

@@ -1,5 +1,6 @@
 import { lazy, Suspense } from 'react';
 import { BrowserRouter, HashRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { GoogleOAuthProvider } from '@react-oauth/google';
 import { AuthProvider, useAuth } from './auth/AuthContext';
 import { UsageProvider } from './context/UsageContext';
 import { UpgradeModal } from './components/UpgradeModal';
@@ -49,13 +50,18 @@ function HomeSwitcher() {
   return <Navigate to="/dashboard" replace />;
 }
 
+const googleClientId =
+  import.meta.env.VITE_GOOGLE_CLIENT_ID ||
+  '611898117527-mqm9g3ai8gd0j38tnsjso0a86htc7s5s.apps.googleusercontent.com';
+
 export default function App() {
   // Demo mode: HashRouter để chạy được trên static hosting không có SPA fallback.
   const Router = import.meta.env.VITE_DEMO === '1' ? HashRouter : BrowserRouter;
   return (
     <Router>
       <ErrorBoundary>
-        <AuthProvider>
+        <GoogleOAuthProvider clientId={googleClientId} locale="vi">
+          <AuthProvider>
           <UsageProvider>
             <UpgradeModal />
             <Suspense fallback={<div className="loading" style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>Đang tải...</div>}>
@@ -111,7 +117,8 @@ export default function App() {
               </Routes>
             </Suspense>
           </UsageProvider>
-        </AuthProvider>
+          </AuthProvider>
+        </GoogleOAuthProvider>
       </ErrorBoundary>
     </Router>
   );

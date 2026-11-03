@@ -231,7 +231,7 @@ export default function Dashboard() {
             <svg viewBox="0 0 24 24" className="ic"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
           </div>
           <div className="lbl">Từ đã học</div>
-          <div className="num"><AnimatedCounter value={totalLearned || 248} /></div>
+          <div className="num"><AnimatedCounter value={totalLearned} /></div>
           <div className="delta up">
             {stats ? `+${stats.masteredWords || 0} đã thành thạo` : '+12 tuần này'}
           </div>
@@ -242,8 +242,8 @@ export default function Dashboard() {
             <svg viewBox="0 0 24 24" className="ic"><path d="M13 2 3 14h7l-1 8 10-12h-7l1-8z"/></svg>
           </div>
           <div className="lbl">Điểm quiz TB</div>
-          <div className="num"><AnimatedCounter value={accuracyRate || 82} />%</div>
-          <div className="delta up">+4 điểm tuần này</div>
+          <div className="num"><AnimatedCounter value={accuracyRate} />%</div>
+          <div className="delta up">{stats && (stats.totalActivities || stats.totalPoints) ? `Tổng ${stats.totalActivities || 0} hoạt động` : 'Chưa có hoạt động'}</div>
         </motion.div>
 
         <motion.div variants={staggerItem} className="kpi">
@@ -251,7 +251,7 @@ export default function Dashboard() {
             <svg viewBox="0 0 24 24" className="ic"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>
           </div>
           <div className="lbl">Streak</div>
-          <div className="num"><AnimatedCounter value={streak || 1} /> <small style={{ fontSize: 16, fontWeight: 700 }}>ngày</small></div>
+          <div className="num"><AnimatedCounter value={streak} /> <small style={{ fontSize: 16, fontWeight: 700 }}>ngày</small></div>
           <div className="delta up">Kỷ lục: {stats?.longestStreak ?? streak} ngày</div>
         </motion.div>
       </motion.div>

@@ -6,11 +6,26 @@ import { Icon } from '../../components/icons';
 import { MotionCard, AnimatedCounter, staggerContainer, staggerItem } from '../../motion';
 
 const LEVELS = ['ALL', 'A1', 'A2', 'B1', 'B2', 'C1'];
+const PAGE_SIZE = 10;
+
+function generatePageNumbers(current: number, total: number): (number | '...')[] {
+  if (total <= 7) {
+    return Array.from({ length: total }, (_, i) => i);
+  }
+  if (current <= 3) {
+    return [0, 1, 2, 3, 4, '...', total - 1];
+  }
+  if (current >= total - 4) {
+    return [0, '...', total - 5, total - 4, total - 3, total - 2, total - 1];
+  }
+  return [0, '...', current - 1, current, current + 1, '...', total - 1];
+}
 
 export default function AdminQuizzes() {
   const [quizzes, setQuizzes] = useState<AdminQuiz[]>([]);
   const [levelFilter, setLevelFilter] = useState('ALL');
   const [statusFilter, setStatusFilter] = useState('ALL');
+  const [page, setPage] = useState(0);
   const [loading, setLoading] = useState(true);
 
   // Modals state
@@ -43,7 +58,7 @@ export default function AdminQuizzes() {
   const fetchQuizzes = async () => {
     setLoading(true);
     try {
-      const res = await adminApi.quizzes(0, 100);
+      const res = await adminApi.quizzes(0, 1000);
       if (res.data) {
         setQuizzes(res.data.content || []);
       }
@@ -189,6 +204,11 @@ export default function AdminQuizzes() {
     return true;
   });
 
+  const totalItems = filteredQuizzes.length;
+  const totalPages = Math.max(1, Math.ceil(totalItems / PAGE_SIZE));
+  const safePage = Math.min(page, totalPages - 1);
+  const paginatedQuizzes = filteredQuizzes.slice(safePage * PAGE_SIZE, (safePage + 1) * PAGE_SIZE);
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
       {/* Header */}
@@ -196,7 +216,7 @@ export default function AdminQuizzes() {
         <div>
           <h1>Quản lý Trắc nghiệm</h1>
           <div className="sub">
-            <AnimatedCounter value={quizzes.length} /> bài trắc nghiệm theo chủ đề &amp; cấp độ · quản lý từng câu hỏi trong bài
+            <AnimatedCounter value={totalItems} /> bài trắc nghiệm {levelFilter !== 'ALL' ? `(Cấp độ ${levelFilter})` : 'theo chủ đề & cấp độ'} · 10 bài / trang · quản lý từng câu hỏi trong bài
           </div>
         </div>
         <button
@@ -222,7 +242,10 @@ export default function AdminQuizzes() {
             key={lvl}
             type="button"
             className={'fchip' + (levelFilter === lvl ? ' on' : '')}
-            onClick={() => setLevelFilter(lvl)}
+            onClick={() => {
+              setLevelFilter(lvl);
+              setPage(0);
+            }}
           >
             {lvl === 'ALL' ? 'Tất cả cấp độ' : lvl}
           </button>
@@ -233,7 +256,10 @@ export default function AdminQuizzes() {
             key={st}
             type="button"
             className={'fchip' + (statusFilter === st ? ' on' : '')}
-            onClick={() => setStatusFilter(st)}
+            onClick={() => {
+              setStatusFilter(st);
+              setPage(0);
+            }}
           >
             {st === 'ALL' ? 'Mọi trạng thái' : st === 'PUBLISHED' ? 'Đang mở' : 'Bản nháp'}
           </button>
@@ -245,70 +271,132 @@ export default function AdminQuizzes() {
         <div className="card center" style={{ padding: 48, color: 'var(--muted)' }}>
           Đang tải danh sách bài trắc nghiệm...
         </div>
-      ) : filteredQuizzes.length === 0 ? (
+      ) : paginatedQuizzes.length === 0 ? (
         <div className="card center" style={{ padding: 48, color: 'var(--muted)' }}>
           Không có bài trắc nghiệm nào phù hợp.
         </div>
       ) : (
-        <motion.div
-          className="cols2"
-          variants={staggerContainer}
-          initial="hidden"
-          animate="visible"
-        >
-          {filteredQuizzes.map((q) => {
-            const isPub = q.status === 'PUBLISHED';
-            return (
-              <MotionCard key={q.id} className="card" variants={staggerItem}>
-                <div className="row" style={{ alignItems: 'flex-start' }}>
-                  <b style={{ fontSize: 17.5, color: 'var(--ink)' }}>{q.title}</b>
-                  <span className={isPub ? 'pill greensoft' : 'pill warn'}>
-                    {isPub ? 'Đang mở' : 'Bản nháp'}
-                  </span>
-                </div>
-
-                <div className="mt8" style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                  <span className="pill level">Cấp {q.level || 'A1'}</span>
-                  <span className="pill"><AnimatedCounter value={q.questionCount ?? 10} /> câu hỏi</span>
-                  <span className="pill">{Math.round((q.timeLimit || 600) / 60)} phút</span>
-                </div>
-
-                {q.description && (
-                  <div className="sub mt8" style={{ fontSize: 13, lineHeight: 1.5 }}>
-                    {q.description}
+        <>
+          <motion.div
+            className="cols2"
+            variants={staggerContainer}
+            initial="hidden"
+            animate="visible"
+          >
+            {paginatedQuizzes.map((q) => {
+              const isPub = q.status === 'PUBLISHED';
+              return (
+                <MotionCard key={q.id} className="card" variants={staggerItem}>
+                  <div className="row" style={{ alignItems: 'flex-start' }}>
+                    <b style={{ fontSize: 17.5, color: 'var(--ink)' }}>{q.title}</b>
+                    <span className={isPub ? 'pill greensoft' : 'pill warn'}>
+                      {isPub ? 'Đang mở' : 'Bản nháp'}
+                    </span>
                   </div>
-                )}
 
-                <div className="btn-row mt16">
-                  <button
-                    type="button"
-                    className="btn ghost"
-                    style={{ flex: 1, minHeight: 42 }}
-                    onClick={() => openManageQuestions(q)}
-                  >
-                    Quản lý câu hỏi
-                  </button>
-                  <button
-                    type="button"
-                    className="btn ghost"
-                    style={{ minHeight: 42, padding: '0 16px' }}
-                    onClick={() => openEdit(q)}
-                  >
-                    Sửa
-                  </button>
-                  <button
-                    type="button"
-                    className="btn ghost"
-                    style={{ minHeight: 42, padding: '0 14px', color: 'var(--red-dark)', borderColor: 'rgba(229,72,77,0.3)' }}
-                    onClick={() => handleDeleteQuiz(q)}
-                  >
-                    Xóa
-                  </button>
-                </div>
-              </MotionCard>
-            );
-          })}
-        </motion.div>
+                  <div className="mt8" style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                    <span className="pill level">Cấp {q.level || 'A1'}</span>
+                    <span className="pill"><AnimatedCounter value={q.questionCount ?? 10} /> câu hỏi</span>
+                    <span className="pill">{Math.round((q.timeLimit || 600) / 60)} phút</span>
+                  </div>
+
+                  {q.description && (
+                    <div className="sub mt8" style={{ fontSize: 13, lineHeight: 1.5 }}>
+                      {q.description}
+                    </div>
+                  )}
+
+                  <div className="btn-row mt16">
+                    <button
+                      type="button"
+                      className="btn ghost"
+                      style={{ flex: 1, minHeight: 42 }}
+                      onClick={() => openManageQuestions(q)}
+                    >
+                      Quản lý câu hỏi
+                    </button>
+                    <button
+                      type="button"
+                      className="btn ghost"
+                      style={{ minHeight: 42, padding: '0 16px' }}
+                      onClick={() => openEdit(q)}
+                    >
+                      Sửa
+                    </button>
+                    <button
+                      type="button"
+                      className="btn ghost"
+                      style={{ minHeight: 42, padding: '0 14px', color: 'var(--red-dark)', borderColor: 'rgba(229,72,77,0.3)' }}
+                      onClick={() => handleDeleteQuiz(q)}
+                    >
+                      Xóa
+                    </button>
+                  </div>
+                </MotionCard>
+              );
+            })}
+          </motion.div>
+
+          {/* Pagination Controls */}
+          {totalPages > 1 && (
+            <div className="row" style={{ alignItems: 'center', justifyContent: 'space-between', marginTop: 12, padding: '8px 2px', flexWrap: 'wrap', gap: 12 }}>
+              <span className="sub" style={{ fontSize: 13.5 }}>
+                Hiển thị <b>{safePage * PAGE_SIZE + 1}–{Math.min((safePage + 1) * PAGE_SIZE, totalItems)}</b> trong tổng số <b>{totalItems}</b> bài trắc nghiệm · Trang <b>{safePage + 1}</b> / <b>{totalPages}</b>
+              </span>
+              <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                <button
+                  type="button"
+                  className="pagebtn"
+                  disabled={safePage === 0}
+                  onClick={() => {
+                    setPage((p) => Math.max(0, p - 1));
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }}
+                  style={{ opacity: safePage === 0 ? 0.35 : 1, cursor: safePage === 0 ? 'not-allowed' : 'pointer' }}
+                  title="Trang trước"
+                >
+                  ‹
+                </button>
+                {generatePageNumbers(safePage, totalPages).map((pItem, idx) => {
+                  if (pItem === '...') {
+                    return (
+                      <span key={`ellipsis-${idx}`} style={{ padding: '0 4px', color: 'var(--muted)', fontWeight: 700 }}>
+                        ...
+                      </span>
+                    );
+                  }
+                  const pNum = pItem as number;
+                  return (
+                    <button
+                      key={pNum}
+                      type="button"
+                      className={'pagebtn' + (safePage === pNum ? ' on' : '')}
+                      onClick={() => {
+                        setPage(pNum);
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                      }}
+                    >
+                      {pNum + 1}
+                    </button>
+                  );
+                })}
+                <button
+                  type="button"
+                  className="pagebtn"
+                  disabled={safePage >= totalPages - 1}
+                  onClick={() => {
+                    setPage((p) => Math.min(totalPages - 1, p + 1));
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }}
+                  style={{ opacity: safePage >= totalPages - 1 ? 0.35 : 1, cursor: safePage >= totalPages - 1 ? 'not-allowed' : 'pointer' }}
+                  title="Trang sau"
+                >
+                  ›
+                </button>
+              </div>
+            </div>
+          )}
+        </>
       )}
 
       {/* Create / Edit Quiz Modal */}

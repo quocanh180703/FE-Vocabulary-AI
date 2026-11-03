@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { authApi, placementApi, errMsg } from '../api';
+import { GoogleLogin } from '@react-oauth/google';
 import { useAuth } from '../auth/AuthContext';
 import { Mascot, Icon } from '../components/icons';
 import { motion, AnimatePresence } from 'motion/react';
@@ -35,6 +36,36 @@ export default function Login() {
   const nav = useNavigate();
   const { login } = useAuth();
   const [isNavigating, setIsNavigating] = useState(false);
+  const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || '611898117527-mqm9g3ai8gd0j38tnsjso0a86htc7s5s.apps.googleusercontent.com';
+
+  const handleGoogleSuccess = async (credentialResponse: any) => {
+    if (!credentialResponse?.credential) {
+      setErr('Không nhận được thông tin xác thực từ Google');
+      return;
+    }
+    setErr('');
+    setBusy(true);
+    try {
+      const { data } = await authApi.googleLogin({ idToken: credentialResponse.credential });
+      const access = data.accessToken || data.access_token || '';
+      const refresh = data.refreshToken || data.refresh_token || '';
+      login(data.user, access, refresh);
+
+      try {
+        const { data: pStatus } = await placementApi.getStatus();
+        if (!pStatus.completed && !sessionStorage.getItem('placement_dismissed')) {
+          nav('/placement');
+          return;
+        }
+      } catch {}
+
+      nav('/dashboard');
+    } catch (e) {
+      setErr(errMsg(e));
+    } finally {
+      setBusy(false);
+    }
+  };
 
   const handleGoHome = (e?: React.MouseEvent) => {
     if (e) e.preventDefault();
@@ -352,6 +383,60 @@ export default function Login() {
                     >
                       {busy ? 'Đang xử lý...' : 'Đăng nhập'}
                     </button>
+
+                    {googleClientId && (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '4px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                          <div style={{ flex: 1, height: '1px', background: 'var(--line, #E2E8F0)' }} />
+                          <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--muted, #64748B)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                            hoặc
+                          </span>
+                          <div style={{ flex: 1, height: '1px', background: 'var(--line, #E2E8F0)' }} />
+                        </div>
+
+                        <div
+                          style={{
+                            width: '100%',
+                            display: 'flex',
+                            justifyContent: 'center',
+                            borderRadius: '999px',
+                            transition: 'all 0.2s ease',
+                          }}
+                        >
+                          <GoogleLogin
+                            onSuccess={handleGoogleSuccess}
+                            onError={() => setErr('Đăng nhập Google thất bại, vui lòng thử lại')}
+                            size="large"
+                            width="380"
+                            text="signin_with"
+                            shape="pill"
+                            theme="outline"
+                            logo_alignment="left"
+                          />
+                        </div>
+
+                        <div
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '7px',
+                            padding: '8px 14px',
+                            borderRadius: '12px',
+                            background: 'var(--tint, #EAF3FC)',
+                            color: 'var(--primary-dark, #0D47A1)',
+                            fontSize: '12.5px',
+                            fontWeight: 700,
+                            lineHeight: 1.45,
+                            textAlign: 'center',
+                            border: '1px solid rgba(21, 101, 192, 0.12)',
+                          }}
+                        >
+                          <span style={{ fontSize: '13px' }}>✨</span>
+                          <span>Tự động tạo tài khoản nếu bạn đăng nhập lần đầu</span>
+                        </div>
+                      </div>
+                    )}
 
                     <div className="center">
                       <button

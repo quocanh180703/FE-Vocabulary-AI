@@ -57,10 +57,24 @@ const P: Record<string, string> = {
   panelLeft: '<rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/><path d="m14 9-3 3 3 3"/>',
   panelLeftOpen: '<rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/><path d="m12 9 3 3-3 3"/>',
   creditCard: '<rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/>',
+  loader: '<path d="M21 12a9 9 0 1 1-6.219-8.56"/>',
+  alert: '<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>',
+  'arrow-left': '<path d="m12 19-7-7 7-7"/><path d="M19 12H5"/>',
+  arrowLeft: '<path d="m12 19-7-7 7-7"/><path d="M19 12H5"/>',
 };
-export const Icon = ({ n, s = 20 }: { n: keyof typeof P; s?: number }) => (
+export const Icon = ({
+  n,
+  s = 20,
+  className,
+  style,
+}: {
+  n: keyof typeof P;
+  s?: number;
+  className?: string;
+  style?: React.CSSProperties;
+}) => (
   <span
-    className="ic"
+    className={`ic${className ? ` ${className}` : ''}`}
     style={{
       width: s,
       height: s,
@@ -73,9 +87,10 @@ export const Icon = ({ n, s = 20 }: { n: keyof typeof P; s?: number }) => (
       justifyContent: 'center',
       flexShrink: 0,
       verticalAlign: 'middle',
+      ...style,
     }}
   >
-    {W(P[n], s)}
+    {P[n] ? W(P[n], s) : null}
   </span>
 );
 export const Mascot = ({ s = 40 }: { s?: number }) => (
