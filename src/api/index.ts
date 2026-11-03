@@ -1047,6 +1047,64 @@ export const speakApi = {
     }).then((res) => res.data as Blob),
 };
 
+
+/* ---------- Listening (Luyện nghe) ---------- */
+export interface CreateListeningRequest {
+  topic: string;
+  level?: string;
+  voice?: string;
+}
+
+export interface CreateListeningResponse {
+  exerciseId: number;
+  topic: string;
+  level: string;
+  voice: string;
+  audioUrl: string;
+}
+
+export interface WordMatchResult {
+  originalWord?: string | null;
+  userWord?: string | null;
+  status: 'CORRECT' | 'NEAR_MISS' | 'INCORRECT' | 'MISSING' | 'EXTRA';
+}
+
+export interface ListeningSubmitResponse {
+  exerciseId: number;
+  score: number;
+  totalWords: number;
+  correctWords: number;
+  nearMissWords: number;
+  wordResults: WordMatchResult[];
+  transcript?: string;
+  userAnswer?: string;
+  completedAt?: string;
+}
+
+export interface ListeningHistoryItem {
+  id: number;
+  topic: string;
+  level: string;
+  voice: string;
+  score?: number | null;
+  status: string;
+  createdAt: string;
+  completedAt?: string | null;
+}
+
+export const listeningApi = {
+  create: (topic: string, level = 'B1', voice = 'alloy') =>
+    api.post<CreateListeningResponse>('/ai/listening/create', { topic, level, voice }).then((res) => ({ ...res, data: res.data })),
+  audioBlob: (exerciseId: number) =>
+    api.get(`/ai/listening/audio/${exerciseId}/stream`, { responseType: 'blob' }).then((res) => res.data as Blob),
+  submit: (exerciseId: number, typedText: string) =>
+    api.post<ListeningSubmitResponse>(`/ai/listening/${exerciseId}/submit`, { typedText }).then((res) => ({ ...res, data: res.data })),
+  detail: (exerciseId: number) =>
+    api.get<ListeningSubmitResponse>(`/ai/listening/${exerciseId}`).then((res) => ({ ...res, data: res.data })),
+  history: (page = 0, size = 10) =>
+    api.get<any>('/ai/listening/history', { params: { page, size, sort: 'createdAt,desc' } }).then((res) => ({ ...res, data: res.data })),
+};
+
 /* ---------- tts (Text to Speech) ---------- */
 export const ttsApi = {
   synthesizeWord: (word: string, language = 'en-US') =>
@@ -1682,6 +1740,7 @@ export interface SubscriptionUsageResponse {
     explain: FeatureQuota;
     roadmap: FeatureQuota;
     voice?: FeatureQuota;
+    listening?: FeatureQuota;
   };
 }
 

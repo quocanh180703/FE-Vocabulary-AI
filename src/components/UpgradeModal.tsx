@@ -17,6 +17,7 @@ export const UpgradeModal: React.FC = () => {
     const f = (modalState.feature || '').toUpperCase();
     if (f.includes('CHAT')) return 'Bạn đã dùng hết 5 lượt Chat AI hôm nay';
     if (f.includes('SPEAK')) return 'Bạn đã dùng hết 5 lượt Luyện nói chấm điểm hôm nay';
+    if (f.includes('LISTEN')) return 'Bạn đã dùng hết 5 lượt Luyện nghe hôm nay';
     if (f.includes('GRAMMAR')) return 'Bạn đã dùng hết 5 lượt Sửa ngữ pháp hôm nay';
     if (f.includes('EXPLAIN') || f.includes('WORD')) return 'Bạn đã dùng hết 10 lượt AI giải thích hôm nay';
     if (f.includes('ROADMAP') || f.includes('PLAN')) return 'Bạn đã dùng hết 2 lượt Tạo lộ trình hôm nay';

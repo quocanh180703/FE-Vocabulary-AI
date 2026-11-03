@@ -28,6 +28,7 @@ const Grammar = lazy(() => import('./pages/Grammar'));
 const Chat = lazy(() => import('./pages/Chat'));
 const Speaking = lazy(() => import('./pages/Speaking'));
 const SpeakingResult = lazy(() => import('./pages/SpeakingResult'));
+const Listening = lazy(() => import('./pages/Listening'));
 const Profile = lazy(() => import('./pages/Profile'));
 const PaymentResult = lazy(() => import('./pages/PaymentResult'));
 const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'));
@@ -92,6 +93,7 @@ export default function App() {
                       <Route path="/chat" element={<Chat />} />
                       <Route path="/speaking" element={<Speaking />} />
                       <Route path="/speaking/result" element={<SpeakingResult />} />
+                      <Route path="/listening" element={<Listening />} />
                       <Route path="/profile" element={<Profile />} />
                       <Route path="/payment/success" element={<PaymentResult />} />
                       <Route path="/payment/cancel" element={<PaymentResult />} />

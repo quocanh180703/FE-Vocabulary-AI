@@ -19,7 +19,7 @@ interface UsageContextType {
   loading: boolean;
   modalState: ModalOptions;
   refreshUsage: () => Promise<void>;
-  decrementQuota: (featureKey: 'chat' | 'speaking' | 'grammar' | 'explain' | 'roadmap' | 'voice') => void;
+  decrementQuota: (featureKey: 'chat' | 'speaking' | 'grammar' | 'explain' | 'roadmap' | 'voice' | 'listening') => void;
   openUpgradeModal: (options?: Partial<ModalOptions> & { force?: boolean }) => void;
   closeUpgradeModal: () => void;
 }
@@ -35,6 +35,7 @@ const defaultUsage: SubscriptionUsageResponse = {
     explain: { limit: 10, used: 0, remaining: 10 },
     roadmap: { limit: 2, used: 0, remaining: 2 },
     voice: { limit: 10, used: 0, remaining: 10 },
+    listening: { limit: 5, used: 0, remaining: 5 },
   },
 };
 
@@ -148,7 +149,7 @@ export function UsageProvider({ children }: { children: ReactNode }) {
   }, [refreshUsage]);
 
   // Optimistic client-side quota decrement
-  const decrementQuota = useCallback((featureKey: 'chat' | 'speaking' | 'grammar' | 'explain' | 'roadmap' | 'voice') => {
+  const decrementQuota = useCallback((featureKey: 'chat' | 'speaking' | 'grammar' | 'explain' | 'roadmap' | 'voice' | 'listening') => {
     setUsage((prev) => {
       if (!prev || prev.isVip) return prev;
       const current = prev.features?.[featureKey];

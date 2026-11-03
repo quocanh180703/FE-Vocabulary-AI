@@ -17,6 +17,7 @@ const TABS = [
   { to: '/grammar', label: 'Sửa ngữ pháp', icon: 'spark' as const },
   { to: '/chat', label: 'Trò chuyện AI', icon: 'msg' as const },
   { to: '/speaking', label: 'Luyện nói', icon: 'mic' as const },
+  { to: '/listening', label: 'Luyện nghe', icon: 'headphones' as const },
   { to: '/profile', label: 'Cá nhân', icon: 'user' as const },
 ];
 

@@ -2,7 +2,7 @@ import React from 'react';
 import { useUsage } from '../context/UsageContext';
 
 interface QuotaBadgeProps {
-  featureKey: 'chat' | 'speaking' | 'grammar' | 'explain' | 'roadmap' | 'voice';
+  featureKey: 'chat' | 'speaking' | 'grammar' | 'explain' | 'roadmap' | 'voice' | 'listening';
   labelSuffix?: string; // e.g. "lượt hôm nay", "lượt chấm hôm nay", "lượt kiểm tra hôm nay", "lượt tạo lộ trình hôm nay"
   showOnlyWhenLow?: boolean; // If true, only renders when remaining <= 3
   className?: string;

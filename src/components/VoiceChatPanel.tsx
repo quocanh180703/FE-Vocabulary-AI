@@ -23,7 +23,7 @@ interface VoiceChatPanelProps {
   onLevelChange?: (lvl: string) => void;
 }
 
-const VOICES = [
+export const VOICES = [
   { id: 'alloy', name: 'Alloy (Tự nhiên, Chuẩn)', desc: 'Cân bằng, dễ nghe' },
   { id: 'echo', name: 'Echo (Ấm áp, Trầm)', desc: 'Giọng nam ấm' },
   { id: 'fable', name: 'Fable (Biểu cảm, Nhẹ nhàng)', desc: 'Giọng kể chuyện' },
