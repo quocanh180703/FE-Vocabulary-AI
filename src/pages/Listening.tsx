@@ -499,18 +499,29 @@ export default function Listening() {
                       >
                         <div className="listening-topic-card-top">
                           <span className="listening-topic-icon">{t.icon}</span>
-                          <span className="listening-topic-tag">Cấp {t.tag}</span>
+                          {isSelected && (
+                            <span
+                              className="pill"
+                              style={{
+                                fontSize: '11.5px',
+                                padding: '3px 9px',
+                                fontWeight: 800,
+                                background: '#dbeafe',
+                                color: '#1e40af',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: 4,
+                              }}
+                            >
+                              <Icon n="check" s={12} /> Đã chọn
+                            </span>
+                          )}
                         </div>
                         <div className="listening-topic-body">
                           <b className="listening-topic-title">{t.name}</b>
                           <div className="listening-topic-en">{t.en}</div>
                           <p className="listening-topic-desc">{t.desc}</p>
                         </div>
-                        {isSelected && (
-                          <div className="listening-topic-selected-badge">
-                            <Icon n="check" s={13} /> Đang chọn luyện tập
-                          </div>
-                        )}
                       </button>
                     </motion.div>
                   );
