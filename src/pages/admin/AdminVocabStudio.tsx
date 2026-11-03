@@ -8,6 +8,7 @@ import {
   TOPIC_MAP,
 } from '../../api';
 import { Icon } from '../../components/icons';
+import { motion, AnimatePresence } from 'motion/react';
 
 const TOPIC_OPTIONS = [
   { code: 'WORK', label: 'WORK — Công việc & Văn phòng' },
@@ -622,8 +623,16 @@ export function AdminVocabStudio({ onSaved, onBackToWords }: AdminVocabStudioPro
           </div>
         </div>
 
+        <AnimatePresence mode="wait">
         {/* Mode 1: Enrich Missing Words */}
         {studioMode === 'enrich' && (
+          <motion.div
+            key="enrich"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -6 }}
+            transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
+          >
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             <div className="toolbar" style={{ flexWrap: 'wrap', gap: 10 }}>
               <div className="chiprow">
@@ -738,10 +747,18 @@ export function AdminVocabStudio({ onSaved, onBackToWords }: AdminVocabStudioPro
               </table>
             </div>
           </div>
+          </motion.div>
         )}
 
         {/* Mode 2: Create New Words Batch */}
         {studioMode === 'create' && (
+          <motion.div
+            key="create"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -6 }}
+            transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
+          >
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             <div className="field">
               <label>Danh sách từ vựng cần sinh (mỗi từ một dòng hoặc cách nhau bằng dấu phẩy):</label>
@@ -783,10 +800,18 @@ export function AdminVocabStudio({ onSaved, onBackToWords }: AdminVocabStudioPro
               </button>
             </div>
           </div>
+          </motion.div>
         )}
 
         {/* Mode 3: Tag Classification & Backfill Pipeline */}
         {studioMode === 'tag' && (
+          <motion.div
+            key="tag"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -6 }}
+            transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
+          >
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             {/* Tag Sub-Tabs */}
             <div className="chiprow" style={{ borderBottom: '1.5px solid var(--line)', paddingBottom: 12 }}>
@@ -1401,7 +1426,9 @@ export function AdminVocabStudio({ onSaved, onBackToWords }: AdminVocabStudioPro
               </div>
             )}
           </div>
+          </motion.div>
         )}
+        </AnimatePresence>
       </div>
 
       {/* Generated Words Review & Approval Section */}

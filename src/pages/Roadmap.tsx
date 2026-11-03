@@ -13,6 +13,7 @@ import { Mascot, Icon } from '../components/icons';
 import { useAuth } from '../auth/AuthContext';
 import { useUsage } from '../context/UsageContext';
 import { QuotaBadge } from '../components/QuotaBadge';
+import { motion, AnimatePresence } from 'motion/react';
 import { AnimatedCounter, MotionCard } from '../motion';
 
 interface SavedRoadmapData {
@@ -806,8 +807,16 @@ export default function Roadmap() {
             </button>
           </div>
 
+          <AnimatePresence mode="wait">
           {/* TAB 1: Today's Tasks & 4-Week Plan */}
           {tab === 'today' && (
+            <motion.div
+              key="today"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -6 }}
+              transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
+            >
             <div className="cols2" style={{ alignItems: 'start' }}>
               {/* Daily Practice */}
               <MotionCard>
@@ -954,10 +963,18 @@ export default function Roadmap() {
                 </MotionCard>
               </div>
             </div>
+            </motion.div>
           )}
 
           {/* TAB 2: Weakness & Strength Analysis */}
           {tab === 'analysis' && (
+            <motion.div
+              key="analysis"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -6 }}
+              transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
+            >
             <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
               {/* Learning Style Assessment */}
               <div className="card">
@@ -1126,10 +1143,18 @@ export default function Roadmap() {
                 </div>
               </div>
             </div>
+            </motion.div>
           )}
 
           {/* TAB 3: Insights & Prediction */}
           {tab === 'insights' && (
+            <motion.div
+              key="insights"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -6 }}
+              transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
+            >
             <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
               {/* Progress Prediction Card */}
               <div
@@ -1213,7 +1238,9 @@ export default function Roadmap() {
                 </div>
               </div>
             </div>
+            </motion.div>
           )}
+          </AnimatePresence>
         </>
       )}
     </div>

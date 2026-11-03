@@ -14,7 +14,7 @@ export const PageTransition = forwardRef<HTMLDivElement, PageTransitionProps>(
 
     if (shouldReduceMotion) {
       return (
-        <div ref={ref} className={className} style={style}>
+        <div ref={ref} className={className} style={{ width: '100%', ...style }}>
           {children}
         </div>
       );
@@ -24,7 +24,7 @@ export const PageTransition = forwardRef<HTMLDivElement, PageTransitionProps>(
       <motion.div
         ref={ref}
         className={className}
-        style={style}
+        style={{ width: '100%', ...style }}
         initial="initial"
         animate="animate"
         exit="exit"

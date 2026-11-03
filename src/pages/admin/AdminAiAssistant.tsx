@@ -7,6 +7,7 @@ import {
   type AdminCopilotChatResponse,
 } from '../../api';
 import { Icon } from '../../components/icons';
+import { motion, AnimatePresence } from 'motion/react';
 import { AnimatedCounter } from '../../motion';
 
 type MainTab = 'copilot' | 'optimizer';
@@ -293,11 +294,16 @@ export default function AdminAiAssistant() {
         </button>
       </div>
 
-      {/* ============================================================
-          TAB 1: TỔNG QUAN & COPILOT (MATCHING ADMIN-AI.HTML EXACTLY)
-          ============================================================ */}
-      {activeTab === 'copilot' && (
-        <div className="cols2">
+      <AnimatePresence mode="wait">
+        {activeTab === 'copilot' ? (
+          <motion.div
+            key="copilot"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -6 }}
+            transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
+          >
+            <div className="cols2">
           {/* Left Column: Live AI Request Logs Table */}
           <div className="card" style={{ padding: '22px 14px' }}>
             <div className="row" style={{ padding: '0 10px 10px' }}>
@@ -512,15 +518,18 @@ export default function AdminAiAssistant() {
                 <Icon n="send" s={18} />
               </button>
             </form>
+            </div>
           </div>
-        </div>
-      )}
-
-      {/* ============================================================
-          TAB 2: TỐI ƯU CHI PHÍ & REQUEST LOGS
-          ============================================================ */}
-      {activeTab === 'optimizer' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+        </motion.div>
+      ) : (
+        <motion.div
+          key="optimizer"
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -6 }}
+          transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
+        >
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
           {/* Daily Trend Chart & Feature Breakdown */}
           <div className="cols2">
             <div className="card">
@@ -775,7 +784,9 @@ export default function AdminAiAssistant() {
             )}
           </div>
         </div>
+        </motion.div>
       )}
+      </AnimatePresence>
 
     </div>
   );

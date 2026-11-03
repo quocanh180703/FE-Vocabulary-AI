@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
 import { speakApi, personalizedApi, errMsg } from '../api';
 import type { SpeakSession } from '../api';
 import { Icon } from '../components/icons';
@@ -335,17 +335,32 @@ export default function Speaking() {
         </button>
       </div>
 
-      {mode === 'voice' ? (
-        <VoiceChatPanel
-          topic={isCustom && customTopic ? customTopic : topic}
-          level={level}
-          onLevelChange={setLevel}
-          customTopic={isCustom ? customTopic : undefined}
-          onBackToPractice={() => setMode('practice')}
-        />
-      ) : (
-        <>
-          {err && <div className="error">{err}</div>}
+      <AnimatePresence mode="wait">
+        {mode === 'voice' ? (
+          <motion.div
+            key="voice"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -6 }}
+            transition={{ duration: 0.22 }}
+          >
+            <VoiceChatPanel
+              topic={isCustom && customTopic ? customTopic : topic}
+              level={level}
+              onLevelChange={setLevel}
+              customTopic={isCustom ? customTopic : undefined}
+              onBackToPractice={() => setMode('practice')}
+            />
+          </motion.div>
+        ) : (
+          <motion.div
+            key="practice"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -6 }}
+            transition={{ duration: 0.22 }}
+          >
+            {err && <div className="error">{err}</div>}
 
           {/* Category & Level Filter Row */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, marginBottom: 16 }}>
@@ -552,8 +567,9 @@ export default function Speaking() {
           </MotionCard>
         </div>
       </div>
-        </>
-      )}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

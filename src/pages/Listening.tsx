@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { motion } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
 import { listeningApi, errMsg } from '../api';
 import type {
   CreateListeningResponse,
@@ -327,9 +327,16 @@ export default function Listening() {
         </div>
       )}
 
+      <AnimatePresence mode="wait">
       {/* VIEW 1: SELECT TOPIC & SETUP */}
       {view === 'select' && (
-        <>
+        <motion.div
+          key="select"
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -6 }}
+          transition={{ duration: 0.22 }}
+        >
           {/* Category Filter & Level Selector */}
           <div
             style={{
@@ -602,12 +609,18 @@ export default function Listening() {
               )}
             </div>
           </div>
-        </>
+        </motion.div>
       )}
 
       {/* VIEW 2: PRACTICE / DICTATION PLAYER */}
       {view === 'practice' && currentExercise && (
-        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>
+        <motion.div
+          key="practice"
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -6 }}
+          transition={{ duration: 0.22 }}
+        >
           {/* Exercise Info & Audio Player */}
           <div className="listening-player-card">
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
@@ -767,7 +780,13 @@ export default function Listening() {
 
       {/* VIEW 3: RESULTS & WORD-BY-WORD DIFF */}
       {view === 'result' && submitResult && (
-        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>
+        <motion.div
+          key="result"
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -6 }}
+          transition={{ duration: 0.22 }}
+        >
           {/* Result Score Card */}
           <div className="result-card">
             <div className="score-hero">
@@ -983,6 +1002,7 @@ export default function Listening() {
           </div>
         </motion.div>
       )}
+      </AnimatePresence>
     </div>
   );
 }

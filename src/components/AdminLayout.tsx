@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { NavLink, useNavigate, useLocation, useOutlet } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import { Icon, Mascot } from './icons';
 import { motion, AnimatePresence } from 'motion/react';
@@ -20,6 +20,17 @@ export function AdminLayout() {
   const { user, logout } = useAuth();
   const nav = useNavigate();
   const location = useLocation();
+  const currentOutlet = useOutlet();
+  const [routeProgress, setRouteProgress] = useState(false);
+
+  useEffect(() => {
+    setRouteProgress(true);
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+    const timer = setTimeout(() => {
+      setRouteProgress(false);
+    }, 280);
+    return () => clearTimeout(timer);
+  }, [location.pathname]);
 
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(() => {
     try {
@@ -54,7 +65,7 @@ export function AdminLayout() {
 
   return (
     <>
-      <div className={'layout-route-bar' + (isNavigating ? ' active' : '')} />
+      <div className={'layout-route-bar' + (routeProgress || isNavigating ? ' active' : '')} />
       <motion.div
         className="sheet"
         initial={{ opacity: 0, y: 12, scale: 0.995 }}
@@ -198,10 +209,12 @@ export function AdminLayout() {
 
         <div className="content" style={{ maxWidth: '1240px' }}>
           <ErrorBoundary>
-            <AnimatePresence mode="wait">
-              <PageTransition key={location.pathname}>
-                <Outlet />
-              </PageTransition>
+            <AnimatePresence mode="wait" initial={false}>
+              {currentOutlet && (
+                <PageTransition key={location.pathname}>
+                  {currentOutlet}
+                </PageTransition>
+              )}
             </AnimatePresence>
           </ErrorBoundary>
         </div>

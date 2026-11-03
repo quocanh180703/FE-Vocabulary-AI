@@ -5,6 +5,7 @@ import { useUsage } from '../context/UsageContext';
 import { userApi, learnApi, paymentApi, errMsg } from '../api';
 import type { User, LearningStats } from '../api';
 import { Icon } from '../components/icons';
+import { motion, AnimatePresence } from 'motion/react';
 import { AnimatedProgressBar, AnimatedCounter, MotionCard } from '../motion';
 import viAvatar from '../assets/vi-3d.webp';
 
@@ -428,30 +429,40 @@ export default function Profile() {
       </div>
 
       {/* Inline Name Edit Box if activated */}
-      {isEditingName && (
-        <div className="card">
-          <div className="field">
-            <label>Họ và tên hiển thị</label>
-            <div style={{ display: 'flex', gap: 10, marginTop: 6 }}>
-              <input
-                className="input"
-                value={fullNameInput}
-                onChange={(e) => setFullNameInput(e.target.value)}
-                placeholder="Nhập họ và tên đầy đủ"
-                style={{ flex: 1 }}
-              />
-              <button
-                type="button"
-                className="btn"
-                disabled={profileBusy}
-                onClick={handleSaveProfile}
-              >
-                {profileBusy ? 'Đang lưu...' : 'Lưu tên'}
-              </button>
+      <AnimatePresence>
+        {isEditingName && (
+          <motion.div
+            initial={{ opacity: 0, height: 0, y: -6 }}
+            animate={{ opacity: 1, height: 'auto', y: 0 }}
+            exit={{ opacity: 0, height: 0, y: -6 }}
+            transition={{ duration: 0.2 }}
+            style={{ overflow: 'hidden' }}
+          >
+            <div className="card">
+              <div className="field">
+                <label>Họ và tên hiển thị</label>
+                <div style={{ display: 'flex', gap: 10, marginTop: 6 }}>
+                  <input
+                    className="input"
+                    value={fullNameInput}
+                    onChange={(e) => setFullNameInput(e.target.value)}
+                    placeholder="Nhập họ và tên đầy đủ"
+                    style={{ flex: 1 }}
+                  />
+                  <button
+                    type="button"
+                    className="btn"
+                    disabled={profileBusy}
+                    onClick={handleSaveProfile}
+                  >
+                    {profileBusy ? 'Đang lưu...' : 'Lưu tên'}
+                  </button>
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
-      )}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {profileMsg && (
         <div className={profileMsg.type === 'ok' ? 'ok' : 'error'}>

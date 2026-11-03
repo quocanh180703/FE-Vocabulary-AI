@@ -7,7 +7,7 @@ import { Icon } from '../../components/icons';
 import { AutocompleteSearch } from '../../components/AutocompleteSearch';
 import { AdminVocabStudio } from './AdminVocabStudio';
 import { AnimatedCounter, MotionCard } from '../../motion';
-import { motion } from 'framer-motion';
+import { motion } from 'motion/react';
 
 const CEFR_LEVELS = ['ALL', 'A1', 'A2', 'B1', 'B2', 'C1'];
 const POS_LIST = [

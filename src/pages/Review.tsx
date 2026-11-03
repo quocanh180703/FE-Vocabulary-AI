@@ -414,8 +414,14 @@ export default function Review() {
   if (i === -1) {
     const totalDone = remembered + forgotten;
     return (
-      <div className="content" style={{ maxWidth: 820 }}>
-        <div className="card" style={{ textAlign: 'center', padding: '44px 34px', margin: '26px auto 0' }}>
+      <motion.div
+        className="content"
+        style={{ maxWidth: 820 }}
+        initial={{ opacity: 0, scale: 0.96, y: 14 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+      >
+        <MotionCard style={{ textAlign: 'center', padding: '44px 34px', margin: '26px auto 0' }}>
           <img src={viAvatar} alt="Vi" style={{ width: 110, height: 110, borderRadius: '50%', objectFit: 'cover', boxShadow: 'var(--sh)', margin: '0 auto' }} />
           <h1 style={{ fontSize: 31, fontWeight: 900, marginTop: 20 }}>Hoàn thành phiên ôn tập!</h1>
           <div className="sub mt8">
@@ -439,8 +445,8 @@ export default function Review() {
               Về Tổng quan
             </button>
           </div>
-        </div>
-      </div>
+        </MotionCard>
+      </motion.div>
     );
   }
 
