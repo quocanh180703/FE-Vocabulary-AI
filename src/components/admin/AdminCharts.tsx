@@ -16,10 +16,11 @@ export interface ActivityTrendData {
 interface ActivityTrendChartProps {
   data?: ActivityTrendData | null;
   loading?: boolean;
+  defaultMetric?: 'sessions' | 'users' | 'revenue';
 }
 
-export function ActivityTrendChart({ data, loading }: ActivityTrendChartProps) {
-  const [metric, setMetric] = useState<'sessions' | 'users' | 'revenue'>('sessions');
+export function ActivityTrendChart({ data, loading, defaultMetric = 'sessions' }: ActivityTrendChartProps) {
+  const [metric, setMetric] = useState<'sessions' | 'users' | 'revenue'>(defaultMetric);
   const [hoverIndex, setHoverIndex] = useState<number | null>(null);
 
   // Generate realistic 14-30 day baseline if backend data is empty or pending
@@ -250,10 +251,10 @@ export function ActivityTrendChart({ data, loading }: ActivityTrendChartProps) {
       }}>
         <div>
           <div style={{ fontSize: '0.74rem', fontWeight: 700, color: '#64748B', textTransform: 'uppercase' }}>
-            Tổng số
+            {metric === 'users' ? 'Lượt active (30 ngày)' : (metric === 'revenue' ? 'Tổng doanh thu kỳ' : 'Tổng phiên học')}
           </div>
           <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#0F172A', marginTop: 2 }}>
-            {metric === 'revenue' ? `${(total / 1000000).toFixed(1)}M đ` : total.toLocaleString('vi-VN')}
+            {metric === 'revenue' ? `${total.toLocaleString('vi-VN')} đ` : `${total.toLocaleString('vi-VN')} ${metric === 'users' ? 'lượt' : 'phiên'}`}
           </div>
         </div>
         <div>
@@ -261,7 +262,7 @@ export function ActivityTrendChart({ data, loading }: ActivityTrendChartProps) {
             Trung bình ngày
           </div>
           <div style={{ fontSize: '1.25rem', fontWeight: 800, color: series.color, marginTop: 2 }}>
-            {metric === 'revenue' ? `${(avg / 1000).toFixed(0)}k đ` : avg.toLocaleString('vi-VN')}
+            {metric === 'revenue' ? `${avg.toLocaleString('vi-VN')} đ` : `${avg.toLocaleString('vi-VN')} ${metric === 'users' ? 'lượt/ngày' : 'phiên/ngày'}`}
           </div>
         </div>
         <div>
@@ -269,16 +270,16 @@ export function ActivityTrendChart({ data, loading }: ActivityTrendChartProps) {
             Đỉnh điểm (Peak)
           </div>
           <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#0F172A', marginTop: 2 }}>
-            {metric === 'revenue' ? `${(peak / 1000000).toFixed(1)}M đ` : peak.toLocaleString('vi-VN')}
+            {metric === 'revenue' ? `${peak.toLocaleString('vi-VN')} đ` : `${peak.toLocaleString('vi-VN')} ${metric === 'users' ? 'học viên' : 'phiên'}`}
           </div>
         </div>
         <div>
           <div style={{ fontSize: '0.74rem', fontWeight: 700, color: '#64748B', textTransform: 'uppercase' }}>
-            Trạng thái xu hướng
+            Ghi nhận hoạt động
           </div>
           <div style={{ fontSize: '0.88rem', fontWeight: 700, color: '#10B981', marginTop: 4, display: 'flex', alignItems: 'center', gap: 4 }}>
-            <span>▲ +16.8%</span>
-            <span style={{ fontSize: '0.75rem', color: '#64748B', fontWeight: 500 }}>(so kỳ trước)</span>
+            <span>{values.filter(v => v > 0).length} / {values.length} ngày</span>
+            <span style={{ fontSize: '0.75rem', color: '#64748B', fontWeight: 500 }}>(có hoạt động)</span>
           </div>
         </div>
       </div>
@@ -674,16 +675,17 @@ export interface QuizPerformanceItem {
   color: string;
 }
 
-export function QuizPerformanceBarChart() {
+export function QuizPerformanceBarChart({ items }: { items?: QuizPerformanceItem[] } = {}) {
   const [hoveredLevel, setHoveredLevel] = useState<string | null>(null);
 
-  const data: QuizPerformanceItem[] = [
+  const defaultData: QuizPerformanceItem[] = [
     { level: 'A1', quizzesCount: 4, passRate: 94, avgScore: 88, color: '#10B981' },
     { level: 'A2', quizzesCount: 5, passRate: 88, avgScore: 84, color: '#06B6D4' },
     { level: 'B1', quizzesCount: 5, passRate: 82, avgScore: 78, color: '#3B82F6' },
     { level: 'B2', quizzesCount: 5, passRate: 75, avgScore: 72, color: '#8B5CF6' },
     { level: 'C1', quizzesCount: 5, passRate: 68, avgScore: 65, color: '#EC4899' },
   ];
+  const data = items && items.length > 0 ? items : defaultData;
 
   return (
     <div style={{
@@ -794,12 +796,18 @@ export function QuizPerformanceBarChart() {
    4. SYSTEM GAUGES & HEALTH CARD
    ========================================================================== */
 
-export function SystemHealthGauges() {
+export function SystemHealthGauges({ health }: { health?: any } = {}) {
+  const uptime = health?.uptime || '99.98%';
+  const jvmMem = health?.jvmMemory || '394MB / 1024MB';
+  const jvmPercent = health?.jvmMemoryPercent ?? 38;
+  const avgLatency = health?.averageResponseTime != null ? (health.averageResponseTime + 'ms') : '180ms';
+  const dbStatus = health?.dbPoolStatus || 'Healthy (HikariCP)';
+
   const gauges = [
-    { title: 'Server Uptime', value: '99.98%', percent: 99, color: '#10B981', note: 'Spring Boot 3.3.4 (PID: 8080)' },
-    { title: 'DB Connection Pool', value: '3 / 10', percent: 30, color: '#3B82F6', note: 'HikariCP MySQL 9.3' },
-    { title: 'Độ Trễ Phản Hồi AI', value: '180ms', percent: 85, color: '#8B5CF6', note: 'Azure Speech & Gemini 2.5' },
-    { title: 'Bộ Nhớ Ram (JVM)', value: '38%', percent: 38, color: '#F59E0B', note: '394MB / 1024MB Heap' },
+    { title: 'Server Uptime', value: uptime, percent: 99, color: '#10B981', note: 'Spring Boot 3.3.4' },
+    { title: 'DB Connection Pool', value: dbStatus, percent: 80, color: '#3B82F6', note: 'HikariCP MySQL' },
+    { title: 'Độ Trễ Phản Hồi AI', value: avgLatency, percent: 85, color: '#8B5CF6', note: 'Azure Speech & Gemini 2.5' },
+    { title: 'Bộ Nhớ Ram (JVM)', value: jvmMem, percent: jvmPercent, color: '#F59E0B', note: (jvmPercent + '% Heap used') },
   ];
 
   const ringRadius = 26;

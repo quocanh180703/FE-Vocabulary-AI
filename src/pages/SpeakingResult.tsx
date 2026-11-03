@@ -1,3 +1,4 @@
+import axios from 'axios';
 import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { speakApi, errMsg } from '../api';
@@ -55,6 +56,53 @@ export default function SpeakingResult() {
   const [d, setD] = useState<SessionDetail | null>(null);
   const [err, setErr] = useState('');
   const [selectedAttemptIdx, setSelectedAttemptIdx] = useState<number>(0);
+  const [audioUrl, setAudioUrl] = useState<string | null>(null);
+  const [audioLoading, setAudioLoading] = useState(false);
+  const [audioErr, setAudioErr] = useState('');
+
+  useEffect(() => {
+    if (audioUrl) {
+      URL.revokeObjectURL(audioUrl);
+      setAudioUrl(null);
+    }
+    setAudioErr('');
+    setAudioLoading(false);
+  }, [selectedAttemptIdx]);
+
+  useEffect(() => {
+    return () => {
+      if (audioUrl) {
+        URL.revokeObjectURL(audioUrl);
+      }
+    };
+  }, [audioUrl]);
+
+  const handlePlayAudio = async () => {
+    if (!state?.sessionId) return;
+    const attemptNum = currentAttempt?.attemptNumber || selectedAttemptIdx + 1;
+    if (audioUrl) return;
+    setAudioLoading(true);
+    setAudioErr('');
+    try {
+      const blob = await speakApi.attemptAudioBlob(state.sessionId, attemptNum);
+      const url = URL.createObjectURL(blob);
+      setAudioUrl(url);
+    } catch (e: any) {
+      if (axios.isAxiosError(e)) {
+        if (e.response?.status === 404) {
+          setAudioErr('Bản ghi không còn tồn tại, có thể do server đã khởi động lại (file lưu ở thư mục tạm).');
+        } else if (e.response?.status === 403) {
+          setAudioErr('Bạn không có quyền nghe bản ghi này.');
+        } else {
+          setAudioErr('Không tải được bản ghi, thử lại sau.');
+        }
+      } else {
+        setAudioErr('Không tải được bản ghi, thử lại sau.');
+      }
+    } finally {
+      setAudioLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (state?.sessionId) {
@@ -248,13 +296,35 @@ export default function SpeakingResult() {
 
       {/* Transcript Card */}
       <MotionCard className="mt16">
-        <div className="row">
+        <div className="row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10 }}>
           <h2>
             <span className="dot" />
             Bài nói của bạn
           </h2>
-          <span className="pill greensoft">Whisper nghe được</span>
+          <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+            <span className="pill greensoft">Whisper nghe được</span>
+            <button
+              type="button"
+              className="btn small ghost"
+              onClick={handlePlayAudio}
+              disabled={audioLoading}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+                fontWeight: 700,
+                padding: '6px 14px',
+                borderRadius: 999,
+                fontSize: 13,
+                cursor: 'pointer',
+              }}
+            >
+              <Icon n="head" s={16} />
+              {audioLoading ? 'Đang tải audio...' : audioUrl ? 'Đang mở phát' : 'Nghe lại bản ghi'}
+            </button>
+          </div>
         </div>
+
         <p
           className="mt8"
           style={{
@@ -267,6 +337,44 @@ export default function SpeakingResult() {
         >
           {transcript ? `“${transcript}”` : 'Không nhận diện được nội dung hoặc âm lượng quá nhỏ.'}
         </p>
+
+        {/* Audio Player */}
+        {audioUrl && (
+          <div style={{ marginTop: 16, padding: '12px 16px', background: '#F1F5F9', borderRadius: 14 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--muted)', marginBottom: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                <Icon n="vol" s={15} />
+                Bản ghi âm lần thử #{currentAttempt?.attemptNumber || selectedAttemptIdx + 1}
+              </span>
+              <button
+                type="button"
+                style={{ background: 'none', border: 'none', color: 'var(--muted)', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}
+                onClick={() => {
+                  if (audioUrl) URL.revokeObjectURL(audioUrl);
+                  setAudioUrl(null);
+                }}
+              >
+                Đóng trình phát ✕
+              </button>
+            </div>
+            <audio controls autoPlay src={audioUrl} style={{ width: '100%', height: 42, outline: 'none' }} />
+          </div>
+        )}
+
+        {/* Audio Error */}
+        {audioErr && (
+          <div className="error mt12" style={{ fontSize: 13.5, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', borderRadius: 10 }}>
+            <span>{audioErr}</span>
+            <button
+              type="button"
+              className="btn small ghost"
+              style={{ padding: '4px 10px', fontSize: 12, marginLeft: 8 }}
+              onClick={handlePlayAudio}
+            >
+              Thử lại
+            </button>
+          </div>
+        )}
       </MotionCard>
 
       {/* Vi Coach Feedback Card */}

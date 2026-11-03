@@ -117,7 +117,7 @@ export default function Speaking() {
     return 'B1';
   };
 
-  const initialLvl = getInitialLevel();
+  const initialLvl = TOPICS[0]?.tag || getInitialLevel();
   const [level, setLevel] = useState(initialLvl);
   const [mode, setMode] = useState<'practice' | 'voice'>('practice');
   const [session, setSession] = useState<SpeakSession | null>(null);
@@ -168,12 +168,12 @@ export default function Speaking() {
     personalizedApi
       .level()
       .then(({ data }) => {
-        if (data && LEVELS.includes(data)) {
+        if (data && LEVELS.includes(data) && isCustom) {
           setLevel(data);
         }
       })
       .catch(() => {});
-  }, [storageKey]);
+  }, [storageKey, isCustom]);
 
   const activeTopicObj = TOPICS.find((t) => t.name === topic);
 
@@ -339,6 +339,7 @@ export default function Speaking() {
         <VoiceChatPanel
           topic={isCustom && customTopic ? customTopic : topic}
           level={level}
+          onLevelChange={setLevel}
           customTopic={isCustom ? customTopic : undefined}
           onBackToPractice={() => setMode('practice')}
         />
@@ -346,51 +347,71 @@ export default function Speaking() {
         <>
           {err && <div className="error">{err}</div>}
 
-          {/* Chiprow categories */}
-          <div className="chiprow">
-        {CATEGORIES.map((c) => (
-          <button
-            key={c.id}
-            type="button"
-            className={'fchip' + (selectedCategory === c.id ? ' on' : '')}
-            onClick={() => setSelectedCategory(c.id)}
-          >
-            {c.name}
-          </button>
-        ))}
-      </div>
+          {/* Category & Level Filter Row */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, marginBottom: 16 }}>
+            <div className="chiprow" style={{ margin: 0 }}>
+              {CATEGORIES.map((c) => (
+                <button
+                  key={c.id}
+                  type="button"
+                  className={'fchip' + (selectedCategory === c.id ? ' on' : '')}
+                  onClick={() => setSelectedCategory(c.id)}
+                >
+                  {c.name}
+                </button>
+              ))}
+            </div>
 
-      <div className="cols2" style={{ alignItems: 'start' }}>
-        {/* Left Column: Topics Grid */}
-        <div className="colstack">
-          <motion.div
-            variants={staggerContainer}
-            initial="hidden"
-            animate="visible"
-            key={selectedCategory}
-            style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 14 }}
-          >
-            {filteredTopics.map((t) => {
-              const isSelected = !isCustom && topic === t.name;
-              return (
-                <motion.div key={t.name} variants={staggerItem}>
-                  <button
-                    type="button"
-                    className={'topic' + (isSelected ? ' on' : '')}
-                    onClick={() => {
-                      setTopic(t.name);
-                      setIsCustom(false);
-                    }}
-                  >
-                    <b style={{ fontSize: 15.5, display: 'block' }}>{t.name}</b>
-                    <div className="sub mt8" style={{ fontSize: 12.5 }}>{t.en}</div>
-                    <div className="mt8">
-                      <span className="pill level">Cấp {t.tag}</span>
-                    </div>
-                  </button>
-                </motion.div>
-              );
-            })}
+            {/* Trình độ (Level) Selector */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#fff', padding: '5px 12px', borderRadius: 14, border: '1px solid var(--border, #e2e8f0)', boxShadow: '0 2px 6px rgba(0,0,0,0.03)' }}>
+              <span style={{ fontSize: '13px', fontWeight: 700, color: '#64748b', marginRight: 2 }}>Trình độ:</span>
+              {LEVELS.map((lvl) => (
+                <button
+                  key={lvl}
+                  type="button"
+                  className={'fchip' + (level === lvl ? ' on' : '')}
+                  style={{
+                    padding: '4px 12px',
+                    fontSize: '12.5px',
+                    fontWeight: 800,
+                    cursor: 'pointer',
+                  }}
+                  onClick={() => setLevel(lvl)}
+                >
+                  {lvl}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="cols2" style={{ alignItems: 'start' }}>
+            {/* Left Column: Topics Grid */}
+            <div className="colstack">
+              <motion.div
+                variants={staggerContainer}
+                initial="hidden"
+                animate="visible"
+                key={selectedCategory}
+                style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 14 }}
+              >
+                {filteredTopics.map((t) => {
+                  const isSelected = !isCustom && topic === t.name;
+                  return (
+                    <motion.div key={t.name} variants={staggerItem}>
+                      <button
+                        type="button"
+                        className={'topic' + (isSelected ? ' on' : '')}
+                        onClick={() => {
+                          setTopic(t.name);
+                          setIsCustom(false);
+                        }}
+                      >
+                        <b style={{ fontSize: 15.5, display: 'block' }}>{t.name}</b>
+                        <div className="sub mt8" style={{ fontSize: 12.5 }}>{t.en}</div>
+                      </button>
+                    </motion.div>
+                  );
+                })}
           </motion.div>
 
           {/* Custom Topic Input */}
@@ -454,7 +475,7 @@ export default function Speaking() {
             </div>
 
             <b style={{ fontSize: 17, display: 'block', marginTop: 14 }}>
-              Chủ đề: {isCustom && customTopic ? customTopic : topic} · {level}
+              Chủ đề: {isCustom && customTopic ? customTopic : topic} · Trình độ {level}
             </b>
             <div className="sub mt8" style={{ fontSize: 13 }}>
               {activeTopicObj?.desc || 'Hãy nói tự nhiên từ 30–60 giây để Vi đánh giá.'}

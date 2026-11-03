@@ -1,3 +1,4 @@
+import { createPortal } from 'react-dom';
 import { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
 import { adminApi, quizApi } from '../../api';
@@ -36,6 +37,17 @@ export default function AdminQuizzes() {
   const [detailLoading, setDetailLoading] = useState(false);
   const [showAddQuestion, setShowAddQuestion] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  useEffect(() => {
+    if (showCreateModal || editingQuiz || managingQuiz) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [showCreateModal, editingQuiz, managingQuiz]);
+
   const [message, setMessage] = useState<{ text: string; error?: boolean } | null>(null);
 
   // Quiz Form
@@ -400,10 +412,51 @@ export default function AdminQuizzes() {
       )}
 
       {/* Create / Edit Quiz Modal */}
-      {(showCreateModal || editingQuiz) && (
-        <>
-          <div className="scrim" onClick={() => { setShowCreateModal(false); setEditingQuiz(null); }} />
-          <div className="modal" style={{ maxWidth: 540 }}>
+      {(showCreateModal || editingQuiz) &&
+        createPortal(
+          <div
+            style={{
+              position: 'fixed',
+              inset: 0,
+              zIndex: 99999,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: 16,
+            }}
+          >
+            <div
+              className="scrim"
+              style={{
+                position: 'fixed',
+                inset: 0,
+                zIndex: 1,
+                background: 'rgba(10, 37, 64, 0.55)',
+                backdropFilter: 'blur(8px)',
+                WebkitBackdropFilter: 'blur(8px)',
+              }}
+              onClick={() => { setShowCreateModal(false); setEditingQuiz(null); }}
+            />
+            <div
+              className="modal"
+              style={{
+                position: 'relative',
+                top: 'auto',
+                left: 'auto',
+                transform: 'none',
+                maxWidth: 540,
+                width: '100%',
+                zIndex: 2,
+                margin: 0,
+                borderRadius: 24,
+                boxShadow: '0 25px 70px rgba(10, 37, 64, 0.35)',
+                background: '#ffffff',
+                padding: '28px 30px',
+                maxHeight: '90vh',
+                overflowY: 'auto',
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
             <div className="row" style={{ alignItems: 'center', marginBottom: 16 }}>
               <h2 style={{ fontSize: 20 }}>
                 {editingQuiz ? `Chỉnh sửa Quiz #${editingQuiz.id}` : 'Tạo bài trắc nghiệm mới'}
@@ -500,14 +553,56 @@ export default function AdminQuizzes() {
               </div>
             </form>
           </div>
-        </>
-      )}
+          </div>,
+          document.body
+        )}
 
       {/* Manage Questions Modal / Drawer */}
-      {managingQuiz && (
-        <>
-          <div className="scrim" onClick={() => { setManagingQuiz(null); setQuizDetails(null); setShowAddQuestion(false); }} />
-          <div className="modal" style={{ maxWidth: 680, maxHeight: '85vh', overflowY: 'auto' }}>
+      {managingQuiz &&
+        createPortal(
+          <div
+            style={{
+              position: 'fixed',
+              inset: 0,
+              zIndex: 99999,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: 16,
+            }}
+          >
+            <div
+              className="scrim"
+              style={{
+                position: 'fixed',
+                inset: 0,
+                zIndex: 1,
+                background: 'rgba(10, 37, 64, 0.55)',
+                backdropFilter: 'blur(8px)',
+                WebkitBackdropFilter: 'blur(8px)',
+              }}
+              onClick={() => { setManagingQuiz(null); setQuizDetails(null); setShowAddQuestion(false); }}
+            />
+            <div
+              className="modal"
+              style={{
+                position: 'relative',
+                top: 'auto',
+                left: 'auto',
+                transform: 'none',
+                maxWidth: 680,
+                width: '100%',
+                zIndex: 2,
+                margin: 0,
+                borderRadius: 24,
+                boxShadow: '0 25px 70px rgba(10, 37, 64, 0.35)',
+                background: '#ffffff',
+                padding: '28px 30px',
+                maxHeight: '85vh',
+                overflowY: 'auto',
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
             <div className="row" style={{ alignItems: 'flex-start', marginBottom: 16 }}>
               <div>
                 <h2 style={{ fontSize: 20 }}>
@@ -684,8 +779,9 @@ export default function AdminQuizzes() {
               </form>
             )}
           </div>
-        </>
-      )}
+          </div>,
+          document.body
+        )}
     </div>
   );
 }

@@ -145,7 +145,7 @@ export default function AdminAiAssistant() {
         ...prev,
         {
           sender: 'ai',
-          text: 'Xin lỗi Quản trị viên, đã xảy ra sự cố kết nối tới dịch vụ AI Copilot. Vui lòng thử lại sau ít giây.',
+          text: 'Xin lỗi Quản trị viên, đã xảy ra sự cố kết nối tới dịch vụ AI. Vui lòng thử lại sau ít giây.',
           time: aiTime,
         },
       ]);
@@ -181,7 +181,7 @@ export default function AdminAiAssistant() {
             Trợ lý AI &amp; Giám sát <span className="adminbadge" style={{ verticalAlign: 5 }}>AI</span>
           </h1>
           <div className="sub">
-            Theo dõi lượt gọi Gemini/Whisper và hỏi Copilot về số liệu hệ thống
+            Theo dõi lượt gọi Gemini/Whisper và hỏi AI về số liệu hệ thống
           </div>
         </div>
 
@@ -282,7 +282,7 @@ export default function AdminAiAssistant() {
           className={'fchip' + (activeTab === 'copilot' ? ' on' : '')}
           onClick={() => setActiveTab('copilot')}
         >
-          Tổng quan &amp; Copilot
+          Tổng quan &amp; AI
         </button>
         <button
           type="button"
@@ -401,7 +401,7 @@ export default function AdminAiAssistant() {
           {/* Right Column: Copilot Quản trị */}
           <div className="card" style={{ display: 'flex', flexDirection: 'column' }}>
             <div className="row">
-              <h2><span className="dot g" />Copilot quản trị</h2>
+              <h2><span className="dot g" />AI quản trị</h2>
               <button
                 type="button"
                 className="link"
@@ -485,7 +485,7 @@ export default function AdminAiAssistant() {
               ))}
               {copilotLoading && (
                 <div className="msg ai">
-                  <i>Copilot đang phân tích số liệu hệ thống...</i>
+                  <i>AI đang phân tích số liệu hệ thống...</i>
                 </div>
               )}
               <div ref={chatBottomRef} />
@@ -499,7 +499,7 @@ export default function AdminAiAssistant() {
               }}
             >
               <input
-                placeholder="Hỏi Copilot về số liệu…"
+                placeholder="Hỏi AI về số liệu…"
                 value={copilotInput}
                 onChange={(e) => setCopilotInput(e.target.value)}
                 disabled={copilotLoading}

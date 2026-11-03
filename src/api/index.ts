@@ -1041,6 +1041,10 @@ export const speakApi = {
     api.get<any>(`/api/ai/speaking/sessions/${id}`).then((res) => ({ ...res, data: res.data })),
   listSessions: (page = 0, size = 10) =>
     api.get<any>('/api/ai/speaking/sessions', { params: { page, size, sort: 'createdAt,desc' } }).then((res) => ({ ...res, data: res.data })),
+  attemptAudioBlob: (sessionId: number, attemptNumber: number) =>
+    api.get(`/api/ai/speaking/audio/${sessionId}/attempt-${attemptNumber}/stream`, {
+      responseType: 'blob',
+    }).then((res) => res.data as Blob),
 };
 
 /* ---------- tts (Text to Speech) ---------- */
@@ -1362,6 +1366,35 @@ export interface AdminRevenueMetrics {
   averagePaymentAmount: number;
   popularPackageId?: number;
   popularPackageName?: string;
+}
+
+export interface AdminLearningProgressReport {
+  totalAttempts: number;
+  avgScore: number;
+  avgCompletionTime: number;
+  uniqueUsers: number;
+  totalSpeakingSessions?: number;
+}
+
+export interface AdminContentPerformanceItem {
+  quizId: number;
+  quizTitle: string;
+  level: string;
+  attemptCount: number;
+  avgScore: number;
+  completionRate: number;
+}
+
+export interface AdminSystemHealth {
+  totalUsers: number;
+  apiCallsToday: number;
+  averageResponseTime: number;
+  errorRate: number;
+  status: string;
+  uptime?: string;
+  jvmMemory?: string;
+  jvmMemoryPercent?: number;
+  dbPoolStatus?: string;
 }
 
 export interface AdminStudent {

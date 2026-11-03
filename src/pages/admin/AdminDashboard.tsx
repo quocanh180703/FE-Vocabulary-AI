@@ -15,8 +15,6 @@ export default function AdminDashboard() {
   const [activityTrend, setActivityTrend] = useState<ActivityTrendData | null>(null);
   const [aiSummary, setAiSummary] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [importing, setImporting] = useState(false);
-  const [importMessage, setImportMessage] = useState<string | null>(null);
   const nav = useNavigate();
 
   const loadData = async () => {
@@ -54,31 +52,6 @@ export default function AdminDashboard() {
     loadData();
   }, []);
 
-  const handleImportCefr = async () => {
-    if (
-      !confirm(
-        'Bạn có chắc muốn chạy tiến trình import toàn bộ 5 tệp CEFR (A1-C1, gần 5000 từ)? Quá trình này có thể mất 30-45 giây.'
-      )
-    ) {
-      return;
-    }
-    setImporting(true);
-    setImportMessage('Đang thực hiện import từ vựng CEFR vào cơ sở dữ liệu...');
-    try {
-      const res = await adminApi.importAllCefr();
-      const msg = res.data?.message || 'Import hoàn tất thành công!';
-      setImportMessage(`Thành công: ${msg}`);
-      await loadData();
-    } catch (e: any) {
-      setImportMessage(
-        'Lỗi import hoặc tiến trình đang chạy ngầm: ' +
-          (e?.message || 'Không thể kết nối')
-      );
-    } finally {
-      setImporting(false);
-    }
-  };
-
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
       {/* Page Header */}
@@ -98,33 +71,8 @@ export default function AdminDashboard() {
             <Icon n="spark" s={16} />
             {loading ? 'Đang tải...' : 'Làm mới'}
           </button>
-          <button
-            type="button"
-            className="btn"
-            disabled={importing}
-            onClick={handleImportCefr}
-          >
-            <Icon n="zap" s={16} />
-            {importing ? 'Đang Import CEFR...' : 'Import Dữ Liệu CEFR'}
-          </button>
         </div>
       </div>
-
-      {importMessage && (
-        <div
-          className={importMessage.includes('Lỗi') ? 'error' : 'ok'}
-          style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
-        >
-          <span>{importMessage}</span>
-          <button
-            type="button"
-            onClick={() => setImportMessage(null)}
-            style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'inherit', fontWeight: 800 }}
-          >
-            ✕
-          </button>
-        </div>
-      )}
 
       {/* KPI Row */}
       <motion.div

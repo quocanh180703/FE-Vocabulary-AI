@@ -36,7 +36,7 @@ export default function Login() {
   const nav = useNavigate();
   const { login } = useAuth();
   const [isNavigating, setIsNavigating] = useState(false);
-  const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || '611898117527-mqm9g3ai8gd0j38tnsjso0a86htc7s5s.apps.googleusercontent.com';
+  const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
   const handleGoogleSuccess = async (credentialResponse: any) => {
     if (!credentialResponse?.credential) {
@@ -57,7 +57,7 @@ export default function Login() {
           nav('/placement');
           return;
         }
-      } catch {}
+      } catch { }
 
       nav('/dashboard');
     } catch (e) {
@@ -93,7 +93,7 @@ export default function Login() {
             nav('/placement');
             return;
           }
-        } catch {}
+        } catch { }
 
         nav('/dashboard');
       } else if (mode === 'register') {
@@ -260,19 +260,19 @@ export default function Login() {
                       {mode === 'login'
                         ? 'Chào mừng trở lại!'
                         : mode === 'register'
-                        ? 'Tạo tài khoản'
-                        : 'Khôi phục mật khẩu'}
+                          ? 'Tạo tài khoản'
+                          : 'Khôi phục mật khẩu'}
                     </h1>
                     <div className="sub">
                       {mode === 'login'
                         ? 'Đăng nhập để tiếp tục hành trình học tiếng Anh'
                         : mode === 'register'
-                        ? 'Miễn phí — chỉ mất 1 phút để bắt đầu'
-                        : forgotStep === 1
-                        ? 'Nhập email để nhận mã OTP xác thực'
-                        : forgotStep === 2
-                        ? 'Nhập mã 6 chữ số vừa nhận qua email'
-                        : 'Thiết lập mật khẩu mới cho tài khoản'}
+                          ? 'Miễn phí — chỉ mất 1 phút để bắt đầu'
+                          : forgotStep === 1
+                            ? 'Nhập email để nhận mã OTP xác thực'
+                            : forgotStep === 2
+                              ? 'Nhập mã 6 chữ số vừa nhận qua email'
+                              : 'Thiết lập mật khẩu mới cho tài khoản'}
                     </div>
                   </motion.div>
                 </AnimatePresence>

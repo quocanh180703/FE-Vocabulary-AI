@@ -50,9 +50,7 @@ function HomeSwitcher() {
   return <Navigate to="/dashboard" replace />;
 }
 
-const googleClientId =
-  import.meta.env.VITE_GOOGLE_CLIENT_ID ||
-  '611898117527-mqm9g3ai8gd0j38tnsjso0a86htc7s5s.apps.googleusercontent.com';
+const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
 export default function App() {
   // Demo mode: HashRouter để chạy được trên static hosting không có SPA fallback.
@@ -62,61 +60,61 @@ export default function App() {
       <ErrorBoundary>
         <GoogleOAuthProvider clientId={googleClientId} locale="vi">
           <AuthProvider>
-          <UsageProvider>
-            <UpgradeModal />
-            <Suspense fallback={<div className="loading" style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>Đang tải...</div>}>
-              <Routes>
-                {/* Public Landing Page & Legal Pages */}
-                <Route path="/landing" element={<LandingPage />} />
-                <Route path="/dieu-khoan" element={<TermsOfService />} />
-                <Route path="/chinh-sach-bao-mat" element={<PrivacyPolicy />} />
+            <UsageProvider>
+              <UpgradeModal />
+              <Suspense fallback={<div className="loading" style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>Đang tải...</div>}>
+                <Routes>
+                  {/* Public Landing Page & Legal Pages */}
+                  <Route path="/landing" element={<LandingPage />} />
+                  <Route path="/dieu-khoan" element={<TermsOfService />} />
+                  <Route path="/chinh-sach-bao-mat" element={<PrivacyPolicy />} />
 
-                {/* Root switch: Public guest sees LandingPage; Authenticated user redirects to /dashboard */}
-                <Route path="/" element={<HomeSwitcher />} />
+                  {/* Root switch: Public guest sees LandingPage; Authenticated user redirects to /dashboard */}
+                  <Route path="/" element={<HomeSwitcher />} />
 
-                <Route element={<Guest />}>
-                  <Route path="/login" element={<Login />} />
-                  <Route path="/otp" element={<Otp />} />
-                </Route>
-                <Route element={<Protected />}>
-                  <Route path="/placement" element={<PlacementTest />} />
-                  <Route element={<Layout />}>
-                    <Route path="/dashboard" element={<Dashboard />} />
-                    <Route path="/words" element={<Words />} />
-                    <Route path="/words/:id" element={<WordDetail />} />
-                    <Route path="/favorites" element={<Favorites />} />
-                    <Route path="/review" element={<Review />} />
-                    <Route path="/roadmap" element={<Roadmap />} />
-                    <Route path="/quiz" element={<QuizList />} />
-                    <Route path="/quiz/:id" element={<QuizDo />} />
-                    <Route path="/quiz/:id/result" element={<QuizResult />} />
-                    <Route path="/grammar" element={<Grammar />} />
-                    <Route path="/chat" element={<Chat />} />
-                    <Route path="/speaking" element={<Speaking />} />
-                    <Route path="/speaking/result" element={<SpeakingResult />} />
-                    <Route path="/profile" element={<Profile />} />
-                    <Route path="/payment/success" element={<PaymentResult />} />
-                    <Route path="/payment/cancel" element={<PaymentResult />} />
+                  <Route element={<Guest />}>
+                    <Route path="/login" element={<Login />} />
+                    <Route path="/otp" element={<Otp />} />
                   </Route>
-                </Route>
-
-                {/* Admin Portal Routes */}
-                <Route element={<AdminGuard />}>
-                  <Route element={<AdminLayout />}>
-                    <Route path="/admin" element={<AdminDashboard />} />
-                    <Route path="/admin/orders" element={<AdminOrders />} />
-                    <Route path="/admin/users" element={<AdminUsers />} />
-                    <Route path="/admin/words" element={<AdminWords />} />
-                    <Route path="/admin/quizzes" element={<AdminQuizzes />} />
-                    <Route path="/admin/reports" element={<AdminReports />} />
-                    <Route path="/admin/ai-assistant" element={<AdminAiAssistant />} />
+                  <Route element={<Protected />}>
+                    <Route path="/placement" element={<PlacementTest />} />
+                    <Route element={<Layout />}>
+                      <Route path="/dashboard" element={<Dashboard />} />
+                      <Route path="/words" element={<Words />} />
+                      <Route path="/words/:id" element={<WordDetail />} />
+                      <Route path="/favorites" element={<Favorites />} />
+                      <Route path="/review" element={<Review />} />
+                      <Route path="/roadmap" element={<Roadmap />} />
+                      <Route path="/quiz" element={<QuizList />} />
+                      <Route path="/quiz/:id" element={<QuizDo />} />
+                      <Route path="/quiz/:id/result" element={<QuizResult />} />
+                      <Route path="/grammar" element={<Grammar />} />
+                      <Route path="/chat" element={<Chat />} />
+                      <Route path="/speaking" element={<Speaking />} />
+                      <Route path="/speaking/result" element={<SpeakingResult />} />
+                      <Route path="/profile" element={<Profile />} />
+                      <Route path="/payment/success" element={<PaymentResult />} />
+                      <Route path="/payment/cancel" element={<PaymentResult />} />
+                    </Route>
                   </Route>
-                </Route>
 
-                <Route path="*" element={<Navigate to="/" replace />} />
-              </Routes>
-            </Suspense>
-          </UsageProvider>
+                  {/* Admin Portal Routes */}
+                  <Route element={<AdminGuard />}>
+                    <Route element={<AdminLayout />}>
+                      <Route path="/admin" element={<AdminDashboard />} />
+                      <Route path="/admin/orders" element={<AdminOrders />} />
+                      <Route path="/admin/users" element={<AdminUsers />} />
+                      <Route path="/admin/words" element={<AdminWords />} />
+                      <Route path="/admin/quizzes" element={<AdminQuizzes />} />
+                      <Route path="/admin/reports" element={<AdminReports />} />
+                      <Route path="/admin/ai-assistant" element={<AdminAiAssistant />} />
+                    </Route>
+                  </Route>
+
+                  <Route path="*" element={<Navigate to="/" replace />} />
+                </Routes>
+              </Suspense>
+            </UsageProvider>
           </AuthProvider>
         </GoogleOAuthProvider>
       </ErrorBoundary>

@@ -20,6 +20,7 @@ interface VoiceChatPanelProps {
   level: string;
   customTopic?: string;
   onBackToPractice?: () => void;
+  onLevelChange?: (lvl: string) => void;
 }
 
 const VOICES = [
@@ -155,11 +156,13 @@ export const VoiceChatPanel: React.FC<VoiceChatPanelProps> = ({
   level,
   customTopic,
   onBackToPractice,
+  onLevelChange,
 }) => {
   const effectiveTopic = customTopic?.trim() || topic;
   const { decrementQuota } = useUsage();
 
   const [messages, setMessages] = useState<Message[]>([]);
+  const [hasStarted, setHasStarted] = useState(false);
   const [status, setStatus] = useState<'idle' | 'recording' | 'transcribing' | 'thinking' | 'speaking'>('idle');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [activeSentence, setActiveSentence] = useState<{ msgId: string; sentenceIdx: number } | null>(null);
@@ -562,6 +565,12 @@ export const VoiceChatPanel: React.FC<VoiceChatPanelProps> = ({
     [stopAudio]
   );
 
+  // Start conversation: show opening greeting and play audio
+  const handleStart = () => {
+    setHasStarted(true);
+    loadOpening();
+  };
+
   // Initial Opening message from Vi (Instant, 0ms wait, 0 LLM requests)
   const loadOpening = useCallback(() => {
     cleanupRequest();
@@ -587,13 +596,17 @@ export const VoiceChatPanel: React.FC<VoiceChatPanelProps> = ({
     if (loadedTopicRef.current === topicKey) return;
     loadedTopicRef.current = topicKey;
 
-    loadOpening();
+    setHasStarted(false);
+    setMessages([]);
+    stopAudio();
+    cleanupRequest();
+    setErrorMsg(null);
 
     return () => {
       cleanupRequest();
       stopAudio();
     };
-  }, [effectiveTopic, level, loadOpening, cleanupRequest, stopAudio]);
+  }, [effectiveTopic, level, cleanupRequest, stopAudio]);
 
   // Push-To-Talk: Start Recording
   const startRecording = async () => {
@@ -841,7 +854,7 @@ export const VoiceChatPanel: React.FC<VoiceChatPanelProps> = ({
     <div className="voice-chat-container">
       {/* 1. Header Bar */}
       <div className="voice-chat-header">
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1, minWidth: 200 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexShrink: 0 }}>
           {onBackToPractice && (
             <button
               onClick={() => {
@@ -849,25 +862,50 @@ export const VoiceChatPanel: React.FC<VoiceChatPanelProps> = ({
                 onBackToPractice();
               }}
               className="btn btn-outline"
-              style={{ padding: '6px 12px', fontSize: '13px' }}
+              style={{ padding: '6px 12px', fontSize: '13px', whiteSpace: 'nowrap' }}
             >
               <Icon n="chevronLeft" s={16} /> Quay lại
             </button>
           )}
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span style={{ fontWeight: 800, fontSize: '16px' }}>{effectiveTopic}</span>
-              <span className="pill greensoft" style={{ fontSize: '11px', padding: '2px 8px' }}>
-                {level}
-              </span>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', whiteSpace: 'nowrap' }}>
+              <span style={{ fontWeight: 800, fontSize: '16px', whiteSpace: 'nowrap' }}>{effectiveTopic}</span>
+              {onLevelChange ? (
+                <select
+                  value={level}
+                  onChange={(e) => onLevelChange(e.target.value)}
+                  style={{
+                    padding: '3px 8px',
+                    borderRadius: '8px',
+                    border: '1px solid #93c5fd',
+                    background: '#eff6ff',
+                    color: '#1d4ed8',
+                    fontSize: '12px',
+                    fontWeight: 800,
+                    cursor: 'pointer',
+                    flexShrink: 0,
+                  }}
+                  title="Thay đổi trình độ luyện nói"
+                >
+                  {['A1', 'A2', 'B1', 'B2', 'C1'].map((lvl) => (
+                    <option key={lvl} value={lvl}>
+                      {lvl}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <span className="pill greensoft" style={{ fontSize: '11px', padding: '2px 8px', whiteSpace: 'nowrap' }}>
+                  {level}
+                </span>
+              )}
             </div>
-            <div className="sub" style={{ fontSize: '12.5px' }}>
+            <div className="sub" style={{ fontSize: '12.5px', whiteSpace: 'nowrap' }}>
               Luyện phản xạ giao tiếp hai chiều cùng trợ lý AI Vi
             </div>
           </div>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', justifyContent: 'flex-end', flex: 1 }}>
           <QuotaBadge featureKey="voice" labelSuffix="lượt thoại hôm nay" />
 
           {/* Voice Selector */}
@@ -936,7 +974,35 @@ export const VoiceChatPanel: React.FC<VoiceChatPanelProps> = ({
 
       {/* 2. Messages Timeline */}
       <div className="voice-chat-messages" ref={chatScrollRef}>
-        {messages.map((m: Message) => (
+        {!hasStarted ? (
+          <div className="voice-start-card">
+            <div className="voice-start-avatar-wrap">
+              <img src={viAvatar} alt="Trợ lý Vi" className="voice-start-avatar" />
+              <span className="voice-start-online-dot" title="Sẵn sàng đối thoại" />
+            </div>
+
+            <div className="voice-start-title">Trò chuyện giọng nói cùng AI Vi</div>
+            <div className="voice-start-desc">
+              Chủ đề: <b style={{ color: 'var(--primary, #2563eb)' }}>{effectiveTopic}</b> · Trình độ: <b>{level}</b>
+              <br />
+              Bấm nút <b>Bắt đầu</b> để Vi mở lời chào và câu hỏi phản xạ đầu tiên cho bạn nhé!
+            </div>
+
+            <button
+              type="button"
+              onClick={handleStart}
+              className="voice-start-btn"
+            >
+              <Icon n="spark" s={20} />
+              Bắt đầu
+            </button>
+
+            <div className="voice-start-hint">
+              <span>💡 Bạn có thể chọn giọng đọc hoặc tốc độ nói ở góc trên trước khi bắt đầu</span>
+            </div>
+          </div>
+        ) : (
+          messages.map((m: Message) => (
           <div key={m.id} className={`voice-msg-row ${m.role}`}>
             {m.role === 'assistant' ? (
               <img src={viAvatar} alt="Vi" className="voice-avatar" />
@@ -1005,7 +1071,8 @@ export const VoiceChatPanel: React.FC<VoiceChatPanelProps> = ({
               )}
             </div>
           </div>
-        ))}
+        ))
+        )}
 
         {/* Live Status Indicator */}
         {status === 'transcribing' && (
@@ -1081,11 +1148,12 @@ export const VoiceChatPanel: React.FC<VoiceChatPanelProps> = ({
       <div className="voice-chat-footer">
         <button
           className={`mic-ptt-btn ${status === 'recording' ? 'recording' : 'idle'}`}
-          onPointerDown={startRecording}
-          onPointerUp={stopRecordingAndSend}
-          onPointerLeave={stopRecordingAndSend}
-          title="Bấm giữ để nói tiếng Anh, thả ra để gửi"
-          disabled={status === 'transcribing' || status === 'thinking'}
+          onPointerDown={hasStarted ? startRecording : undefined}
+          onPointerUp={hasStarted ? stopRecordingAndSend : undefined}
+          onPointerLeave={hasStarted ? stopRecordingAndSend : undefined}
+          title={hasStarted ? "Bấm giữ để nói tiếng Anh, thả ra để gửi" : "Vui lòng bấm 'Bắt đầu' trước khi nói"}
+          disabled={!hasStarted || status === 'transcribing' || status === 'thinking'}
+          style={!hasStarted ? { opacity: 0.5, cursor: 'not-allowed' } : undefined}
         >
           {status === 'recording' ? (
             <div className="wave-bars">
@@ -1100,7 +1168,11 @@ export const VoiceChatPanel: React.FC<VoiceChatPanelProps> = ({
         </button>
 
         <div style={{ textAlign: 'center' }}>
-          {status === 'recording' ? (
+          {!hasStarted ? (
+            <div style={{ color: '#64748b', fontSize: '13.5px', fontWeight: 600 }}>
+              👉 Bấm <b>&quot;Bắt đầu&quot;</b> ở trên để Vi mở lời chào và câu hỏi phản xạ đầu tiên
+            </div>
+          ) : status === 'recording' ? (
             <div style={{ color: '#ef4444', fontWeight: 800, fontSize: '15px' }}>
               🔴 Đang ghi âm: {recordSeconds}s · Thả ra để gửi
             </div>
@@ -1264,6 +1336,7 @@ export const VoiceChatPanel: React.FC<VoiceChatPanelProps> = ({
                 onClick={() => {
                   setScoreReport(null);
                   setMessages([]);
+                  setHasStarted(false);
                 }}
                 className="btn btn-outline"
                 style={{ padding: '8px 18px', fontWeight: 700 }}

@@ -1,3 +1,4 @@
+import { createPortal } from 'react-dom';
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { adminApi } from '../../api';
@@ -37,6 +38,17 @@ export default function AdminWords() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingWord, setEditingWord] = useState<AdminVocabularyItem | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  useEffect(() => {
+    if (showAddModal || editingWord) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [showAddModal, editingWord]);
+
   const [importing, setImporting] = useState(false);
   const [message, setMessage] = useState<{ text: string; error?: boolean } | null>(null);
 
@@ -629,10 +641,51 @@ export default function AdminWords() {
       )}
 
       {/* Add / Edit Word Modal */}
-      {(showAddModal || editingWord) && (
-        <>
-          <div className="scrim" onClick={() => { setShowAddModal(false); setEditingWord(null); }} />
-          <div className="modal" style={{ maxWidth: 560 }}>
+      {(showAddModal || editingWord) &&
+        createPortal(
+          <div
+            style={{
+              position: 'fixed',
+              inset: 0,
+              zIndex: 99999,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: 16,
+            }}
+          >
+            <div
+              className="scrim"
+              style={{
+                position: 'fixed',
+                inset: 0,
+                zIndex: 1,
+                background: 'rgba(10, 37, 64, 0.55)',
+                backdropFilter: 'blur(8px)',
+                WebkitBackdropFilter: 'blur(8px)',
+              }}
+              onClick={() => { setShowAddModal(false); setEditingWord(null); }}
+            />
+            <div
+              className="modal"
+              style={{
+                position: 'relative',
+                top: 'auto',
+                left: 'auto',
+                transform: 'none',
+                maxWidth: 560,
+                width: '100%',
+                zIndex: 2,
+                margin: 0,
+                borderRadius: 24,
+                boxShadow: '0 25px 70px rgba(10, 37, 64, 0.35)',
+                background: '#ffffff',
+                padding: '28px 30px',
+                maxHeight: '90vh',
+                overflowY: 'auto',
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
             <div className="row" style={{ alignItems: 'center', marginBottom: 16 }}>
               <h2 style={{ fontSize: 20 }}>
                 {editingWord ? `Chỉnh sửa từ: "${editingWord.word}"` : 'Thêm từ vựng mới'}
@@ -742,8 +795,9 @@ export default function AdminWords() {
               </div>
             </form>
           </div>
-        </>
-      )}
+          </div>,
+          document.body
+        )}
     </div>
   );
 }

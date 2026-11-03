@@ -1,3 +1,4 @@
+import { createPortal } from 'react-dom';
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { adminApi } from '../../api';
@@ -24,6 +25,17 @@ export default function AdminUsers() {
   const [selectedUser, setSelectedUser] = useState<AdminStudentDetail | null>(null);
   const [actionMsg, setActionMsg] = useState<{ text: string; error?: boolean } | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
+
+  useEffect(() => {
+    if (selectedUser) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [selectedUser]);
 
   const fetchUsers = async (overrideSearch?: string) => {
     setLoading(true);
@@ -301,138 +313,179 @@ export default function AdminUsers() {
       )}
 
       {/* User Detail Modal */}
-      <AnimatePresence>
-        {selectedUser && (
-          <>
-            <motion.div
-              className="scrim"
-              variants={backdropVariants}
-              initial="hidden"
-              animate="visible"
-              exit="exit"
-              onClick={() => setSelectedUser(null)}
-            />
-            <motion.div
-              className="modal"
-              style={{ maxWidth: 580 }}
-              variants={modalVariants}
-              initial="hidden"
-              animate="visible"
-              exit="exit"
+      {selectedUser &&
+        createPortal(
+          <AnimatePresence>
+            <div
+              style={{
+                position: 'fixed',
+                inset: 0,
+                zIndex: 99999,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: 16,
+              }}
             >
-            <div className="row" style={{ alignItems: 'flex-start', marginBottom: 18 }}>
-              <div>
-                <h2 style={{ fontSize: 20 }}>Hồ sơ Học viên #{selectedUser.userId}</h2>
-                <div className="sub mt8">{selectedUser.email}</div>
-              </div>
-              <button
-                type="button"
-                className="btn ghost sm"
+              {/* Full-screen Dark Backdrop Scrim & Blur */}
+              <motion.div
+                className="scrim"
+                style={{
+                  position: 'fixed',
+                  inset: 0,
+                  zIndex: 1,
+                  background: 'rgba(10, 37, 64, 0.55)',
+                  backdropFilter: 'blur(8px)',
+                  WebkitBackdropFilter: 'blur(8px)',
+                }}
+                variants={backdropVariants}
+                initial="hidden"
+                animate="visible"
+                exit="exit"
                 onClick={() => setSelectedUser(null)}
-                style={{ padding: '4px 8px' }}
+              />
+
+              {/* Centered Modal Content Card */}
+              <motion.div
+                className="modal"
+                style={{
+                  position: 'relative',
+                  top: 'auto',
+                  left: 'auto',
+                  transform: 'none',
+                  maxWidth: 560,
+                  width: '100%',
+                  zIndex: 2,
+                  margin: 0,
+                  borderRadius: 24,
+                  boxShadow: '0 25px 70px rgba(10, 37, 64, 0.35)',
+                  background: '#ffffff',
+                  padding: '28px 30px',
+                }}
+                variants={modalVariants}
+                initial="hidden"
+                animate="visible"
+                exit="exit"
+                onClick={(e) => e.stopPropagation()}
               >
-                ✕
-              </button>
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 18 }}>
-              <div className="card" style={{ padding: 12 }}>
-                <span className="sub" style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase' }}>
-                  TÊN TÀI KHOẢN
-                </span>
-                <div style={{ fontWeight: 800, fontSize: 15, marginTop: 4 }}>
-                  @{selectedUser.username}
-                </div>
-              </div>
-
-              <div className="card" style={{ padding: 12 }}>
-                <span className="sub" style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase' }}>
-                  HỌ VÀ TÊN
-                </span>
-                <div style={{ fontWeight: 800, fontSize: 15, marginTop: 4 }}>
-                  {selectedUser.fullName || '—'}
-                </div>
-              </div>
-
-              <div className="card" style={{ padding: 12 }}>
-                <span className="sub" style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase' }}>
-                  TỪ ĐÃ HỌC
-                </span>
-                <div style={{ fontWeight: 800, fontSize: 15, color: 'var(--green-dark)', marginTop: 4 }}>
-                  {selectedUser.wordsLearned ?? 0} từ
-                </div>
-              </div>
-
-              <div className="card" style={{ padding: 12 }}>
-                <span className="sub" style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase' }}>
-                  TỔNG BUỔI HỌC
-                </span>
-                <div style={{ fontWeight: 800, fontSize: 15, color: 'var(--primary)', marginTop: 4 }}>
-                  {selectedUser.totalSessions ?? 0} buổi
-                </div>
-              </div>
-
-              <div className="card" style={{ padding: 12 }}>
-                <span className="sub" style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase' }}>
-                  ĐỘ CHÍNH XÁC
-                </span>
-                <div style={{ fontWeight: 800, fontSize: 15, color: 'var(--yellow-dark)', marginTop: 4 }}>
-                  {selectedUser.accuracyRate ? `${selectedUser.accuracyRate}%` : '—'}
-                </div>
-              </div>
-
-              <div className="card" style={{ padding: 12 }}>
-                <span className="sub" style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase' }}>
-                  TRẠNG THÁI HIỆN TẠI
-                </span>
-                <div style={{ fontWeight: 800, fontSize: 15, marginTop: 4 }}>
-                  <span
-                    className={
-                      selectedUser.status === 'ACTIVE'
-                        ? 'pill greensoft'
-                        : selectedUser.status === 'BANNED'
-                        ? 'pill redsoft'
-                        : 'pill warn'
-                    }
+                <div className="row" style={{ alignItems: 'flex-start', marginBottom: 20 }}>
+                  <div>
+                    <h2 style={{ fontSize: 20, fontWeight: 900, color: 'var(--ink)', margin: 0 }}>
+                      Hồ sơ Học viên #{selectedUser.userId}
+                    </h2>
+                    <div className="sub mt8" style={{ fontSize: 13, color: 'var(--muted)' }}>
+                      {selectedUser.email}
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    className="btn ghost sm"
+                    onClick={() => setSelectedUser(null)}
+                    style={{ padding: '6px 10px', borderRadius: 8, cursor: 'pointer' }}
                   >
-                    {selectedUser.status}
-                  </span>
+                    ✕
+                  </button>
                 </div>
-              </div>
-            </div>
 
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
-              {selectedUser.status === 'ACTIVE' ? (
-                <button
-                  type="button"
-                  className="btn"
-                  style={{ background: 'var(--red)', border: 'none' }}
-                  onClick={() => handleStatusChange(selectedUser.userId, 'BANNED')}
-                >
-                  <Icon n="lock" s={16} /> Khóa tài khoản
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  className="btn"
-                  style={{ background: 'var(--green)', border: 'none' }}
-                  onClick={() => handleStatusChange(selectedUser.userId, 'ACTIVE')}
-                >
-                  <Icon n="check" s={16} /> Kích hoạt tài khoản
-                </button>
-              )}
-              <button
-                type="button"
-                className="btn ghost"
-                onClick={() => setSelectedUser(null)}
-              >
-                Đóng
-              </button>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 22 }}>
+                  <div style={{ padding: '12px 14px', background: '#F8FAFC', borderRadius: 14, border: '1px solid #E2E8F0' }}>
+                    <span className="sub" style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                      TÊN TÀI KHOẢN
+                    </span>
+                    <div style={{ fontWeight: 800, fontSize: 15, marginTop: 4, color: 'var(--ink)' }}>
+                      @{selectedUser.username}
+                    </div>
+                  </div>
+
+                  <div style={{ padding: '12px 14px', background: '#F8FAFC', borderRadius: 14, border: '1px solid #E2E8F0' }}>
+                    <span className="sub" style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                      HỌ VÀ TÊN
+                    </span>
+                    <div style={{ fontWeight: 800, fontSize: 15, marginTop: 4, color: 'var(--ink)' }}>
+                      {selectedUser.fullName || '—'}
+                    </div>
+                  </div>
+
+                  <div style={{ padding: '12px 14px', background: '#F8FAFC', borderRadius: 14, border: '1px solid #E2E8F0' }}>
+                    <span className="sub" style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                      TỪ ĐÃ HỌC
+                    </span>
+                    <div style={{ fontWeight: 800, fontSize: 15, color: 'var(--green-dark)', marginTop: 4 }}>
+                      {selectedUser.wordsLearned ?? 0} từ
+                    </div>
+                  </div>
+
+                  <div style={{ padding: '12px 14px', background: '#F8FAFC', borderRadius: 14, border: '1px solid #E2E8F0' }}>
+                    <span className="sub" style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                      TỔNG BUỔI HỌC
+                    </span>
+                    <div style={{ fontWeight: 800, fontSize: 15, color: 'var(--primary)', marginTop: 4 }}>
+                      {selectedUser.totalSessions ?? 0} buổi
+                    </div>
+                  </div>
+
+                  <div style={{ padding: '12px 14px', background: '#F8FAFC', borderRadius: 14, border: '1px solid #E2E8F0' }}>
+                    <span className="sub" style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                      ĐỘ CHÍNH XÁC
+                    </span>
+                    <div style={{ fontWeight: 800, fontSize: 15, color: 'var(--yellow-dark)', marginTop: 4 }}>
+                      {selectedUser.accuracyRate ? `${selectedUser.accuracyRate}%` : '—'}
+                    </div>
+                  </div>
+
+                  <div style={{ padding: '12px 14px', background: '#F8FAFC', borderRadius: 14, border: '1px solid #E2E8F0' }}>
+                    <span className="sub" style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                      TRẠNG THÁI HIỆN TẠI
+                    </span>
+                    <div style={{ fontWeight: 800, fontSize: 15, marginTop: 4 }}>
+                      <span
+                        className={
+                          selectedUser.status === 'ACTIVE'
+                            ? 'pill greensoft'
+                            : selectedUser.status === 'BANNED'
+                            ? 'pill redsoft'
+                            : 'pill warn'
+                        }
+                      >
+                        {selectedUser.status}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
+                  {selectedUser.status === 'ACTIVE' ? (
+                    <button
+                      type="button"
+                      className="btn"
+                      style={{ background: 'var(--red)', border: 'none', display: 'inline-flex', alignItems: 'center', gap: 6 }}
+                      onClick={() => handleStatusChange(selectedUser.userId, 'BANNED')}
+                    >
+                      <Icon n="lock" s={16} /> Khóa tài khoản
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      className="btn"
+                      style={{ background: 'var(--green)', border: 'none', display: 'inline-flex', alignItems: 'center', gap: 6 }}
+                      onClick={() => handleStatusChange(selectedUser.userId, 'ACTIVE')}
+                    >
+                      <Icon n="check" s={16} /> Kích hoạt tài khoản
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    className="btn ghost"
+                    onClick={() => setSelectedUser(null)}
+                  >
+                    Đóng
+                  </button>
+                </div>
+              </motion.div>
             </div>
-          </motion.div>
-        </>
-      )}
-    </AnimatePresence>
-  </div>
+          </AnimatePresence>,
+          document.body
+        )}
+    </div>
   );
 }
