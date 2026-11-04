@@ -300,6 +300,17 @@ export default function Listening() {
       setView('result');
       loadHistory();
     } catch (e: any) {
+      if (e?.response?.status === 409) {
+        try {
+          const { data } = await listeningApi.detail(currentExercise.exerciseId);
+          setSubmitResult(data);
+          setView('result');
+          loadHistory();
+          return;
+        } catch {
+          // ignore, fall back to err
+        }
+      }
       setErr(errMsg(e, 'Chấm điểm bài nghe thất bại. Vui lòng thử lại!'));
     } finally {
       setSubmitting(false);
