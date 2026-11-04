@@ -7,7 +7,6 @@ import {
   aiApi,
   errMsg,
   daysOverdue,
-  formatPartOfSpeech,
   isMeaningfulVietnamese,
   cleanDefinitionText,
   analyzeWordRelations,
@@ -74,7 +73,7 @@ export default function Review() {
         const parsed = JSON.parse(raw);
         if (parsed?.profile?.currentLevel) return parsed.profile.currentLevel;
       }
-    } catch {}
+    } catch { }
     return 'B1';
   };
 
@@ -82,8 +81,6 @@ export default function Review() {
   const [cards, setCards] = useState<FlashcardWord[]>([]);
   const [i, setI] = useState(0);
   const [flip, setFlip] = useState(false);
-  const [hint, setHint] = useState('');
-  const [loadingHint, setLoadingHint] = useState(false);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState('');
 
@@ -108,7 +105,7 @@ export default function Review() {
           setRecommendedLevel(data);
         }
       })
-      .catch(() => {});
+      .catch(() => { });
 
     const onRoadmapAnalyzed = (e: any) => {
       const lvl = e?.detail?.currentLevel;
@@ -124,7 +121,6 @@ export default function Review() {
     setErr('');
     setI(0);
     setFlip(false);
-    setHint('');
     setAiDetail(null);
     setRemembered(0);
     setForgotten(0);
@@ -293,7 +289,7 @@ export default function Review() {
     e?.stopPropagation();
     if (!cur) return;
     if (cur.audioUrl) {
-      new Audio(cur.audioUrl).play().catch(() => {});
+      new Audio(cur.audioUrl).play().catch(() => { });
     } else if (window.speechSynthesis) {
       window.speechSynthesis.cancel();
       const u = new SpeechSynthesisUtterance(cur.word);
@@ -317,7 +313,7 @@ export default function Review() {
       }
 
       setFlip(false);
-      setHint('');
+      setAiDetail(null);
 
       if (i + 1 >= cards.length) {
         setI(-1); // Hoàn thành phiên ôn tập
@@ -333,7 +329,7 @@ export default function Review() {
       }
 
       setFlip(false);
-      setHint('');
+      setAiDetail(null);
 
       if (i > 0) {
         setI(i - 1); // Quay lại từ trước đó
@@ -344,34 +340,13 @@ export default function Review() {
     }
   };
 
-  const getHint = async () => {
-    if (!cur || hint) return;
-    setLoadingHint(true);
-    try {
-      if (cur.progressId) {
-        const { data } = await aiApi.hint(cur.progressId, (cur.reviewCount || 0) + 1);
-        setHint(data.hint);
-      } else {
-        // Smart contextual hint from word information
-        const posText = cur.partOfSpeech ? formatPartOfSpeech(cur.partOfSpeech) : 'Từ';
-        let customHint = `${posText} thuộc cấp độ ${cur.level}.`;
-        if (cur.example) {
-          const masked = cur.example.replace(new RegExp(cur.word, 'gi'), '_____');
-          customHint += ` Gợi ý ngữ cảnh câu: "${masked}"`;
-        } else {
-          customHint += ` Hãy liên tưởng tới ngữ cảnh sử dụng hàng ngày của "${cur.word}".`;
-        }
-        setHint(customHint);
-      }
-    } catch {
-      setHint(`Nghĩ tới ngữ cảnh bạn đã gặp từ "${cur.word}" nhé.`);
-    } finally {
-      setLoadingHint(false);
-    }
-  };
-
   const explainWithAi = async () => {
-    if (!cur || aiDetail) return;
+    if (!cur) return;
+    if (!flip) setFlip(true);
+    if (aiDetail) {
+      setAiDetail(null);
+      return;
+    }
     setLoadingAiDetail(true);
     try {
       const { data } = await aiApi.explain(cur.id, cur.word, {
@@ -555,11 +530,11 @@ export default function Review() {
               style={
                 isRec
                   ? {
-                      borderColor: isSelected ? 'var(--ink)' : 'var(--primary)',
-                      background: isSelected ? 'var(--ink)' : 'var(--tint-blue, #e0f2fe)',
-                      color: isSelected ? '#fff' : 'var(--primary-dark, #0369a1)',
-                      fontWeight: 800,
-                    }
+                    borderColor: isSelected ? 'var(--ink)' : 'var(--primary)',
+                    background: isSelected ? 'var(--ink)' : 'var(--tint-blue, #e0f2fe)',
+                    color: isSelected ? '#fff' : 'var(--primary-dark, #0369a1)',
+                    fontWeight: 800,
+                  }
                   : undefined
               }
               title={`Bấm để tải từ vựng ngẫu nhiên ${m.label}`}
@@ -591,376 +566,350 @@ export default function Review() {
         <>
           <motion.div
             key={`card-${cur.id}-${i}`}
-          initial={{ opacity: 0, y: 12, scale: 0.99 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-          style={{ width: '100%' }}
-        >
-          <div
-            ref={cardRef}
-            className="card flash"
-            onClick={() => setFlip(!flip)}
-            style={{
-              position: 'relative',
-              cursor: 'pointer',
-              minHeight: 400,
-              padding: '40px 28px',
-              border: '1.5px solid var(--line)',
-              borderRadius: 22,
-              background: flip
-                ? 'linear-gradient(180deg, #FFFFFF 0%, #F8FAFC 100%)'
-                : 'linear-gradient(180deg, #FFFFFF 0%, #FAFAFC 100%)',
-              boxShadow: '0 12px 32px -4px rgba(15, 23, 42, 0.08)',
-              transition: 'background 0.3s ease, border-color 0.2s ease',
-              perspective: 1200,
-            }}
+            initial={{ opacity: 0, y: 12, scale: 0.99 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+            style={{ width: '100%' }}
           >
-            {/* Top Bar on Flashcard */}
             <div
+              ref={cardRef}
+              className="card flash"
+              onClick={() => setFlip(!flip)}
               style={{
-                width: '100%',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                position: 'absolute',
-                top: 16,
-                left: 0,
-                padding: '0 22px',
+                position: 'relative',
+                cursor: 'pointer',
+                minHeight: 400,
+                padding: '40px 28px',
+                border: '1.5px solid var(--line)',
+                borderRadius: 22,
+                background: flip
+                  ? 'linear-gradient(180deg, #FFFFFF 0%, #F8FAFC 100%)'
+                  : 'linear-gradient(180deg, #FFFFFF 0%, #FAFAFC 100%)',
+                boxShadow: '0 12px 32px -4px rgba(15, 23, 42, 0.08)',
+                transition: 'background 0.3s ease, border-color 0.2s ease',
+                perspective: 1200,
               }}
             >
-              <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                <span className="pill level" style={{ fontSize: 11.5, padding: '3px 10px', fontWeight: 800 }}>
-                  {cur.level}
-                </span>
-                {(() => {
-                  const r = analyzeWordRelations(cur.word, cur.partOfSpeech);
-                  return cur.partOfSpeech ? (
-                    <span
-                      className="pill"
-                      style={{
-                        fontSize: 11.5,
-                        fontWeight: 800,
-                        padding: '3px 10px',
-                        background: r.posBadge.bg,
-                        color: r.posBadge.color,
-                        border: `1px solid ${r.posBadge.border}`,
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: 4,
-                      }}
-                    >
-                      <span>{r.posBadge.icon}</span>
-                      <span>{r.posBadge.label}</span>
-                    </span>
-                  ) : null;
-                })()}
-                {cur.isSrs && (
-                  <span className="pill warn" style={{ fontSize: 11.5, padding: '3px 10px', fontWeight: 800 }}>
-                    SRS
-                  </span>
-                )}
-              </div>
-
-              <button
-                className="btn ghost sm"
-                onClick={playAudio}
-                title="Nghe phát âm (Phím P)"
-                style={{ borderRadius: '50%', width: 38, height: 38, padding: 0, background: 'rgba(79, 70, 229, 0.08)', color: 'var(--primary)', border: '1px solid #C7D2FE' }}
-                aria-label="phát âm"
+              {/* Top Bar on Flashcard */}
+              <div
+                style={{
+                  width: '100%',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  position: 'absolute',
+                  top: 16,
+                  left: 0,
+                  padding: '0 22px',
+                }}
               >
-                <Icon n="vol" s={18} />
-              </button>
-            </div>
-
-            {/* Front & Back 3D Animated Flip */}
-            <AnimatePresence mode="wait" initial={false}>
-              {!flip ? (
-                <motion.div
-                  key="front"
-                  initial={shouldReduce ? { opacity: 0 } : { opacity: 0, rotateY: 90 }}
-                  animate={shouldReduce ? { opacity: 1 } : { opacity: 1, rotateY: 0 }}
-                  exit={shouldReduce ? { opacity: 0 } : { opacity: 0, rotateY: -90 }}
-                  transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
-                  style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: 32, transformStyle: 'preserve-3d' }}
-                >
-                  <div className="big" style={{ fontSize: 50, fontWeight: 900, color: 'var(--ink)', letterSpacing: '-0.5px' }}>
-                    {cur.word}
-                  </div>
-                  {cur.pronunciation && (
-                    <div className="sub mt8" style={{ fontSize: 20, color: 'var(--muted)', fontWeight: 600 }}>
-                      {cur.pronunciation}
-                    </div>
-                  )}
-                  <div
-                    style={{
-                      marginTop: 40,
-                      fontSize: 13.5,
-                      color: 'var(--primary)',
-                      fontWeight: 800,
-                      background: '#EEF2FF',
-                      border: '1px solid #C7D2FE',
-                      padding: '9px 20px',
-                      borderRadius: 99,
-                      boxShadow: '0 2px 8px rgba(79, 70, 229, 0.08)',
-                    }}
-                  >
-                    👆 Bấm vào thẻ để lật xem nghĩa tiếng Việt
-                  </div>
-                  <div className="sub mt8" style={{ fontSize: 12.5 }}>
-                    Phím tắt: [Space] Lật thẻ · [←] Chưa nhớ · [→] Đã nhớ
-                  </div>
-                </motion.div>
-              ) : (
-                /* Back of Card */
-                <motion.div
-                  key="back"
-                  initial={shouldReduce ? { opacity: 0 } : { opacity: 0, rotateY: 90 }}
-                  animate={shouldReduce ? { opacity: 1 } : { opacity: 1, rotateY: 0 }}
-                  exit={shouldReduce ? { opacity: 0 } : { opacity: 0, rotateY: -90 }}
-                  transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
-                  style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%', marginTop: 8, transformStyle: 'preserve-3d' }}
-                >
-                {(() => {
-                  const rel = analyzeWordRelations(cur.word, cur.partOfSpeech);
-                  return (
-                    <>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                        <div style={{ fontSize: 28, fontWeight: 900, color: 'var(--ink)' }}>
-                          {cur.word}
-                        </div>
-                        {cur.partOfSpeech && (
-                          <span
-                            style={{
-                              fontSize: 12,
-                              fontWeight: 800,
-                              padding: '3px 10px',
-                              borderRadius: 99,
-                              background: rel.posBadge.bg,
-                              color: rel.posBadge.color,
-                              border: `1px solid ${rel.posBadge.border}`,
-                            }}
-                          >
-                            {rel.posBadge.icon} {rel.posBadge.shortLabel}
-                          </span>
-                        )}
-                      </div>
-                      {cur.pronunciation && (
-                        <div className="sub mt4" style={{ fontSize: 16, color: 'var(--muted)', fontWeight: 600 }}>
-                          {cur.pronunciation}
-                        </div>
-                      )}
-
-                      {/* VIETNAMESE MEANING HIGHLIGHT */}
-                      <div
+                <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                  <span className="pill level" style={{ fontSize: 11.5, padding: '3px 10px', fontWeight: 800 }}>
+                    {cur.level}
+                  </span>
+                  {(() => {
+                    const r = analyzeWordRelations(cur.word, cur.partOfSpeech);
+                    return cur.partOfSpeech ? (
+                      <span
+                        className="pill"
                         style={{
-                          marginTop: 16,
-                          display: 'flex',
-                          flexDirection: 'column',
+                          fontSize: 11.5,
+                          fontWeight: 800,
+                          padding: '3px 10px',
+                          background: r.posBadge.bg,
+                          color: r.posBadge.color,
+                          border: `1px solid ${r.posBadge.border}`,
+                          display: 'inline-flex',
                           alignItems: 'center',
-                          width: '100%',
-                          maxWidth: 540,
-                          background: 'linear-gradient(135deg, #ECFDF5 0%, #F0FDF4 100%)',
-                          padding: '18px 24px',
-                          borderRadius: 16,
-                          border: '1.5px solid #A7F3D0',
-                          boxShadow: '0 4px 14px rgba(16, 185, 129, 0.08)',
+                          gap: 4,
                         }}
                       >
-                        <div
-                          style={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: 6,
-                            fontSize: 11.5,
-                            fontWeight: 800,
-                            color: '#047857',
-                            background: '#D1FAE5',
-                            padding: '3px 10px',
-                            borderRadius: 99,
-                            border: '1px solid #A7F3D0',
-                            letterSpacing: 0.5,
-                          }}
-                        >
-                          🇻🇳 NGHĨA TIẾNG VIỆT
-                        </div>
+                        <span>{r.posBadge.icon}</span>
+                        <span>{r.posBadge.label}</span>
+                      </span>
+                    ) : null;
+                  })()}
+                  {cur.isSrs && (
+                    <span className="pill warn" style={{ fontSize: 11.5, padding: '3px 10px', fontWeight: 800 }}>
+                      SRS
+                    </span>
+                  )}
+                </div>
 
-                        <div
-                          className="mean"
-                          style={{
-                            fontSize: 26,
-                            fontWeight: 900,
-                            color: '#065F46',
-                            textAlign: 'center',
-                            marginTop: 8,
-                            lineHeight: 1.35,
-                          }}
-                        >
-                          {activeVi || (
-                            <span style={{ fontSize: 16, color: 'var(--muted)', fontStyle: 'italic' }}>
-                              Đang cập nhật nghĩa tiếng Việt...
-                            </span>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* WORD & ADVERB DISAMBIGUATION / RELATIONSHIP BOX */}
-                      {rel.warningNote && (
-                        <div
-                          style={{
-                            marginTop: 14,
-                            width: '100%',
-                            maxWidth: 540,
-                            background: '#FFFBEB',
-                            border: '1.5px solid #FCD34D',
-                            borderRadius: 14,
-                            padding: '14px 18px',
-                            textAlign: 'left',
-                            fontSize: 13,
-                            color: '#92400E',
-                            boxShadow: '0 2px 8px rgba(245, 158, 11, 0.08)',
-                          }}
-                        >
-                          <div style={{ fontWeight: 800, display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
-                            <span>🔍</span>
-                            <span>Phân biệt Trạng từ & Từ gốc (Tránh nhầm lẫn):</span>
-                          </div>
-                          <div style={{ lineHeight: 1.5 }}>{rel.warningNote}</div>
-                          {rel.exampleNote && (
-                            <div style={{ marginTop: 6, fontStyle: 'italic', color: '#B45309', fontSize: 12.5 }}>
-                              👉 {rel.exampleNote}
-                            </div>
-                          )}
-                        </div>
-                      )}
-
-                      {!rel.warningNote && rel.isAdverb && rel.rootWord && (
-                        <div
-                          style={{
-                            marginTop: 12,
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: 8,
-                            fontSize: 12.5,
-                            background: '#F5F3FF',
-                            border: '1px solid #DDD6FE',
-                            color: '#6D28D9',
-                            padding: '6px 14px',
-                            borderRadius: 99,
-                            maxWidth: 540,
-                          }}
-                        >
-                          <span>💡 Tính từ gốc tương ứng:</span>
-                          <b style={{ textDecoration: 'underline' }}>{rel.rootWord}</b>
-                        </div>
-                      )}
-
-                      {!rel.warningNote && rel.isAdjective && rel.correspondingAdverb && (
-                        <div
-                          style={{
-                            marginTop: 12,
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: 8,
-                            fontSize: 12.5,
-                            background: '#EFF6FF',
-                            border: '1px solid #BFDBFE',
-                            color: '#1D4ED8',
-                            padding: '6px 14px',
-                            borderRadius: 99,
-                            maxWidth: 540,
-                          }}
-                        >
-                          <span>⚡ Trạng từ tương ứng:</span>
-                          <b style={{ textDecoration: 'underline' }}>{rel.correspondingAdverb}</b>
-                        </div>
-                      )}
-                    </>
-                  );
-                })()}
-
-                {/* Oxford English Definition */}
-                {cur.definition && (
-                  <div
-                    style={{
-                      marginTop: 14,
-                      fontSize: 13.5,
-                      maxWidth: 540,
-                      textAlign: 'left',
-                      lineHeight: 1.55,
-                      color: 'var(--muted)',
-                      background: '#F8FAFC',
-                      padding: '10px 16px',
-                      borderRadius: 10,
-                      border: '1px solid var(--line)',
-                    }}
-                  >
-                    <b style={{ color: 'var(--ink)' }}>English: </b>
-                    {cleanDefinitionText(cur.definition)}
-                  </div>
-                )}
-
-                {/* Example sentence */}
-                {cur.example && (
-                  <div
-                    style={{
-                      marginTop: 12,
-                      fontSize: 13.5,
-                      fontStyle: 'italic',
-                      color: 'var(--ink)',
-                      background: 'rgba(79, 70, 229, 0.04)',
-                      padding: '10px 16px',
-                      borderRadius: 10,
-                      maxWidth: 540,
-                      textAlign: 'left',
-                      lineHeight: 1.5,
-                      borderLeft: '3px solid var(--primary)',
-                    }}
-                  >
-                    💬 "{cur.example}"
-                  </div>
-                )}
-
-                {/* AI Deep explain button */}
                 <button
                   className="btn ghost sm"
-                  style={{
-                    marginTop: 14,
-                    fontSize: 13,
-                    color: 'var(--primary)',
-                    borderColor: '#C7D2FE',
-                    background: '#FFFFFF',
-                    minHeight: 38,
-                  }}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    explainWithAi();
-                  }}
-                  disabled={loadingAiDetail}
+                  onClick={playAudio}
+                  title="Nghe phát âm (Phím P)"
+                  style={{ borderRadius: '50%', width: 38, height: 38, padding: 0, background: 'rgba(79, 70, 229, 0.08)', color: 'var(--primary)', border: '1px solid #C7D2FE' }}
+                  aria-label="phát âm"
                 >
-                  <Icon n="spark" s={16} />
-                  {loadingAiDetail ? 'Vi đang giải thích...' : 'Vi giải thích chuyên sâu'}
+                  <Icon n="vol" s={18} />
                 </button>
+              </div>
 
-                {aiDetail && (
-                  <div style={{ marginTop: 14, width: '100%', maxWidth: 540 }}>
-                    <AiExplanationBox explanation={aiDetail} compact />
-                  </div>
+              {/* Front & Back 3D Animated Flip */}
+              <AnimatePresence mode="wait" initial={false}>
+                {!flip ? (
+                  <motion.div
+                    key="front"
+                    initial={shouldReduce ? { opacity: 0 } : { opacity: 0, rotateY: 90 }}
+                    animate={shouldReduce ? { opacity: 1 } : { opacity: 1, rotateY: 0 }}
+                    exit={shouldReduce ? { opacity: 0 } : { opacity: 0, rotateY: -90 }}
+                    transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+                    style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: 32, transformStyle: 'preserve-3d' }}
+                  >
+                    <div className="big" style={{ fontSize: 50, fontWeight: 900, color: 'var(--ink)', letterSpacing: '-0.5px' }}>
+                      {cur.word}
+                    </div>
+                    {cur.pronunciation && (
+                      <div className="sub mt8" style={{ fontSize: 20, color: 'var(--muted)', fontWeight: 600 }}>
+                        {cur.pronunciation}
+                      </div>
+                    )}
+                    <div
+                      style={{
+                        marginTop: 40,
+                        fontSize: 13.5,
+                        color: 'var(--primary)',
+                        fontWeight: 800,
+                        background: '#EEF2FF',
+                        border: '1px solid #C7D2FE',
+                        padding: '9px 20px',
+                        borderRadius: 99,
+                        boxShadow: '0 2px 8px rgba(79, 70, 229, 0.08)',
+                      }}
+                    >
+                      👆 Bấm vào thẻ để lật xem nghĩa tiếng Việt
+                    </div>
+                    <div className="sub mt8" style={{ fontSize: 12.5 }}>
+                      Phím tắt: [Space] Lật thẻ · [←] Chưa nhớ · [→] Đã nhớ
+                    </div>
+                  </motion.div>
+                ) : (
+                  /* Back of Card */
+                  <motion.div
+                    key="back"
+                    initial={shouldReduce ? { opacity: 0 } : { opacity: 0, rotateY: 90 }}
+                    animate={shouldReduce ? { opacity: 1 } : { opacity: 1, rotateY: 0 }}
+                    exit={shouldReduce ? { opacity: 0 } : { opacity: 0, rotateY: -90 }}
+                    transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+                    style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%', marginTop: 8, transformStyle: 'preserve-3d' }}
+                  >
+                    {(() => {
+                      const rel = analyzeWordRelations(cur.word, cur.partOfSpeech);
+                      return (
+                        <>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                            <div style={{ fontSize: 28, fontWeight: 900, color: 'var(--ink)' }}>
+                              {cur.word}
+                            </div>
+                            {cur.partOfSpeech && (
+                              <span
+                                style={{
+                                  fontSize: 12,
+                                  fontWeight: 800,
+                                  padding: '3px 10px',
+                                  borderRadius: 99,
+                                  background: rel.posBadge.bg,
+                                  color: rel.posBadge.color,
+                                  border: `1px solid ${rel.posBadge.border}`,
+                                }}
+                              >
+                                {rel.posBadge.icon} {rel.posBadge.shortLabel}
+                              </span>
+                            )}
+                          </div>
+                          {cur.pronunciation && (
+                            <div className="sub mt4" style={{ fontSize: 16, color: 'var(--muted)', fontWeight: 600 }}>
+                              {cur.pronunciation}
+                            </div>
+                          )}
+
+                          {/* VIETNAMESE MEANING HIGHLIGHT */}
+                          <div
+                            style={{
+                              marginTop: 16,
+                              display: 'flex',
+                              flexDirection: 'column',
+                              alignItems: 'center',
+                              width: '100%',
+                              maxWidth: 540,
+                              background: 'linear-gradient(135deg, #ECFDF5 0%, #F0FDF4 100%)',
+                              padding: '18px 24px',
+                              borderRadius: 16,
+                              border: '1.5px solid #A7F3D0',
+                              boxShadow: '0 4px 14px rgba(16, 185, 129, 0.08)',
+                            }}
+                          >
+                            <div
+                              style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: 6,
+                                fontSize: 11.5,
+                                fontWeight: 800,
+                                color: '#047857',
+                                background: '#D1FAE5',
+                                padding: '3px 10px',
+                                borderRadius: 99,
+                                border: '1px solid #A7F3D0',
+                                letterSpacing: 0.5,
+                              }}
+                            >
+                              🇻🇳 NGHĨA TIẾNG VIỆT
+                            </div>
+
+                            <div
+                              className="mean"
+                              style={{
+                                fontSize: 26,
+                                fontWeight: 900,
+                                color: '#065F46',
+                                textAlign: 'center',
+                                marginTop: 8,
+                                lineHeight: 1.35,
+                              }}
+                            >
+                              {activeVi || (
+                                <span style={{ fontSize: 16, color: 'var(--muted)', fontStyle: 'italic' }}>
+                                  Đang cập nhật nghĩa tiếng Việt...
+                                </span>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* WORD & ADVERB DISAMBIGUATION / RELATIONSHIP BOX */}
+                          {rel.warningNote && (
+                            <div
+                              style={{
+                                marginTop: 14,
+                                width: '100%',
+                                maxWidth: 540,
+                                background: '#FFFBEB',
+                                border: '1.5px solid #FCD34D',
+                                borderRadius: 14,
+                                padding: '14px 18px',
+                                textAlign: 'left',
+                                fontSize: 13,
+                                color: '#92400E',
+                                boxShadow: '0 2px 8px rgba(245, 158, 11, 0.08)',
+                              }}
+                            >
+                              <div style={{ fontWeight: 800, display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                                <span>🔍</span>
+                                <span>Phân biệt Trạng từ & Từ gốc (Tránh nhầm lẫn):</span>
+                              </div>
+                              <div style={{ lineHeight: 1.5 }}>{rel.warningNote}</div>
+                              {rel.exampleNote && (
+                                <div style={{ marginTop: 6, fontStyle: 'italic', color: '#B45309', fontSize: 12.5 }}>
+                                  👉 {rel.exampleNote}
+                                </div>
+                              )}
+                            </div>
+                          )}
+
+                          {!rel.warningNote && rel.isAdverb && rel.rootWord && (
+                            <div
+                              style={{
+                                marginTop: 12,
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: 8,
+                                fontSize: 12.5,
+                                background: '#F5F3FF',
+                                border: '1px solid #DDD6FE',
+                                color: '#6D28D9',
+                                padding: '6px 14px',
+                                borderRadius: 99,
+                                maxWidth: 540,
+                              }}
+                            >
+                              <span>💡 Tính từ gốc tương ứng:</span>
+                              <b style={{ textDecoration: 'underline' }}>{rel.rootWord}</b>
+                            </div>
+                          )}
+
+                          {!rel.warningNote && rel.isAdjective && rel.correspondingAdverb && (
+                            <div
+                              style={{
+                                marginTop: 12,
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: 8,
+                                fontSize: 12.5,
+                                background: '#EFF6FF',
+                                border: '1px solid #BFDBFE',
+                                color: '#1D4ED8',
+                                padding: '6px 14px',
+                                borderRadius: 99,
+                                maxWidth: 540,
+                              }}
+                            >
+                              <span>⚡ Trạng từ tương ứng:</span>
+                              <b style={{ textDecoration: 'underline' }}>{rel.correspondingAdverb}</b>
+                            </div>
+                          )}
+                        </>
+                      );
+                    })()}
+
+                    {/* Oxford English Definition */}
+                    {cur.definition && (
+                      <div
+                        style={{
+                          marginTop: 14,
+                          fontSize: 13.5,
+                          maxWidth: 540,
+                          textAlign: 'left',
+                          lineHeight: 1.55,
+                          color: 'var(--muted)',
+                          background: '#F8FAFC',
+                          padding: '10px 16px',
+                          borderRadius: 10,
+                          border: '1px solid var(--line)',
+                        }}
+                      >
+                        <b style={{ color: 'var(--ink)' }}>English: </b>
+                        {cleanDefinitionText(cur.definition)}
+                      </div>
+                    )}
+
+                    {/* Example sentence */}
+                    {cur.example && (
+                      <div
+                        style={{
+                          marginTop: 12,
+                          fontSize: 13.5,
+                          fontStyle: 'italic',
+                          color: 'var(--ink)',
+                          background: 'rgba(79, 70, 229, 0.04)',
+                          padding: '10px 16px',
+                          borderRadius: 10,
+                          maxWidth: 540,
+                          textAlign: 'left',
+                          lineHeight: 1.5,
+                          borderLeft: '3px solid var(--primary)',
+                        }}
+                      >
+                        💬 "{cur.example}"
+                      </div>
+                    )}
+
+                    {cur.overdue !== undefined && cur.overdue > 0 && (
+                      <div className="sub mt8" style={{ fontSize: 12, color: 'var(--red-dark)' }}>
+                        Trễ lịch ôn tập {cur.overdue} ngày
+                      </div>
+                    )}
+                  </motion.div>
                 )}
+              </AnimatePresence>
+            </div>
+          </motion.div>
 
-                {cur.overdue !== undefined && cur.overdue > 0 && (
-                  <div className="sub mt8" style={{ fontSize: 12, color: 'var(--red-dark)' }}>
-                    Trễ lịch ôn tập {cur.overdue} ngày
-                  </div>
-                )}
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-      </motion.div>
-
-          {/* Action Button Row matching review.html */}
+          {/* Action Button Row */}
           <div className="btn-row mt16">
             <button
+              type="button"
               className="btn softred"
               style={{ flex: 1, minHeight: 52 }}
               onClick={() => answer(false)}
@@ -968,15 +917,29 @@ export default function Review() {
               Chưa nhớ
             </button>
             <button
+              type="button"
               className="btn ghost"
-              style={{ minHeight: 52, padding: '0 24px' }}
-              onClick={getHint}
-              disabled={loadingHint}
+              style={{
+                minHeight: 52,
+                padding: '0 22px',
+                color: 'var(--primary, #1565C0)',
+                borderColor: '#C7D2FE',
+                background: aiDetail ? '#EEF2FF' : '#FFFFFF',
+                fontWeight: 800,
+                fontSize: 14,
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 8,
+                transition: 'all 0.2s ease',
+              }}
+              onClick={explainWithAi}
+              disabled={loadingAiDetail}
             >
-              <svg viewBox="0 0 24 24" className="ic"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.4 1 2.3h6c0-.9.4-1.8 1-2.3A7 7 0 0 0 12 2z"/></svg>
-              {loadingHint ? 'Đang nghĩ...' : 'Gợi ý'}
+              <Icon n="spark" s={18} />
+              {loadingAiDetail ? 'Vi đang giải thích...' : aiDetail ? 'Thu gọn giải thích' : 'Vi giải thích chuyên sâu'}
             </button>
             <button
+              type="button"
               className="btn green"
               style={{ flex: 1, minHeight: 52 }}
               onClick={() => answer(true)}
@@ -985,15 +948,55 @@ export default function Review() {
             </button>
           </div>
 
-          {/* Coach Box matching review.html */}
-          <div className="card mt16">
-            <div className="coach">
-              <img src={viAvatar} alt="Vi" style={{ width: 54, height: 54, borderRadius: '50%', objectFit: 'cover' }} />
-              <div className="bubble">
-                <b>Vi giải thích:</b> {hint || `“${cur.word}” là từ vựng quan trọng ở cấp độ ${cur.level}. Bạn có thể bấm “Gợi ý” nếu cần manh mối ghi nhớ!`}
+          {/* AI Explanation Area / Vi Coach Box */}
+          {loadingAiDetail && (
+            <motion.div
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="card mt16"
+              style={{
+                padding: '18px 24px',
+                background: 'linear-gradient(135deg, #F5F3FF 0%, #EDE9FE 100%)',
+                border: '1.5px solid #C4B5FD',
+                borderRadius: 16,
+              }}
+            >
+              <div className="coach" style={{ alignItems: 'center' }}>
+                <img src={viAvatar} alt="Vi" style={{ width: 50, height: 50, borderRadius: '50%', objectFit: 'cover' }} />
+                <div>
+                  <div style={{ fontWeight: 800, color: '#6D28D9', display: 'flex', alignItems: 'center', gap: 6, fontSize: 14 }}>
+                    <Icon n="spark" s={16} /> Vi đang soạn lời giải thích chuyên sâu...
+                  </div>
+                  <div className="sub mt4" style={{ fontSize: 13, color: '#7C3AED' }}>
+                    Đang tổng hợp ví dụ thực tế, từ đồng nghĩa/trái nghĩa, ngữ cảnh sử dụng và mẹo ghi nhớ cho từ “{cur.word}”.
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {aiDetail && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.25 }}
+              className="mt16"
+              style={{ width: '100%' }}
+            >
+              <AiExplanationBox explanation={aiDetail} />
+            </motion.div>
+          )}
+
+          {!aiDetail && !loadingAiDetail && (
+            <div className="card mt16">
+              <div className="coach">
+                <img src={viAvatar} alt="Vi" style={{ width: 54, height: 54, borderRadius: '50%', objectFit: 'cover' }} />
+                <div className="bubble">
+                  <b>Vi đồng hành:</b> “{cur.word}” là từ vựng quan trọng ở cấp độ {cur.level}. Bạn có thể bấm “Vi giải thích chuyên sâu” để xem ngữ cảnh, từ đồng nghĩa và mẹo ghi nhớ!
+                </div>
               </div>
             </div>
-          </div>
+          )}
         </>
       )}
 
