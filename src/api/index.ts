@@ -830,7 +830,7 @@ export const quizApi = {
     }),
   history: (p?: { page?: number; size?: number }) =>
     api.get<any>('/quizzes/history', {
-      params: { page: p?.page ?? 0, size: p?.size ?? 10 },
+      params: { page: p?.page ?? 0, size: p?.size ?? 6 },
     }).then((res) => {
       const pageData = res.data?.data || res.data || {};
       const raw = Array.isArray(pageData.content) ? pageData.content : [];

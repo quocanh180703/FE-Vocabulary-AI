@@ -437,21 +437,27 @@ export default function QuizResult() {
     <div className="content" style={{ maxWidth: 860, paddingBottom: 60 }}>
       {/* Top Page Header */}
       <div className="pagehead">
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
           <button
-            onClick={() => nav('/quiz')}
-            className="sub"
+            type="button"
+            onClick={() => nav('/quiz?tab=history')}
+            className="btn ghost sm"
             style={{
-              background: 'none',
-              border: 'none',
-              color: 'var(--primary)',
-              fontSize: 14,
-              fontWeight: 800,
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 6,
+              fontSize: 13.5,
+              fontWeight: 700,
+              padding: '7px 16px',
+              borderRadius: 10,
+              background: '#fff',
+              border: '1.5px solid #CBD5E1',
+              color: '#1E293B',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
               cursor: 'pointer',
-              padding: 0,
             }}
           >
-            ← Danh sách bài quiz
+            ← Quay lại lịch sử làm bài
           </button>
         </div>
         <h1>Kết quả: {effectiveState?.title || attemptQuizTitle || 'Trắc nghiệm'}</h1>
@@ -1224,6 +1230,55 @@ export default function QuizResult() {
               </div>
             );
           })}
+        </div>
+
+        {/* Bottom Action Bar */}
+        <div
+          className="card"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '20px 24px',
+            borderRadius: 18,
+            background: '#fff',
+            boxShadow: 'var(--sh)',
+            marginTop: 32,
+            flexWrap: 'wrap',
+            gap: 14,
+          }}
+        >
+          <button
+            type="button"
+            className="btn ghost"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 8,
+              fontWeight: 700,
+              fontSize: 14,
+              padding: '10px 20px',
+            }}
+            onClick={() => nav('/quiz?tab=history')}
+          >
+            ← Quay lại lịch sử làm bài
+          </button>
+
+          <button
+            type="button"
+            className="btn primary"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 8,
+              fontWeight: 800,
+              fontSize: 14,
+              padding: '10px 24px',
+            }}
+            onClick={() => nav(`/quiz/${id}`)}
+          >
+            🔄 Làm lại bài thi này
+          </button>
         </div>
       </div>
     </div>

@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { quizApi, personalizedApi, errMsg } from '../api';
 import type { Quiz, QuizHistoryItem } from '../api';
@@ -8,11 +8,15 @@ import { useAuth } from '../auth/AuthContext';
 import { MotionCard, staggerContainer, staggerItem, AnimatedCounter } from '../motion';
 
 const LEVELS = ['Tất cả', '🎯 Đề xuất cho bạn', 'A1', 'A2', 'B1', 'B2', 'C1'];
-const PAGE_SIZE = 10;
+const QUIZ_PAGE_SIZE = 10;
+const HISTORY_PAGE_SIZE = 6;
 
 export default function QuizList() {
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState<'quizzes' | 'history'>('quizzes');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const initialTab = searchParams.get('tab') === 'history' ? 'history' : 'quizzes';
+  const [activeTab, setActiveTab] = useState<'quizzes' | 'history'>(initialTab);
+
   const [allQuizzes, setAllQuizzes] = useState<Quiz[]>([]);
   const [level, setLevel] = useState('Tất cả');
   const [page, setPage] = useState(0);
@@ -22,7 +26,7 @@ export default function QuizList() {
   const nav = useNavigate();
   const listRef = useRef<HTMLDivElement>(null);
 
-  // History tab states
+  // History tab states (6 bài mỗi trang)
   const [historyList, setHistoryList] = useState<QuizHistoryItem[]>([]);
   const [historyPage, setHistoryPage] = useState(0);
   const [historyTotalPages, setHistoryTotalPages] = useState(1);
@@ -86,13 +90,12 @@ export default function QuizList() {
   const fetchHistory = (pageToFetch: number = historyPage) => {
     setHistoryLoading(true);
     setHistoryErr('');
-    quizApi.history({ page: pageToFetch, size: PAGE_SIZE })
+    quizApi.history({ page: pageToFetch, size: HISTORY_PAGE_SIZE })
       .then(({ data }) => {
         const raw = Array.isArray(data?.content) ? data.content : [];
-        const completedOnly = raw.filter((item: any) => item.completed !== false && item.submittedAt != null);
-        setHistoryList(completedOnly);
+        setHistoryList(raw);
         setHistoryTotalPages(data?.totalPages || 1);
-        setHistoryTotalElements(data?.totalElements || completedOnly.length);
+        setHistoryTotalElements(data?.totalElements || raw.length);
         setHistoryLoaded(true);
         setHistoryLoading(false);
       })
@@ -102,9 +105,31 @@ export default function QuizList() {
       });
   };
 
+  // Sync tab with URL search parameter
+  useEffect(() => {
+    const tabParam = searchParams.get('tab');
+    if (tabParam === 'history' && activeTab !== 'history') {
+      setActiveTab('history');
+      if (!historyLoaded) {
+        fetchHistory(0);
+      }
+    } else if (tabParam !== 'history' && activeTab === 'history' && !tabParam) {
+      setActiveTab('quizzes');
+    }
+  }, [searchParams]);
+
+  // Load history on initial mount if tab is history
+  useEffect(() => {
+    if (initialTab === 'history') {
+      fetchHistory(0);
+    }
+  }, []);
+
   const handleTabChange = (t: 'quizzes' | 'history') => {
     setActiveTab(t);
-    if (t === 'history' && !historyLoaded) {
+    setSearchParams(t === 'history' ? { tab: 'history' } : {});
+    if (t === 'history') {
+      setHistoryPage(0);
       fetchHistory(0);
     }
   };
@@ -151,7 +176,7 @@ export default function QuizList() {
   }, [allQuizzes, level, weakTopics, recommendedLevel]);
 
   const totalElements = filteredQuizzes.length;
-  const totalPages = Math.ceil(totalElements / PAGE_SIZE) || 1;
+  const totalPages = Math.ceil(totalElements / QUIZ_PAGE_SIZE) || 1;
 
   useEffect(() => {
     if (page >= totalPages && totalPages > 0) {
@@ -160,8 +185,8 @@ export default function QuizList() {
   }, [totalPages, page]);
 
   const paginatedQuizzes = useMemo(() => {
-    const start = page * PAGE_SIZE;
-    return filteredQuizzes.slice(start, start + PAGE_SIZE);
+    const start = page * QUIZ_PAGE_SIZE;
+    return filteredQuizzes.slice(start, start + QUIZ_PAGE_SIZE);
   }, [filteredQuizzes, page]);
 
   const getTabCount = (l: string) => {
@@ -424,7 +449,7 @@ export default function QuizList() {
         </>
       )}
 
-      {/* ================= TAB 2: LỊCH SỬ LÀM BÀI ================= */}
+      {/* ================= TAB 2: LỊCH SỬ LÀM BÀI (6 bài mỗi trang) ================= */}
       {activeTab === 'history' && (
         <div ref={listRef}>
           {historyErr && (
@@ -487,6 +512,7 @@ export default function QuizList() {
             </div>
           ) : (
             <>
+              {/* Grid 2 cột: hiển thị tối đa 6 bài (3 hàng) mỗi trang */}
               <div className="cols2" style={{ gridTemplateColumns: '1fr 1fr' }}>
                 {historyList.map((item) => {
                   const pct =
@@ -592,7 +618,7 @@ export default function QuizList() {
                 })}
               </div>
 
-              {/* History Pagination */}
+              {/* History Pagination: 6 bài mỗi trang */}
               {historyTotalPages > 1 && (
                 <motion.div
                   className="row"
