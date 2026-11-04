@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useLocation, useNavigate, useParams } from 'react-router-dom';
+import { useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { quizApi, aiApi } from '../api';
 import type { QuizResult as R, QuizAttemptAnswerDetail, QuizDetail } from '../api';
 import viAvatar from '../assets/vi-3d.webp';
@@ -253,7 +253,12 @@ function AiExplanationCardView({ text }: { text: string }) {
 export default function QuizResult() {
   const { id } = useParams();
   const { state: navState } = useLocation() as { state?: LocationState };
+  const [searchParams] = useSearchParams();
   const nav = useNavigate();
+
+  const queryAttemptId = searchParams.get('attemptId')
+    ? Number(searchParams.get('attemptId'))
+    : undefined;
 
   // Support restoring result state on page refresh
   const [effectiveState, setEffectiveState] = useState<LocationState | undefined>(() => {
@@ -270,10 +275,15 @@ export default function QuizResult() {
     return undefined;
   });
 
-  const r = effectiveState?.result;
+  const [syntheticResult, setSyntheticResult] = useState<R | undefined>(undefined);
+  const [attemptQuizTitle, setAttemptQuizTitle] = useState<string>('');
+
+  const r = effectiveState?.result || syntheticResult;
 
   const [attemptDetails, setAttemptDetails] = useState<ReviewQuestionItem[]>([]);
-  const [loadingDetails, setLoadingDetails] = useState(false);
+  const [loadingDetails, setLoadingDetails] = useState<boolean>(() => {
+    return Boolean(queryAttemptId && !navState?.result);
+  });
   const [filterMode, setFilterMode] = useState<'ALL' | 'WRONG' | 'CORRECT'>('ALL');
 
   // AI explanation state per question: { [questionId]: { loading: boolean, text?: string, error?: string } }
@@ -289,12 +299,27 @@ export default function QuizResult() {
   }, [navState, id]);
 
   useEffect(() => {
-    const attemptId = r?.attemptId || effectiveState?.attemptId;
+    const attemptId = queryAttemptId || r?.attemptId || effectiveState?.attemptId;
     if (attemptId) {
       setLoadingDetails(true);
       quizApi
         .getAttemptDetails(attemptId)
         .then(({ data }) => {
+          if (data?.attempt) {
+            if (data.attempt.quizTitle) {
+              setAttemptQuizTitle(data.attempt.quizTitle);
+            }
+            if (!effectiveState?.result) {
+              const syn: R = {
+                attemptId: data.attempt.id,
+                score: Math.round(Number(data.attempt.score ?? 0)),
+                totalQuestions: data.attempt.totalQuestions || (data.answers ? data.answers.length : 0),
+                correctAnswers: data.attempt.correctAnswers || 0,
+                feedback: '',
+              };
+              setSyntheticResult(syn);
+            }
+          }
           if (data?.answers && data.answers.length > 0) {
             const mapped: ReviewQuestionItem[] = data.answers.map((a: any, index: number) => {
               let qNum = index + 1;
@@ -324,7 +349,16 @@ export default function QuizResult() {
           setLoadingDetails(false);
         });
     }
-  }, [r?.attemptId, effectiveState?.attemptId]);
+  }, [queryAttemptId, r?.attemptId, effectiveState?.attemptId]);
+
+  if (loadingDetails && !r) {
+    return (
+      <div className="content" style={{ maxWidth: 860, textAlign: 'center', paddingTop: 80 }}>
+        <div className="spinner" style={{ margin: '0 auto 16px' }} />
+        <div className="sub">Đang tải chi tiết bài làm...</div>
+      </div>
+    );
+  }
 
   if (!r) {
     return (
@@ -420,7 +454,7 @@ export default function QuizResult() {
             ← Danh sách bài quiz
           </button>
         </div>
-        <h1>Kết quả: {effectiveState?.title || 'Trắc nghiệm'}</h1>
+        <h1>Kết quả: {effectiveState?.title || attemptQuizTitle || 'Trắc nghiệm'}</h1>
         <div className="sub">
           {pct >= 80
             ? 'Xuất sắc! Bạn nắm rất vững kiến thức bài học.'

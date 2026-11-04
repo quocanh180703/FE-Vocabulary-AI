@@ -2,8 +2,8 @@ import { useEffect, useState, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { quizApi, personalizedApi, errMsg } from '../api';
-import type { Quiz } from '../api';
-import { Mascot } from '../components/icons';
+import type { Quiz, QuizHistoryItem } from '../api';
+import { Mascot, Icon } from '../components/icons';
 import { useAuth } from '../auth/AuthContext';
 import { MotionCard, staggerContainer, staggerItem, AnimatedCounter } from '../motion';
 
@@ -12,6 +12,7 @@ const PAGE_SIZE = 10;
 
 export default function QuizList() {
   const { user } = useAuth();
+  const [activeTab, setActiveTab] = useState<'quizzes' | 'history'>('quizzes');
   const [allQuizzes, setAllQuizzes] = useState<Quiz[]>([]);
   const [level, setLevel] = useState('Tất cả');
   const [page, setPage] = useState(0);
@@ -20,6 +21,15 @@ export default function QuizList() {
   const [err, setErr] = useState('');
   const nav = useNavigate();
   const listRef = useRef<HTMLDivElement>(null);
+
+  // History tab states
+  const [historyList, setHistoryList] = useState<QuizHistoryItem[]>([]);
+  const [historyPage, setHistoryPage] = useState(0);
+  const [historyTotalPages, setHistoryTotalPages] = useState(1);
+  const [historyTotalElements, setHistoryTotalElements] = useState(0);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [historyErr, setHistoryErr] = useState('');
+  const [historyLoaded, setHistoryLoaded] = useState(false);
 
   // Storage key for roadmap data
   const storageKey = `vocab_ai_roadmap_${user?.id || user?.username || 'default'}`;
@@ -72,6 +82,39 @@ export default function QuizList() {
         setLoading(false);
       });
   }, []);
+
+  const fetchHistory = (pageToFetch: number = historyPage) => {
+    setHistoryLoading(true);
+    setHistoryErr('');
+    quizApi.history({ page: pageToFetch, size: PAGE_SIZE })
+      .then(({ data }) => {
+        const raw = Array.isArray(data?.content) ? data.content : [];
+        const completedOnly = raw.filter((item: any) => item.completed !== false && item.submittedAt != null);
+        setHistoryList(completedOnly);
+        setHistoryTotalPages(data?.totalPages || 1);
+        setHistoryTotalElements(data?.totalElements || completedOnly.length);
+        setHistoryLoaded(true);
+        setHistoryLoading(false);
+      })
+      .catch((e) => {
+        setHistoryErr(errMsg(e) || 'Không thể tải lịch sử làm bài');
+        setHistoryLoading(false);
+      });
+  };
+
+  const handleTabChange = (t: 'quizzes' | 'history') => {
+    setActiveTab(t);
+    if (t === 'history' && !historyLoaded) {
+      fetchHistory(0);
+    }
+  };
+
+  const changeHistoryPage = (newPage: number) => {
+    if (newPage === historyPage) return;
+    setHistoryPage(newPage);
+    fetchHistory(newPage);
+    listRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
 
   const isQuizRecommended = (qz: Quiz) => {
     const titleLower = (qz.title || '').toLowerCase();
@@ -127,6 +170,29 @@ export default function QuizList() {
     return allQuizzes.filter((q) => (q.level || '').toUpperCase() === l.toUpperCase()).length;
   };
 
+  const formatDateTime = (isoString?: string) => {
+    if (!isoString) return '--';
+    try {
+      const d = new Date(isoString);
+      return d.toLocaleString('vi-VN', {
+        hour: '2-digit',
+        minute: '2-digit',
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+      });
+    } catch {
+      return isoString;
+    }
+  };
+
+  const formatDuration = (seconds?: number) => {
+    if (seconds == null || isNaN(seconds)) return '--';
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+  };
+
   return (
     <div className="content" style={{ maxWidth: 1600 }}>
       <div className="pagehead">
@@ -134,205 +200,481 @@ export default function QuizList() {
         <div className="sub">Chọn một bài để luyện — điểm được tính khi bạn nộp bài</div>
       </div>
 
-      {weakTopics.length > 0 && (
-        <div
-          className="card"
-          style={{
-            background: 'linear-gradient(135deg, #F5F3FF 0%, #EEF2FF 100%)',
-            border: '1px solid #DDD6FE',
-            padding: '16px 22px',
-            marginBottom: 20,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: 16,
-            flexWrap: 'wrap',
-            borderRadius: 16,
-          }}
+      {/* Main Tab Navigation: Bài thi vs Lịch sử làm bài */}
+      <div className="chips" style={{ marginBottom: 20, gap: 10 }}>
+        <button
+          className={'chip' + (activeTab === 'quizzes' ? ' on' : '')}
+          onClick={() => handleTabChange('quizzes')}
+          style={{ padding: '8px 20px', fontSize: 14, fontWeight: 700 }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-            <Mascot s={40} />
-            <div style={{ fontSize: 13.5, color: '#1E1B4B', lineHeight: 1.5 }}>
-              <b style={{ color: 'var(--primary)' }}>Gợi ý thích ứng từ Vi AI:</b> Bạn nên tập trung củng cố chủ đề{' '}
-              <b style={{ color: 'var(--primary)' }}>{weakTopics.join(', ')}</b> (trình độ đề xuất: <b>{recommendedLevel}</b>). Hãy ưu tiên các bài có nhãn ✨ để tăng tốc cải thiện nhé!
-            </div>
-          </div>
-          <button
-            className="btn ghost sm"
-            onClick={() => handleLevelChange('🎯 Đề xuất cho bạn')}
-            style={{ borderColor: '#C7D2FE', color: 'var(--primary)', background: '#FFFFFF', minHeight: 38, fontSize: 13.5, fontWeight: 800 }}
-          >
-            Lọc bài AI khuyên làm
-          </button>
-        </div>
-      )}
-
-      {/* Chiprow matching quiz-list.html */}
-      <div ref={listRef} className="chiprow" style={{ marginBottom: 16 }}>
-        {LEVELS.map((l) => {
-          const count = getTabCount(l);
-          return (
-            <button
-              key={l}
-              className={'fchip' + (level === l ? ' on' : '')}
-              onClick={() => handleLevelChange(l)}
-            >
-              {l === 'Tất cả' ? 'Tất cả trình độ' : l}
-              <span
-                style={{
-                  marginLeft: 6,
-                  fontSize: 11,
-                  fontWeight: 800,
-                  padding: '1px 7px',
-                  borderRadius: 99,
-                  background: level === l ? 'rgba(255,255,255,0.28)' : 'rgba(10,37,64,0.08)',
-                  color: level === l ? '#fff' : 'var(--ink)',
-                }}
-              >
-                <AnimatedCounter value={count} />
-              </span>
-            </button>
-          );
-        })}
+          <Icon n="book" s={18} /> Bài thi
+        </button>
+        <button
+          className={'chip' + (activeTab === 'history' ? ' on' : '')}
+          onClick={() => handleTabChange('history')}
+          style={{ padding: '8px 20px', fontSize: 14, fontWeight: 700 }}
+        >
+          <Icon n="clock" s={18} /> Lịch sử làm bài
+        </button>
       </div>
 
-      {err && <div className="error">{err}</div>}
-
-      {/* Grid 2 cols with smooth page switch animation */}
-      <AnimatePresence mode="wait" initial={false}>
-        <motion.div
-          key={`${level}-${page}`}
-          className="cols2"
-          style={{ gridTemplateColumns: '1fr 1fr' }}
-          variants={staggerContainer}
-          initial="hidden"
-          animate="visible"
-          exit={{ opacity: 0, y: -8, transition: { duration: 0.15 } }}
-        >
-          {paginatedQuizzes.map((qz) => {
-            const recommended = isQuizRecommended(qz);
-            return (
-              <motion.div key={qz.id} variants={staggerItem}>
-                <MotionCard>
-                  <div className="row">
-                    <b style={{ fontSize: '18.5px' }}>{qz.title}</b>
-                    <span className="pill level">Cấp {qz.level}</span>
-                  </div>
-                  {(() => {
-                    const mins = qz.timeLimit > 60 ? Math.round(qz.timeLimit / 60) : qz.timeLimit;
-                    return (
-                      <>
-                        <div className="sub mt8">
-                          {qz.questionCount} câu · giới hạn {mins} phút{qz.category ? ` · ${qz.category}` : ''}
-                        </div>
-                        <div className="row mt16">
-                          {recommended ? (
-                            <span className="pill" style={{ background: 'var(--primary)', color: '#fff' }}>✨ AI đề xuất</span>
-                          ) : (
-                            <span className="pill level">Bấm giờ {mins}p</span>
-                          )}
-                          <button
-                            className="btn"
-                            style={{ minHeight: 46, padding: '0 22px' }}
-                            onClick={() => nav(`/quiz/${qz.id}`)}
-                          >
-                            Bắt đầu làm
-                          </button>
-                        </div>
-                      </>
-                    );
-                  })()}
-                </MotionCard>
-              </motion.div>
-            );
-          })}
-        </motion.div>
-      </AnimatePresence>
-
-      {filteredQuizzes.length === 0 && !loading && !err && (
-        <div className="empty" style={{ textAlign: 'center', padding: '48px 16px' }}>
-          {level === '🎯 Đề xuất cho bạn'
-            ? 'Không tìm thấy bài quiz nào trùng với chủ đề đề xuất hiện tại.'
-            : 'Chưa có quiz nào ở trình độ này.'}
-        </div>
-      )}
-
-      {/* Pagination Controls - chỉ hiển thị 10 bài rồi sang trang */}
-      {totalPages > 1 && (
-        <motion.div
-          className="row"
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.2 }}
-          style={{
-            marginTop: 28,
-            padding: '16px 22px',
-            background: '#fff',
-            borderRadius: 18,
-            boxShadow: 'var(--sh)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            flexWrap: 'wrap',
-            gap: 12,
-          }}
-        >
-          <span className="sub" style={{ fontSize: 14 }}>
-            Trang <b>{page + 1}</b> / <b>{totalPages}</b> · Đang hiển thị{' '}
-            <b>{paginatedQuizzes.length}</b> / <b>{totalElements}</b> bài trắc nghiệm
-          </span>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <motion.button
-              type="button"
-              className="pagebtn"
-              disabled={page === 0}
-              onClick={() => changePage(Math.max(0, page - 1))}
-              whileTap={page > 0 ? { scale: 0.92 } : undefined}
-              whileHover={page > 0 ? { y: -1 } : undefined}
-              title="Trang trước"
-              style={{ opacity: page === 0 ? 0.45 : 1, cursor: page === 0 ? 'not-allowed' : 'pointer' }}
-            >
-              ‹
-            </motion.button>
-            {Array.from({ length: totalPages }, (_, i) => (
-              <motion.button
-                key={i}
-                type="button"
-                className={'pagebtn' + (page === i ? ' on' : '')}
-                onClick={() => changePage(i)}
-                whileTap={{ scale: 0.92 }}
-                whileHover={{ y: -1 }}
-                style={
-                  page === i
-                    ? {
-                        background: 'var(--primary)',
-                        color: '#fff',
-                        boxShadow: '0 4px 14px rgba(21, 101, 192, 0.32)',
-                        transform: 'scale(1.04)',
-                      }
-                    : {}
-                }
-              >
-                {i + 1}
-              </motion.button>
-            ))}
-            <motion.button
-              type="button"
-              className="pagebtn"
-              disabled={page >= totalPages - 1}
-              onClick={() => changePage(Math.min(totalPages - 1, page + 1))}
-              whileTap={page < totalPages - 1 ? { scale: 0.92 } : undefined}
-              whileHover={page < totalPages - 1 ? { y: -1 } : undefined}
-              title="Trang sau"
+      {/* ================= TAB 1: BÀI THI ================= */}
+      {activeTab === 'quizzes' && (
+        <>
+          {weakTopics.length > 0 && (
+            <div
+              className="card"
               style={{
-                opacity: page >= totalPages - 1 ? 0.45 : 1,
-                cursor: page >= totalPages - 1 ? 'not-allowed' : 'pointer',
+                background: 'linear-gradient(135deg, #F5F3FF 0%, #EEF2FF 100%)',
+                border: '1px solid #DDD6FE',
+                padding: '16px 22px',
+                marginBottom: 20,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: 16,
+                flexWrap: 'wrap',
+                borderRadius: 16,
               }}
             >
-              ›
-            </motion.button>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                <Mascot s={40} />
+                <div style={{ fontSize: 13.5, color: '#1E1B4B', lineHeight: 1.5 }}>
+                  <b style={{ color: 'var(--primary)' }}>Gợi ý thích ứng từ Vi AI:</b> Bạn nên tập trung củng cố chủ đề{' '}
+                  <b style={{ color: 'var(--primary)' }}>{weakTopics.join(', ')}</b> (trình độ đề xuất: <b>{recommendedLevel}</b>). Hãy ưu tiên các bài có nhãn ✨ để tăng tốc cải thiện nhé!
+                </div>
+              </div>
+              <button
+                className="btn ghost sm"
+                onClick={() => handleLevelChange('🎯 Đề xuất cho bạn')}
+                style={{ borderColor: '#C7D2FE', color: 'var(--primary)', background: '#FFFFFF', minHeight: 38, fontSize: 13.5, fontWeight: 800 }}
+              >
+                Lọc bài AI khuyên làm
+              </button>
+            </div>
+          )}
+
+          {/* Chiprow matching quiz-list.html */}
+          <div ref={listRef} className="chiprow" style={{ marginBottom: 16 }}>
+            {LEVELS.map((l) => {
+              const count = getTabCount(l);
+              return (
+                <button
+                  key={l}
+                  className={'fchip' + (level === l ? ' on' : '')}
+                  onClick={() => handleLevelChange(l)}
+                >
+                  {l === 'Tất cả' ? 'Tất cả trình độ' : l}
+                  <span
+                    style={{
+                      marginLeft: 6,
+                      fontSize: 11,
+                      fontWeight: 800,
+                      padding: '1px 7px',
+                      borderRadius: 99,
+                      background: level === l ? 'rgba(255,255,255,0.28)' : 'rgba(10,37,64,0.08)',
+                      color: level === l ? '#fff' : 'var(--ink)',
+                    }}
+                  >
+                    <AnimatedCounter value={count} />
+                  </span>
+                </button>
+              );
+            })}
           </div>
-        </motion.div>
+
+          {err && <div className="error">{err}</div>}
+
+          {/* Grid 2 cols with smooth page switch animation */}
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.div
+              key={`${level}-${page}`}
+              className="cols2"
+              style={{ gridTemplateColumns: '1fr 1fr' }}
+              variants={staggerContainer}
+              initial="hidden"
+              animate="visible"
+              exit={{ opacity: 0, y: -8, transition: { duration: 0.15 } }}
+            >
+              {paginatedQuizzes.map((qz) => {
+                const recommended = isQuizRecommended(qz);
+                return (
+                  <motion.div key={qz.id} variants={staggerItem}>
+                    <MotionCard>
+                      <div className="row">
+                        <b style={{ fontSize: '18.5px' }}>{qz.title}</b>
+                        <span className="pill level">Cấp {qz.level}</span>
+                      </div>
+                      {(() => {
+                        const mins = qz.timeLimit > 60 ? Math.round(qz.timeLimit / 60) : qz.timeLimit;
+                        return (
+                          <>
+                            <div className="sub mt8">
+                              {qz.questionCount} câu · giới hạn {mins} phút{qz.category ? ` · ${qz.category}` : ''}
+                            </div>
+                            <div className="row mt16">
+                              {recommended ? (
+                                <span className="pill" style={{ background: 'var(--primary)', color: '#fff' }}>✨ AI đề xuất</span>
+                              ) : (
+                                <span className="pill level">Bấm giờ {mins}p</span>
+                              )}
+                              <button
+                                className="btn"
+                                style={{ minHeight: 46, padding: '0 22px' }}
+                                onClick={() => nav(`/quiz/${qz.id}`)}
+                              >
+                                Bắt đầu làm
+                              </button>
+                            </div>
+                          </>
+                        );
+                      })()}
+                    </MotionCard>
+                  </motion.div>
+                );
+              })}
+            </motion.div>
+          </AnimatePresence>
+
+          {filteredQuizzes.length === 0 && !loading && !err && (
+            <div className="empty" style={{ textAlign: 'center', padding: '48px 16px' }}>
+              {level === '🎯 Đề xuất cho bạn'
+                ? 'Không tìm thấy bài quiz nào trùng với chủ đề đề xuất hiện tại.'
+                : 'Chưa có quiz nào ở trình độ này.'}
+            </div>
+          )}
+
+          {/* Pagination Controls */}
+          {totalPages > 1 && (
+            <motion.div
+              className="row"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.2 }}
+              style={{
+                marginTop: 28,
+                padding: '16px 22px',
+                background: '#fff',
+                borderRadius: 18,
+                boxShadow: 'var(--sh)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                flexWrap: 'wrap',
+                gap: 12,
+              }}
+            >
+              <span className="sub" style={{ fontSize: 14 }}>
+                Trang <b>{page + 1}</b> / <b>{totalPages}</b> · Đang hiển thị{' '}
+                <b>{paginatedQuizzes.length}</b> / <b>{totalElements}</b> bài trắc nghiệm
+              </span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <motion.button
+                  type="button"
+                  className="pagebtn"
+                  disabled={page === 0}
+                  onClick={() => changePage(Math.max(0, page - 1))}
+                  whileTap={page > 0 ? { scale: 0.92 } : undefined}
+                  whileHover={page > 0 ? { y: -1 } : undefined}
+                  title="Trang trước"
+                  style={{ opacity: page === 0 ? 0.45 : 1, cursor: page === 0 ? 'not-allowed' : 'pointer' }}
+                >
+                  ‹
+                </motion.button>
+                {Array.from({ length: totalPages }, (_, i) => (
+                  <motion.button
+                    key={i}
+                    type="button"
+                    className={'pagebtn' + (page === i ? ' on' : '')}
+                    onClick={() => changePage(i)}
+                    whileTap={{ scale: 0.92 }}
+                    whileHover={{ y: -1 }}
+                    style={
+                      page === i
+                        ? {
+                            background: 'var(--primary)',
+                            color: '#fff',
+                            boxShadow: '0 4px 14px rgba(21, 101, 192, 0.32)',
+                            transform: 'scale(1.04)',
+                          }
+                        : {}
+                    }
+                  >
+                    {i + 1}
+                  </motion.button>
+                ))}
+                <motion.button
+                  type="button"
+                  className="pagebtn"
+                  disabled={page >= totalPages - 1}
+                  onClick={() => changePage(Math.min(totalPages - 1, page + 1))}
+                  whileTap={page < totalPages - 1 ? { scale: 0.92 } : undefined}
+                  whileHover={page < totalPages - 1 ? { y: -1 } : undefined}
+                  title="Trang sau"
+                  style={{
+                    opacity: page >= totalPages - 1 ? 0.45 : 1,
+                    cursor: page >= totalPages - 1 ? 'not-allowed' : 'pointer',
+                  }}
+                >
+                  ›
+                </motion.button>
+              </div>
+            </motion.div>
+          )}
+        </>
+      )}
+
+      {/* ================= TAB 2: LỊCH SỬ LÀM BÀI ================= */}
+      {activeTab === 'history' && (
+        <div ref={listRef}>
+          {historyErr && (
+            <div
+              style={{
+                background: '#FEF2F2',
+                border: '1px solid #FCA5A5',
+                borderRadius: 14,
+                padding: '14px 18px',
+                marginBottom: 20,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: 12,
+              }}
+            >
+              <div style={{ color: '#B91C1C', fontSize: 14, fontWeight: 600 }}>{historyErr}</div>
+              <button
+                className="btn ghost sm"
+                onClick={() => fetchHistory(historyPage)}
+                style={{ borderColor: '#FCA5A5', color: '#B91C1C' }}
+              >
+                Thử lại
+              </button>
+            </div>
+          )}
+
+          {historyLoading ? (
+            <div style={{ textAlign: 'center', padding: '60px 16px' }}>
+              <div className="spinner" style={{ margin: '0 auto 16px' }} />
+              <div className="sub">Đang tải lịch sử làm bài...</div>
+            </div>
+          ) : historyList.length === 0 && !historyErr ? (
+            <div
+              className="card"
+              style={{
+                textAlign: 'center',
+                padding: '56px 20px',
+                borderRadius: 20,
+                background: '#fff',
+                boxShadow: 'var(--sh)',
+              }}
+            >
+              <div style={{ marginBottom: 14 }}>
+                <Mascot s={64} />
+              </div>
+              <h3 style={{ fontSize: 20, fontWeight: 800, color: 'var(--ink)' }}>
+                Bạn chưa làm bài trắc nghiệm nào
+              </h3>
+              <p className="sub mt8" style={{ maxWidth: 460, margin: '8px auto 24px', lineHeight: 1.5 }}>
+                Hãy chọn một bài thi ở tab <b>Bài thi</b> để bắt đầu luyện tập tính giờ và kiểm tra kiến thức. Toàn bộ lịch sử điểm số sẽ hiển thị tại đây!
+              </p>
+              <button
+                className="btn primary"
+                onClick={() => handleTabChange('quizzes')}
+                style={{ padding: '10px 24px', fontWeight: 800 }}
+              >
+                Về danh sách bài thi
+              </button>
+            </div>
+          ) : (
+            <>
+              <div className="cols2" style={{ gridTemplateColumns: '1fr 1fr' }}>
+                {historyList.map((item) => {
+                  const pct =
+                    item.totalQuestions > 0
+                      ? Math.round((item.correctAnswers / item.totalQuestions) * 100)
+                      : Math.round(item.score || 0);
+                  const isPassed = pct >= 80;
+                  const isMedium = pct >= 50;
+                  const badgeColor = isPassed ? '#15803D' : isMedium ? 'var(--primary)' : '#DC2626';
+                  const badgeBg = isPassed ? '#DCFCE7' : isMedium ? '#EFF6FF' : '#FEE2E2';
+
+                  return (
+                    <motion.div
+                      key={item.attemptId}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      <MotionCard>
+                        <div
+                          className="row"
+                          style={{
+                            alignItems: 'flex-start',
+                            justifyContent: 'space-between',
+                            gap: 12,
+                          }}
+                        >
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <b
+                              style={{
+                                fontSize: '18px',
+                                display: 'block',
+                                color: 'var(--ink)',
+                                wordBreak: 'break-word',
+                              }}
+                            >
+                              {item.quizTitle}
+                            </b>
+                            <div className="sub mt4" style={{ fontSize: 13, color: '#64748B' }}>
+                              Nộp lúc: <b>{formatDateTime(item.submittedAt)}</b>
+                            </div>
+                          </div>
+                          <span
+                            className="pill"
+                            style={{
+                              background: badgeBg,
+                              color: badgeColor,
+                              fontWeight: 800,
+                              fontSize: 13.5,
+                              padding: '5px 12px',
+                              borderRadius: 99,
+                              whiteSpace: 'nowrap',
+                              border: `1px solid ${badgeColor}33`,
+                            }}
+                          >
+                            {pct}% ({item.correctAnswers}/{item.totalQuestions})
+                          </span>
+                        </div>
+
+                        <div
+                          className="row mt12"
+                          style={{
+                            fontSize: 13.5,
+                            color: '#475569',
+                            background: '#F8FAFC',
+                            padding: '8px 14px',
+                            borderRadius: 10,
+                          }}
+                        >
+                          <span>⏱️ Thời gian: <b>{formatDuration(item.timeTaken)}</b></span>
+                          <span>🎯 Điểm số: <b>{item.score}đ</b></span>
+                        </div>
+
+                        <div className="row mt16" style={{ gap: 10, justifyContent: 'flex-end' }}>
+                          <button
+                            className="btn ghost sm"
+                            style={{
+                              minHeight: 38,
+                              padding: '0 16px',
+                              fontWeight: 700,
+                              fontSize: 13.5,
+                            }}
+                            onClick={() => nav(`/quiz/${item.quizId}/result?attemptId=${item.attemptId}`)}
+                          >
+                            🔍 Xem lại
+                          </button>
+                          <button
+                            className="btn primary sm"
+                            style={{
+                              minHeight: 38,
+                              padding: '0 16px',
+                              fontWeight: 700,
+                              fontSize: 13.5,
+                            }}
+                            onClick={() => nav(`/quiz/${item.quizId}`)}
+                          >
+                            🔄 Làm lại
+                          </button>
+                        </div>
+                      </MotionCard>
+                    </motion.div>
+                  );
+                })}
+              </div>
+
+              {/* History Pagination */}
+              {historyTotalPages > 1 && (
+                <motion.div
+                  className="row"
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.2 }}
+                  style={{
+                    marginTop: 28,
+                    padding: '16px 22px',
+                    background: '#fff',
+                    borderRadius: 18,
+                    boxShadow: 'var(--sh)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    flexWrap: 'wrap',
+                    gap: 12,
+                  }}
+                >
+                  <span className="sub" style={{ fontSize: 14 }}>
+                    Trang <b>{historyPage + 1}</b> / <b>{historyTotalPages}</b> · Đang hiển thị{' '}
+                    <b>{historyList.length}</b> / <b>{historyTotalElements}</b> bài đã làm
+                  </span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <motion.button
+                      type="button"
+                      className="pagebtn"
+                      disabled={historyPage === 0}
+                      onClick={() => changeHistoryPage(Math.max(0, historyPage - 1))}
+                      whileTap={historyPage > 0 ? { scale: 0.92 } : undefined}
+                      whileHover={historyPage > 0 ? { y: -1 } : undefined}
+                      title="Trang trước"
+                      style={{
+                        opacity: historyPage === 0 ? 0.45 : 1,
+                        cursor: historyPage === 0 ? 'not-allowed' : 'pointer',
+                      }}
+                    >
+                      ‹
+                    </motion.button>
+                    {Array.from({ length: historyTotalPages }, (_, i) => (
+                      <motion.button
+                        key={i}
+                        type="button"
+                        className={'pagebtn' + (historyPage === i ? ' on' : '')}
+                        onClick={() => changeHistoryPage(i)}
+                        whileTap={{ scale: 0.92 }}
+                        whileHover={{ y: -1 }}
+                        style={
+                          historyPage === i
+                            ? {
+                                background: 'var(--primary)',
+                                color: '#fff',
+                                boxShadow: '0 4px 14px rgba(21, 101, 192, 0.32)',
+                                transform: 'scale(1.04)',
+                              }
+                            : {}
+                        }
+                      >
+                        {i + 1}
+                      </motion.button>
+                    ))}
+                    <motion.button
+                      type="button"
+                      className="pagebtn"
+                      disabled={historyPage >= historyTotalPages - 1}
+                      onClick={() => changeHistoryPage(Math.min(historyTotalPages - 1, historyPage + 1))}
+                      whileTap={historyPage < historyTotalPages - 1 ? { scale: 0.92 } : undefined}
+                      whileHover={historyPage < historyTotalPages - 1 ? { y: -1 } : undefined}
+                      title="Trang sau"
+                      style={{
+                        opacity: historyPage >= historyTotalPages - 1 ? 0.45 : 1,
+                        cursor: historyPage >= historyTotalPages - 1 ? 'not-allowed' : 'pointer',
+                      }}
+                    >
+                      ›
+                    </motion.button>
+                  </div>
+                </motion.div>
+              )}
+            </>
+          )}
+        </div>
       )}
     </div>
   );

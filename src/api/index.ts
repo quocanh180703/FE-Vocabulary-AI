@@ -117,6 +117,17 @@ export interface QuizAttemptAnswerDetail {
   isCorrect: boolean;
   explanation?: string;
 }
+export interface QuizHistoryItem {
+  attemptId: number;
+  quizId: number;
+  quizTitle: string;
+  score: number;
+  totalQuestions: number;
+  correctAnswers: number;
+  completed: boolean;
+  timeTaken: number;
+  submittedAt: string;
+}
 export interface Explain { wordId: number | string; word: string; meaning: string; examples: string[]; synonyms: string[]; usageTips: string; tokensUsed: number; source: string }
 export interface GrammarErr { errorType: string; message: string; suggestion: string }
 export interface GrammarResp { originalText: string; correctedText: string; score: number; errors: GrammarErr[]; tokensUsed: number }
@@ -814,6 +825,30 @@ export const quizApi = {
         data: {
           attempt: d.attempt || res.data?.attempt,
           answers,
+        },
+      };
+    }),
+  history: (p?: { page?: number; size?: number }) =>
+    api.get<any>('/quizzes/history', {
+      params: { page: p?.page ?? 0, size: p?.size ?? 10 },
+    }).then((res) => {
+      const pageData = res.data?.data || res.data || {};
+      const raw = Array.isArray(pageData.content) ? pageData.content : [];
+      return {
+        ...res,
+        data: {
+          ...pageData,
+          content: raw.map((a: any) => ({
+            attemptId: a.id,
+            quizId: a.quizId,
+            quizTitle: a.quizTitle || `Bài thi #${a.quizId}`,
+            score: a.score,
+            totalQuestions: a.totalQuestions,
+            correctAnswers: a.correctAnswers,
+            completed: a.completed,
+            timeTaken: a.timeTaken,
+            submittedAt: a.submittedAt,
+          })),
         },
       };
     }),
