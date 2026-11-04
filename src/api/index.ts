@@ -915,6 +915,60 @@ export const aiApi = {
       };
     }
   },
+  getPracticePrompt: (params: { wordId: number; mode?: 'SENTENCE' | 'PARAGRAPH' }) =>
+    api.get<any>('/api/v1/ai/grammar/practice/prompt', { params }).then((res) => res.data),
+
+  generatePracticePrompt: (body: { wordId: number; mode?: 'SENTENCE' | 'PARAGRAPH'; level?: string; forceNew?: boolean }) =>
+    api.post<any>('/api/v1/ai/grammar/practice/generate', body).then((res) => res.data),
+
+  checkTranslation: (body: {
+    text: string;
+    viPrompt: string;
+    targetWord: string;
+    targetMeaning?: string;
+    mode?: 'SENTENCE' | 'PARAGRAPH';
+  }) =>
+    api.post<any>('/api/v1/ai/grammar/check-translation', body).then((res) => {
+      const d = res.data;
+      const score = typeof d.score === 'number' ? d.score : Math.max(0, 100 - (d.errors?.length || 0) * 15);
+      return {
+        data: {
+          originalText: d.originalText || body.text,
+          correctedText: d.correctedText || body.text,
+          score,
+          errors: (d.errors || []).map((e: any) => ({
+            errorType: e.errorType || 'GRAMMAR',
+            message: e.explanation || e.message || '',
+            suggestion: e.suggestion || '',
+          })),
+          tokensUsed: 120,
+          targetWord: d.targetWord,
+          isTargetWordUsed: d.isTargetWordUsed,
+          viPrompt: d.viPrompt,
+          feedback: d.feedback,
+        },
+      };
+    }),
+
+  topicGrammar: (body: { text: string; topic?: string; level?: string; suggestedWords?: string[]; structures?: string[] }) =>
+    api.post<any>('/api/v1/ai/grammar/check-topic', body).then((res) => {
+      const d = res.data;
+      const score = typeof d.score === 'number' ? d.score : Math.max(0, 100 - (d.errors?.length || 0) * 15);
+      return {
+        data: {
+          originalText: d.originalText || body.text,
+          correctedText: d.correctedText || body.text,
+          score,
+          errors: (d.errors || []).map((e: any) => ({
+            errorType: e.errorType || 'GRAMMAR',
+            message: e.explanation || e.message || '',
+            suggestion: e.suggestion || '',
+          })),
+          tokensUsed: 120,
+          outlineReport: d.outlineReport,
+        },
+      };
+    }),
   grammar: (text: string) =>
     api.post<any>('/api/v1/ai/grammar/check', { text, language: 'English', includeSuggestions: true }).then((res) => {
       const d = res.data;

@@ -291,6 +291,19 @@ export default function Favorites() {
                   </span>
 
                   <button
+                    type="button"
+                    className="btn ghost sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      nav(`/grammar?tab=translate&wordId=${w.id}`);
+                    }}
+                    title="Luyện dịch câu với từ này"
+                    style={{ padding: '3px 8px', fontSize: 11.5, fontWeight: 700, borderRadius: 6 }}
+                  >
+                    ✍️ Luyện dịch
+                  </button>
+
+                  <button
                     className="heartbtn on"
                     onClick={(e) => remove(w.id, e)}
                     title="Bỏ lưu khỏi danh sách yêu thích"

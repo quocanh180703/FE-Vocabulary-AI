@@ -93,9 +93,59 @@ export default function Review() {
   const [remembered, setRemembered] = useState(0);
   const [forgotten, setForgotten] = useState(0);
 
+  // Favorite tracking for flashcard heart button
+  const [favoriteIds, setFavoriteIds] = useState<Set<string | number>>(new Set());
+
+  useEffect(() => {
+    const fetchFavs = () => {
+      wordApi.favorites(0, 500)
+        .then(({ data }) => {
+          const ids = new Set((data?.content || []).map((w: any) => String(w.id)));
+          setFavoriteIds(ids);
+        })
+        .catch(() => {});
+    };
+    fetchFavs();
+    window.addEventListener('vocab_favorites_changed', fetchFavs);
+    return () => window.removeEventListener('vocab_favorites_changed', fetchFavs);
+  }, []);
+
   const nav = useNavigate();
   const cardRef = useRef<HTMLDivElement>(null);
   const shouldReduce = useReducedMotion();
+
+  const toggleFavorite = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const cur = cards[i];
+    if (!cur?.id) return;
+    const wordId = String(cur.id);
+    const isFav = favoriteIds.has(wordId);
+
+    // Optimistic UI update
+    setFavoriteIds((prev) => {
+      const next = new Set(prev);
+      if (isFav) next.delete(wordId);
+      else next.add(wordId);
+      return next;
+    });
+
+    try {
+      if (isFav) {
+        await wordApi.unfavorite(cur.id);
+      } else {
+        await wordApi.favorite(cur.id);
+      }
+      window.dispatchEvent(new CustomEvent('vocab_favorites_changed'));
+    } catch {
+      // Revert if API fails
+      setFavoriteIds((prev) => {
+        const next = new Set(prev);
+        if (isFav) next.add(wordId);
+        else next.delete(wordId);
+        return next;
+      });
+    }
+  };
 
   // 1. Fetch AI level recommendation on mount & listen to roadmap updates
   useEffect(() => {
@@ -636,15 +686,42 @@ export default function Review() {
                   )}
                 </div>
 
-                <button
-                  className="btn ghost sm"
-                  onClick={playAudio}
-                  title="Nghe phát âm (Phím P)"
-                  style={{ borderRadius: '50%', width: 38, height: 38, padding: 0, background: 'rgba(79, 70, 229, 0.08)', color: 'var(--primary)', border: '1px solid #C7D2FE' }}
-                  aria-label="phát âm"
-                >
-                  <Icon n="vol" s={18} />
-                </button>
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                  <button
+                    type="button"
+                    className="btn ghost sm"
+                    onClick={toggleFavorite}
+                    title={favoriteIds.has(String(cur.id)) ? 'Bỏ yêu thích' : 'Thêm vào yêu thích'}
+                    style={{
+                      borderRadius: '50%',
+                      width: 38,
+                      height: 38,
+                      padding: 0,
+                      background: favoriteIds.has(String(cur.id)) ? '#FEE2E2' : 'rgba(100, 116, 139, 0.08)',
+                      color: favoriteIds.has(String(cur.id)) ? '#EF4444' : '#94A3B8',
+                      border: `1.5px solid ${favoriteIds.has(String(cur.id)) ? '#FCA5A5' : 'var(--line)'}`,
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      cursor: 'pointer',
+                      transition: 'all 0.15s ease',
+                    }}
+                    aria-label="yêu thích"
+                  >
+                    <Icon n="heart" s={18} />
+                  </button>
+
+                  <button
+                    type="button"
+                    className="btn ghost sm"
+                    onClick={playAudio}
+                    title="Nghe phát âm (Phím P)"
+                    style={{ borderRadius: '50%', width: 38, height: 38, padding: 0, background: 'rgba(79, 70, 229, 0.08)', color: 'var(--primary)', border: '1px solid #C7D2FE' }}
+                    aria-label="phát âm"
+                  >
+                    <Icon n="vol" s={18} />
+                  </button>
+                </div>
               </div>
 
               {/* Front & Back 3D Animated Flip */}
