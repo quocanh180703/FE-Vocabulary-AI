@@ -227,7 +227,7 @@ export default function Roadmap() {
       .then((res) => {
         if (res?.data) setStats(res.data);
       })
-      .catch(() => {});
+      .catch(() => { });
   }, []);
 
   // 1. Initial Load: Check localStorage and backend cache for existing saved analysis (GET plan does not consume quota)
@@ -259,10 +259,10 @@ export default function Roadmap() {
               setAnalyzedAt('Đã lưu gần đây');
               personalizedApi.profile().then((pRes) => {
                 if (isCurrent && pRes?.data) setProfile(pRes.data);
-              }).catch(() => {});
+              }).catch(() => { });
               personalizedApi.dailyPractice().then((dRes) => {
                 if (isCurrent && dRes?.data) setDaily(dRes.data);
-              }).catch(() => {});
+              }).catch(() => { });
             }
           })
           .catch(() => {
@@ -358,7 +358,7 @@ export default function Roadmap() {
 
       setFeedbackMsg('✨ Lộ trình AI đã được phân tích và lưu lại thành công!');
       setTimeout(() => setFeedbackMsg(''), 5000);
-      learnApi.stats().then((res) => { if (res?.data) setStats(res.data); }).catch(() => {});
+      learnApi.stats().then((res) => { if (res?.data) setStats(res.data); }).catch(() => { });
     } catch (e: any) {
       console.error('Lỗi khi phân tích lộ trình:', e);
       if (e?.response?.status === 429) {
@@ -396,7 +396,7 @@ export default function Roadmap() {
       if (next.has(key)) next.delete(key);
       else {
         next.add(key);
-        if (act.id) personalizedApi.completeDailyActivity(act.id).catch(() => {});
+        if (act.id) personalizedApi.completeDailyActivity(act.id).catch(() => { });
       }
 
       // Update completedActs in storage
@@ -547,13 +547,13 @@ export default function Roadmap() {
                       background: isCurrent
                         ? 'rgba(255, 255, 255, 0.16)'
                         : isPassed
-                        ? 'rgba(34, 197, 94, 0.18)'
-                        : 'rgba(255, 255, 255, 0.05)',
+                          ? 'rgba(34, 197, 94, 0.18)'
+                          : 'rgba(255, 255, 255, 0.05)',
                       border: isCurrent
                         ? '1px solid #38bdf8'
                         : isPassed
-                        ? '1px solid #4ade80'
-                        : '1px solid transparent',
+                          ? '1px solid #4ade80'
+                          : '1px solid transparent',
                       transition: 'all 0.3s ease',
                     }}
                   >
@@ -778,565 +778,567 @@ export default function Roadmap() {
           </div>
 
           <AnimatePresence mode="wait">
-          {/* TAB 1: Today's Tasks & 4-Week Plan */}
-          {tab === 'today' && (
-            <motion.div
-              key="today"
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -6 }}
-              transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
-            >
-            <div className="cols2" style={{ alignItems: 'start' }}>
-              {/* Daily Practice */}
-              <MotionCard>
-                <div className="row" style={{ alignItems: 'center' }}>
-                  <h2>
-                    <span className="dot" style={{ background: 'var(--primary)' }} />
-                    Bài tập hôm nay {daily?.totalDurationMinutes ? `(${daily.totalDurationMinutes} phút)` : ''}
-                  </h2>
-                  {activities.length > 0 && (
-                    <span className="pill" style={{ background: 'var(--tint-blue)', color: 'var(--primary)' }}>
-                      {completedActs.size}/{activities.length} hoàn thành
-                    </span>
-                  )}
-                </div>
+            {/* TAB 1: Today's Tasks & 4-Week Plan */}
+            {tab === 'today' && (
+              <motion.div
+                key="today"
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -6 }}
+                transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
+              >
+                <div className="cols2" style={{ alignItems: 'start' }}>
+                  {/* Daily Practice */}
+                  <MotionCard>
+                    <div className="row" style={{ alignItems: 'center' }}>
+                      <h2>
+                        <span className="dot" style={{ background: 'var(--primary)' }} />
+                        Bài tập hôm nay {daily?.totalDurationMinutes ? `(${daily.totalDurationMinutes} phút)` : ''}
+                      </h2>
+                      {activities.length > 0 && (
+                        <span className="pill" style={{ background: 'var(--tint-blue)', color: 'var(--primary)' }}>
+                          {completedActs.size}/{activities.length} hoàn thành
+                        </span>
+                      )}
+                    </div>
 
-                {activities.length === 0 ? (
-                  <div style={{ textAlign: 'center', padding: '36px 16px' }}>
-                    <div style={{ fontSize: 36, marginBottom: 10 }}>📋</div>
-                    <h3 style={{ fontSize: 16, fontWeight: 700, margin: '0 0 6px' }}>Chưa có nhiệm vụ hôm nay</h3>
-                    <p className="sub" style={{ maxWidth: 360, margin: '0 auto 18px', fontSize: 13.5 }}>
-                      Chạy phân tích để AI tạo kế hoạch và nhiệm vụ cho bạn.
+                    {activities.length === 0 ? (
+                      <div style={{ textAlign: 'center', padding: '36px 16px' }}>
+                        <div style={{ fontSize: 36, marginBottom: 10 }}>📋</div>
+                        <h3 style={{ fontSize: 16, fontWeight: 700, margin: '0 0 6px' }}>Chưa có nhiệm vụ hôm nay</h3>
+                        <p className="sub" style={{ maxWidth: 360, margin: '0 auto 18px', fontSize: 13.5 }}>
+                          Chạy phân tích để AI tạo kế hoạch và nhiệm vụ cho bạn.
+                        </p>
+                        <button
+                          className="btn primary sm"
+                          onClick={startAnalysis}
+                          disabled={isAnalyzing}
+                          style={{ fontWeight: 700, padding: '10px 20px', borderRadius: 10 }}
+                        >
+                          <Icon n="spark" s={15} /> Chạy phân tích AI
+                        </button>
+                        <div className="sub mt8" style={{ fontSize: 11.5, color: 'var(--text-sub)' }}>
+                          ⚡ Thao tác này tốn 1 lượt tạo lộ trình
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        {daily?.motivationalTip && (
+                          <div className="sub mt8" style={{ fontStyle: 'italic', color: 'var(--text-sub)' }}>
+                            "{daily.motivationalTip}"
+                          </div>
+                        )}
+
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 16 }}>
+                          {activities.map((act, idx) => {
+                            const isDone = completedActs.has(act.id || idx);
+                            return (
+                              <div
+                                key={act.id || idx}
+                                style={{
+                                  border: '1px solid var(--border)',
+                                  borderRadius: 12,
+                                  padding: 16,
+                                  background: isDone ? 'var(--bg-tag, #f8fafc)' : 'var(--bg-card, #fff)',
+                                  opacity: isDone ? 0.75 : 1,
+                                  transition: 'all 0.2s',
+                                }}
+                              >
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
+                                  <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                                    <input
+                                      type="checkbox"
+                                      checked={isDone}
+                                      onChange={() => toggleActivity(act, idx)}
+                                      style={{ width: 18, height: 18, marginTop: 3, cursor: 'pointer', accentColor: 'var(--primary)' }}
+                                      id={`act-${idx}`}
+                                    />
+                                    <div>
+                                      <label
+                                        htmlFor={`act-${idx}`}
+                                        style={{
+                                          fontWeight: 700,
+                                          fontSize: 15,
+                                          cursor: 'pointer',
+                                          textDecoration: isDone ? 'line-through' : 'none',
+                                          color: isDone ? 'var(--text-sub)' : 'var(--text-main)',
+                                        }}
+                                      >
+                                        {act.activityTitle}
+                                      </label>
+                                      {act.description && (
+                                        <div className="sub mt8" style={{ fontSize: 13 }}>
+                                          {act.description}
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+
+                                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
+                                    {act.durationMinutes && (
+                                      <span className="sub" style={{ fontSize: 12, fontWeight: 600 }}>
+                                        ⏱️ {act.durationMinutes}p
+                                      </span>
+                                    )}
+                                    {act.isPriority && (
+                                      <span className="pill warn" style={{ fontSize: 11, padding: '2px 8px' }}>
+                                        Ưu tiên
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+
+                                <div style={{ marginTop: 12, display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+                                  {act.activityType === 'VOCABULARY' && (
+                                    <button className="btn ghost sm" onClick={() => nav('/review')}>
+                                      Vào Ôn tập →
+                                    </button>
+                                  )}
+                                  {act.activityType === 'QUIZ' && (
+                                    <button className="btn ghost sm" onClick={() => nav('/quiz')}>
+                                      Làm Quiz →
+                                    </button>
+                                  )}
+                                  {act.activityType === 'SPEAKING' && (
+                                    <button className="btn ghost sm" onClick={() => nav('/speaking')}>
+                                      Luyện nói →
+                                    </button>
+                                  )}
+                                  {act.activityType === 'GRAMMAR' && (
+                                    <button className="btn ghost sm" onClick={() => nav('/grammar')}>
+                                      Sửa ngữ pháp →
+                                    </button>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </>
+                    )}
+                  </MotionCard>
+
+                  {/* 4-Week Plan & Milestones */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+                    <MotionCard>
+                      <h2><Icon n="book" s={20} /> Kế hoạch học tập 4 tuần</h2>
+
+                      {!plan ? (
+                        <div style={{ textAlign: 'center', padding: '36px 16px' }}>
+                          <div style={{ fontSize: 36, marginBottom: 10 }}>📅</div>
+                          <h3 style={{ fontSize: 16, fontWeight: 700, margin: '0 0 6px' }}>Chưa có kế hoạch 4 tuần</h3>
+                          <p className="sub" style={{ maxWidth: 360, margin: '0 auto 18px', fontSize: 13.5 }}>
+                            Chạy phân tích để AI tạo kế hoạch từ dữ liệu học của bạn.
+                          </p>
+                          <button
+                            className="btn primary sm"
+                            onClick={startAnalysis}
+                            disabled={isAnalyzing}
+                            style={{ fontWeight: 700, padding: '10px 20px', borderRadius: 10 }}
+                          >
+                            <Icon n="spark" s={15} /> Chạy phân tích AI
+                          </button>
+                          <div className="sub mt8" style={{ fontSize: 11.5, color: 'var(--text-sub)' }}>
+                            ⚡ Thao tác này tốn 1 lượt tạo lộ trình
+                          </div>
+                        </div>
+                      ) : (
+                        <>
+                          {plan.planDescription && (
+                            <div className="sub mt8">
+                              {plan.planDescription}
+                            </div>
+                          )}
+
+                          {(plan.primaryGoal || plan.totalCommitmentMinutesPerWeek) && (
+                            <div className="mt16" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                              {plan.primaryGoal && (
+                                <div className="kv">
+                                  <span>Mục tiêu chính</span>
+                                  <b>{plan.primaryGoal}</b>
+                                </div>
+                              )}
+                              {plan.totalCommitmentMinutesPerWeek && (
+                                <div className="kv">
+                                  <span>Thời gian cam kết</span>
+                                  <b>{plan.totalCommitmentMinutesPerWeek} phút / tuần</b>
+                                </div>
+                              )}
+                            </div>
+                          )}
+
+                          {plan.milestones && plan.milestones.length > 0 && (
+                            <>
+                              <h3 style={{ fontSize: 15, fontWeight: 700, margin: '20px 0 10px' }}>Các cột mốc quan trọng (Milestones)</h3>
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                                {plan.milestones.map((m: any, idx: number) => (
+                                  <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', background: 'var(--bg-tag, #f8fafc)', borderRadius: 8 }}>
+                                    <span className="pill" style={{ fontSize: 11 }}>Tuần {m.week || idx + 1}</span>
+                                    <span style={{ fontSize: 13, fontWeight: 600 }}>{m.name || m.title || `Hoàn thiện mục tiêu tuần ${m.week || idx + 1}`}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </>
+                          )}
+                        </>
+                      )}
+                    </MotionCard>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+
+            {/* TAB 2: Weakness & Strength Analysis */}
+            {tab === 'analysis' && (
+              <motion.div
+                key="analysis"
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -6 }}
+                transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
+              >
+                {!analysis ? (
+                  <MotionCard style={{ textAlign: 'center', padding: '48px 20px' }}>
+                    <div style={{ fontSize: 40, marginBottom: 14 }}>🔍</div>
+                    <h2 style={{ fontSize: 18, fontWeight: 800, margin: '0 0 8px' }}>
+                      Chưa có phân tích điểm mạnh — điểm yếu
+                    </h2>
+                    <p className="sub" style={{ maxWidth: 420, margin: '0 auto 20px', fontSize: 14 }}>
+                      Chạy phân tích để AI đánh giá từ dữ liệu học của bạn.
                     </p>
                     <button
                       className="btn primary sm"
                       onClick={startAnalysis}
                       disabled={isAnalyzing}
-                      style={{ fontWeight: 700, padding: '10px 20px', borderRadius: 10 }}
+                      style={{ fontWeight: 700, padding: '10px 22px', borderRadius: 10 }}
                     >
                       <Icon n="spark" s={15} /> Chạy phân tích AI
                     </button>
-                    <div className="sub mt8" style={{ fontSize: 11.5, color: 'var(--text-sub)' }}>
+                    <div className="sub mt8" style={{ fontSize: 12, color: 'var(--text-sub)' }}>
                       ⚡ Thao tác này tốn 1 lượt tạo lộ trình
                     </div>
-                  </div>
+                  </MotionCard>
                 ) : (
-                  <>
-                    {daily?.motivationalTip && (
-                      <div className="sub mt8" style={{ fontStyle: 'italic', color: 'var(--text-sub)' }}>
-                        "{daily.motivationalTip}"
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+                    {/* Learning Style Assessment */}
+                    <div className="card">
+                      <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
+                        <Icon n="spark" s={28} />
+                        <div>
+                          <h2 style={{ margin: 0 }}>Đặc điểm phong cách học của bạn</h2>
+                          <div className="sub mt8">
+                            Phong cách chính: <b>{formatLearningStyle(analysis.learningStyle)}</b> · Mức độ duy trì: <b>{formatMotivationLevel(analysis.motivationLevel)}</b>
+                          </div>
+                        </div>
                       </div>
-                    )}
+                    </div>
 
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 16 }}>
-                      {activities.map((act, idx) => {
-                        const isDone = completedActs.has(act.id || idx);
-                        return (
-                          <div
-                            key={act.id || idx}
-                            style={{
-                              border: '1px solid var(--border)',
-                              borderRadius: 12,
-                              padding: 16,
-                              background: isDone ? 'var(--bg-tag, #f8fafc)' : 'var(--bg-card, #fff)',
-                              opacity: isDone ? 0.75 : 1,
-                              transition: 'all 0.2s',
-                            }}
-                          >
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
-                              <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-                                <input
-                                  type="checkbox"
-                                  checked={isDone}
-                                  onChange={() => toggleActivity(act, idx)}
-                                  style={{ width: 18, height: 18, marginTop: 3, cursor: 'pointer', accentColor: 'var(--primary)' }}
-                                  id={`act-${idx}`}
-                                />
-                                <div>
-                                  <label
-                                    htmlFor={`act-${idx}`}
-                                    style={{
-                                      fontWeight: 700,
-                                      fontSize: 15,
-                                      cursor: 'pointer',
-                                      textDecoration: isDone ? 'line-through' : 'none',
-                                      color: isDone ? 'var(--text-sub)' : 'var(--text-main)',
-                                    }}
-                                  >
-                                    {act.activityTitle}
-                                  </label>
-                                  {act.description && (
-                                    <div className="sub mt8" style={{ fontSize: 13 }}>
-                                      {act.description}
+                    <div className="cols2" style={{ alignItems: 'start' }}>
+                      {/* Outstanding Strengths */}
+                      <div className="card">
+                        <div className="row">
+                          <h2 style={{ color: 'var(--green-dark, #15803d)' }}>
+                            🟢 Điểm mạnh vượt trội ({analysis.outstandingStrengths?.length ?? 0})
+                          </h2>
+                        </div>
+                        <div className="sub mt8">Các chủ đề và kỹ năng bạn đã xử lý rất tốt:</div>
+
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 16 }}>
+                          {!analysis.outstandingStrengths || analysis.outstandingStrengths.length === 0 ? (
+                            <div className="sub mt8" style={{ fontStyle: 'italic', padding: '16px 0' }}>
+                              Chưa ghi nhận điểm mạnh nổi bật. Tiếp tục luyện tập để AI nhận diện các thế mạnh của bạn!
+                            </div>
+                          ) : (
+                            analysis.outstandingStrengths.map((s: any, idx: number) => {
+                              const name = toVietnameseSkillName(s.area || s.skill || s.category || 'Điểm mạnh');
+                              const level = s.excellenceLevel || s.proficiencyLevel || 'XUẤT SẮC';
+                              const desc = toVietnameseRoadmapText(s.description || s.leverageStrategy);
+                              return (
+                                <div key={idx} style={{ padding: 14, background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 10 }}>
+                                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <b style={{ color: '#166534', fontSize: 15 }}>{name}</b>
+                                    <span className="pill green" style={{ fontSize: 11 }}>{formatExcellenceLevel(level)}</span>
+                                  </div>
+                                  <div className="sub mt8" style={{ fontSize: 13, color: '#14532d' }}>
+                                    {desc}
+                                  </div>
+                                </div>
+                              );
+                            })
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Critical Weaknesses */}
+                      <div className="card">
+                        <div className="row">
+                          <h2 style={{ color: 'var(--red-dark, #b91c1c)' }}>
+                            🔴 Lỗ hổng cần cải thiện ({analysis.criticalWeaknesses?.length ?? 0})
+                          </h2>
+                        </div>
+                        <div className="sub mt8">Những điểm thường bị trừ điểm hoặc hay quên:</div>
+
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 16 }}>
+                          {!analysis.criticalWeaknesses || analysis.criticalWeaknesses.length === 0 ? (
+                            <div style={{ padding: 14, background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 10, color: '#166534', fontWeight: 600 }}>
+                              ✅ Không còn lỗ hổng nghiêm trọng
+                            </div>
+                          ) : (
+                            analysis.criticalWeaknesses.map((w: any, idx: number) => {
+                              const name = toVietnameseSkillName(w.area || w.skill || w.category || 'Lỗ hổng kiến thức');
+                              const rawRec = w.recommendation || (w.strategies && w.strategies.length > 0 ? w.strategies[0] : null);
+                              const rec = toVietnameseRoadmapText(rawRec);
+                              const desc = toVietnameseRoadmapText(w.description);
+                              return (
+                                <div key={idx} style={{ padding: 14, background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 10 }}>
+                                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <b style={{ color: '#991b1b', fontSize: 15 }}>{name}</b>
+                                    <span className="pill warn" style={{ fontSize: 11 }}>{formatSeverity(w.severity)}</span>
+                                  </div>
+                                  <div className="sub mt8" style={{ fontSize: 13, color: '#7f1d1d' }}>
+                                    {desc}
+                                  </div>
+                                  {rec && (
+                                    <div style={{ marginTop: 8, fontSize: 12, color: '#991b1b', fontStyle: 'italic', background: 'rgba(255,255,255,0.6)', padding: '6px 10px', borderRadius: 6 }}>
+                                      💡 <b>Lời khuyên từ Vi:</b> {rec}
                                     </div>
                                   )}
                                 </div>
-                              </div>
-
-                              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
-                                {act.durationMinutes && (
-                                  <span className="sub" style={{ fontSize: 12, fontWeight: 600 }}>
-                                    ⏱️ {act.durationMinutes}p
-                                  </span>
-                                )}
-                                {act.isPriority && (
-                                  <span className="pill warn" style={{ fontSize: 11, padding: '2px 8px' }}>
-                                    Ưu tiên
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-
-                            <div style={{ marginTop: 12, display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
-                              {act.activityType === 'VOCABULARY' && (
-                                <button className="btn ghost sm" onClick={() => nav('/review')}>
-                                  Vào Ôn tập →
-                                </button>
-                              )}
-                              {act.activityType === 'QUIZ' && (
-                                <button className="btn ghost sm" onClick={() => nav('/quiz')}>
-                                  Làm Quiz →
-                                </button>
-                              )}
-                              {act.activityType === 'SPEAKING' && (
-                                <button className="btn ghost sm" onClick={() => nav('/speaking')}>
-                                  Luyện nói →
-                                </button>
-                              )}
-                              {act.activityType === 'GRAMMAR' && (
-                                <button className="btn ghost sm" onClick={() => nav('/grammar')}>
-                                  Sửa ngữ pháp →
-                                </button>
-                              )}
-                            </div>
-                          </div>
-                        );
-                      })}
+                              );
+                            })
+                          )}
+                        </div>
+                      </div>
                     </div>
-                  </>
+
+                    {/* Priority Actions - Only rendered if non-empty */}
+                    {analysis.priorityActions && analysis.priorityActions.length > 0 && (
+                      <div className="card">
+                        <h2><Icon n="zap" s={20} /> Hành động ưu tiên được AI đề xuất cho bạn</h2>
+                        <div className="sub mt8">Tập trung vào các việc này sẽ giúp điểm số của bạn tăng nhanh nhất:</div>
+
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 14, marginTop: 16 }}>
+                          {analysis.priorityActions.slice(0, 3).map((act: any, i: number) => {
+                            const area = formatArea(act.addressesArea, i);
+                            let actionText = 'Bắt đầu ngay';
+                            let link = '/review';
+                            if (area === 'Luyện nói') {
+                              actionText = 'Luyện nói ngay';
+                              link = '/speaking';
+                            } else if (area === 'Ngữ pháp' || area.includes('Quiz')) {
+                              actionText = 'Làm Quiz';
+                              link = '/quiz';
+                            } else if (area === 'Từ vựng') {
+                              actionText = 'Học từ vựng';
+                              link = '/words';
+                            } else {
+                              actionText = 'Vào Ôn tập';
+                              link = '/review';
+                            }
+                            const impactStr = formatImpact(act.expectedImpact);
+                            const rationaleVi = toVietnameseRoadmapText(act.rationale);
+                            const desc = rationaleVi
+                              ? `Tác động: ${impactStr}. ${rationaleVi}`
+                              : `Tác động: ${impactStr}`;
+
+                            return (
+                              <div key={i} style={{ border: '1px solid var(--border)', borderRadius: 12, padding: 16, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                                <div>
+                                  <span className="pill" style={{ fontSize: 11, marginBottom: 8 }}>{area}</span>
+                                  <h3 style={{ fontSize: 15, fontWeight: 700, margin: '6px 0' }}>{toVietnameseRoadmapText(act.action) || `Hành động ${i + 1}`}</h3>
+                                  <div className="sub" style={{ fontSize: 13 }}>{desc}</div>
+                                </div>
+                                <button className="btn ghost sm mt16" onClick={() => nav(link)}>
+                                  {actionText} →
+                                </button>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 )}
-              </MotionCard>
+              </motion.div>
+            )}
 
-              {/* 4-Week Plan & Milestones */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
-                <MotionCard>
-                  <h2><Icon n="book" s={20} /> Kế hoạch học tập 4 tuần</h2>
-
-                  {!plan ? (
-                    <div style={{ textAlign: 'center', padding: '36px 16px' }}>
-                      <div style={{ fontSize: 36, marginBottom: 10 }}>📅</div>
-                      <h3 style={{ fontSize: 16, fontWeight: 700, margin: '0 0 6px' }}>Chưa có kế hoạch 4 tuần</h3>
-                      <p className="sub" style={{ maxWidth: 360, margin: '0 auto 18px', fontSize: 13.5 }}>
-                        Chạy phân tích để AI tạo kế hoạch từ dữ liệu học của bạn.
+            {/* TAB 3: Insights & Prediction */}
+            {tab === 'insights' && (
+              <motion.div
+                key="insights"
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -6 }}
+                transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
+              >
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+                  {/* Progress Prediction Card */}
+                  {!prediction ? (
+                    <div
+                      className="card"
+                      style={{
+                        background: 'linear-gradient(135deg, #1e1b4b 0%, #312e81 100%)',
+                        color: '#fff',
+                        padding: '36px 28px',
+                        borderRadius: 16,
+                        textAlign: 'center',
+                      }}
+                    >
+                      <div style={{ fontSize: 36, marginBottom: 12 }}>📈</div>
+                      <h2 style={{ fontSize: 20, fontWeight: 800, margin: '0 0 8px', color: '#fff' }}>
+                        Chưa có dự đoán tiến độ
+                      </h2>
+                      <p style={{ color: '#c7d2fe', maxWidth: 440, margin: '0 auto 20px', fontSize: 14 }}>
+                        Chạy phân tích để AI dự đoán thời gian hoàn thành mục tiêu.
                       </p>
                       <button
                         className="btn primary sm"
                         onClick={startAnalysis}
                         disabled={isAnalyzing}
-                        style={{ fontWeight: 700, padding: '10px 20px', borderRadius: 10 }}
+                        style={{
+                          fontWeight: 700,
+                          padding: '10px 22px',
+                          borderRadius: 10,
+                          background: 'linear-gradient(135deg, #38bdf8 0%, #0284c7 100%)',
+                          color: '#0A2540',
+                          border: 'none',
+                          cursor: isAnalyzing ? 'not-allowed' : 'pointer',
+                        }}
                       >
                         <Icon n="spark" s={15} /> Chạy phân tích AI
                       </button>
-                      <div className="sub mt8" style={{ fontSize: 11.5, color: 'var(--text-sub)' }}>
+                      <div style={{ fontSize: 12, color: '#a5b4fc', marginTop: 8 }}>
                         ⚡ Thao tác này tốn 1 lượt tạo lộ trình
                       </div>
                     </div>
                   ) : (
-                    <>
-                      {plan.planDescription && (
-                        <div className="sub mt8">
-                          {plan.planDescription}
-                        </div>
-                      )}
-
-                      {(plan.primaryGoal || plan.totalCommitmentMinutesPerWeek) && (
-                        <div className="mt16" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                          {plan.primaryGoal && (
-                            <div className="kv">
-                              <span>Mục tiêu chính</span>
-                              <b>{plan.primaryGoal}</b>
-                            </div>
-                          )}
-                          {plan.totalCommitmentMinutesPerWeek && (
-                            <div className="kv">
-                              <span>Thời gian cam kết</span>
-                              <b>{plan.totalCommitmentMinutesPerWeek} phút / tuần</b>
-                            </div>
-                          )}
-                        </div>
-                      )}
-
-                      {plan.milestones && plan.milestones.length > 0 && (
-                        <>
-                          <h3 style={{ fontSize: 15, fontWeight: 700, margin: '20px 0 10px' }}>Các cột mốc quan trọng (Milestones)</h3>
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                            {plan.milestones.map((m: any, idx: number) => (
-                              <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', background: 'var(--bg-tag, #f8fafc)', borderRadius: 8 }}>
-                                <span className="pill" style={{ fontSize: 11 }}>Tuần {m.week || idx + 1}</span>
-                                <span style={{ fontSize: 13, fontWeight: 600 }}>{m.name || m.title || `Hoàn thiện mục tiêu tuần ${m.week || idx + 1}`}</span>
-                              </div>
-                            ))}
-                          </div>
-                        </>
-                      )}
-                    </>
-                  )}
-                </MotionCard>
-              </div>
-            </div>
-            </motion.div>
-          )}
-
-          {/* TAB 2: Weakness & Strength Analysis */}
-          {tab === 'analysis' && (
-            <motion.div
-              key="analysis"
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -6 }}
-              transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
-            >
-              {!analysis ? (
-                <MotionCard style={{ textAlign: 'center', padding: '48px 20px' }}>
-                  <div style={{ fontSize: 40, marginBottom: 14 }}>🔍</div>
-                  <h2 style={{ fontSize: 18, fontWeight: 800, margin: '0 0 8px' }}>
-                    Chưa có phân tích điểm mạnh — điểm yếu
-                  </h2>
-                  <p className="sub" style={{ maxWidth: 420, margin: '0 auto 20px', fontSize: 14 }}>
-                    Chạy phân tích để AI đánh giá từ dữ liệu học của bạn.
-                  </p>
-                  <button
-                    className="btn primary sm"
-                    onClick={startAnalysis}
-                    disabled={isAnalyzing}
-                    style={{ fontWeight: 700, padding: '10px 22px', borderRadius: 10 }}
-                  >
-                    <Icon n="spark" s={15} /> Chạy phân tích AI
-                  </button>
-                  <div className="sub mt8" style={{ fontSize: 12, color: 'var(--text-sub)' }}>
-                    ⚡ Thao tác này tốn 1 lượt tạo lộ trình
-                  </div>
-                </MotionCard>
-              ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-                  {/* Learning Style Assessment */}
-                  <div className="card">
-                    <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
-                      <Icon n="spark" s={28} />
-                      <div>
-                        <h2 style={{ margin: 0 }}>Đặc điểm phong cách học của bạn</h2>
-                        <div className="sub mt8">
-                          Phong cách chính: <b>{formatLearningStyle(analysis.learningStyle)}</b> · Mức độ duy trì: <b>{formatMotivationLevel(analysis.motivationLevel)}</b>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="cols2" style={{ alignItems: 'start' }}>
-                    {/* Outstanding Strengths */}
-                    <div className="card">
-                      <div className="row">
-                        <h2 style={{ color: 'var(--green-dark, #15803d)' }}>
-                          🟢 Điểm mạnh vượt trội ({analysis.outstandingStrengths?.length ?? 0})
-                        </h2>
-                      </div>
-                      <div className="sub mt8">Các chủ đề và kỹ năng bạn đã xử lý rất tốt:</div>
-
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 16 }}>
-                        {!analysis.outstandingStrengths || analysis.outstandingStrengths.length === 0 ? (
-                          <div className="sub mt8" style={{ fontStyle: 'italic', padding: '16px 0' }}>
-                            Chưa ghi nhận điểm mạnh nổi bật. Tiếp tục luyện tập để AI nhận diện các thế mạnh của bạn!
-                          </div>
-                        ) : (
-                          analysis.outstandingStrengths.map((s: any, idx: number) => {
-                            const name = toVietnameseSkillName(s.area || s.skill || s.category || 'Điểm mạnh');
-                            const level = s.excellenceLevel || s.proficiencyLevel || 'XUẤT SẮC';
-                            const desc = toVietnameseRoadmapText(s.description || s.leverageStrategy);
-                            return (
-                              <div key={idx} style={{ padding: 14, background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 10 }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                  <b style={{ color: '#166534', fontSize: 15 }}>{name}</b>
-                                  <span className="pill green" style={{ fontSize: 11 }}>{formatExcellenceLevel(level)}</span>
-                                </div>
-                                <div className="sub mt8" style={{ fontSize: 13, color: '#14532d' }}>
-                                  {desc}
-                                </div>
-                              </div>
-                            );
-                          })
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Critical Weaknesses */}
-                    <div className="card">
-                      <div className="row">
-                        <h2 style={{ color: 'var(--red-dark, #b91c1c)' }}>
-                          🔴 Lỗ hổng cần cải thiện ({analysis.criticalWeaknesses?.length ?? 0})
-                        </h2>
-                      </div>
-                      <div className="sub mt8">Những điểm thường bị trừ điểm hoặc hay quên:</div>
-
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 16 }}>
-                        {!analysis.criticalWeaknesses || analysis.criticalWeaknesses.length === 0 ? (
-                          <div style={{ padding: 14, background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 10, color: '#166534', fontWeight: 600 }}>
-                            ✅ Không còn lỗ hổng nghiêm trọng
-                          </div>
-                        ) : (
-                          analysis.criticalWeaknesses.map((w: any, idx: number) => {
-                            const name = toVietnameseSkillName(w.area || w.skill || w.category || 'Lỗ hổng kiến thức');
-                            const rawRec = w.recommendation || (w.strategies && w.strategies.length > 0 ? w.strategies[0] : null);
-                            const rec = toVietnameseRoadmapText(rawRec);
-                            const desc = toVietnameseRoadmapText(w.description);
-                            return (
-                              <div key={idx} style={{ padding: 14, background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 10 }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                  <b style={{ color: '#991b1b', fontSize: 15 }}>{name}</b>
-                                  <span className="pill warn" style={{ fontSize: 11 }}>{formatSeverity(w.severity)}</span>
-                                </div>
-                                <div className="sub mt8" style={{ fontSize: 13, color: '#7f1d1d' }}>
-                                  {desc}
-                                </div>
-                                {rec && (
-                                  <div style={{ marginTop: 8, fontSize: 12, color: '#991b1b', fontStyle: 'italic', background: 'rgba(255,255,255,0.6)', padding: '6px 10px', borderRadius: 6 }}>
-                                    💡 <b>Lời khuyên từ Vi:</b> {rec}
-                                  </div>
-                                )}
-                              </div>
-                            );
-                          })
-                        )}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Priority Actions - Only rendered if non-empty */}
-                  {analysis.priorityActions && analysis.priorityActions.length > 0 && (
-                    <div className="card">
-                      <h2><Icon n="zap" s={20} /> Hành động ưu tiên được AI đề xuất cho bạn</h2>
-                      <div className="sub mt8">Tập trung vào các việc này sẽ giúp điểm số của bạn tăng nhanh nhất:</div>
-
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 14, marginTop: 16 }}>
-                        {analysis.priorityActions.slice(0, 3).map((act: any, i: number) => {
-                          const area = formatArea(act.addressesArea, i);
-                          let actionText = 'Bắt đầu ngay';
-                          let link = '/review';
-                          if (area === 'Luyện nói') {
-                            actionText = 'Luyện nói ngay';
-                            link = '/speaking';
-                          } else if (area === 'Ngữ pháp' || area.includes('Quiz')) {
-                            actionText = 'Làm Quiz';
-                            link = '/quiz';
-                          } else if (area === 'Từ vựng') {
-                            actionText = 'Học từ vựng';
-                            link = '/words';
-                          } else {
-                            actionText = 'Vào Ôn tập';
-                            link = '/review';
-                          }
-                          const impactStr = formatImpact(act.expectedImpact);
-                          const rationaleVi = toVietnameseRoadmapText(act.rationale);
-                          const desc = rationaleVi
-                            ? `Tác động: ${impactStr}. ${rationaleVi}`
-                            : `Tác động: ${impactStr}`;
-
-                          return (
-                            <div key={i} style={{ border: '1px solid var(--border)', borderRadius: 12, padding: 16, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-                              <div>
-                                <span className="pill" style={{ fontSize: 11, marginBottom: 8 }}>{area}</span>
-                                <h3 style={{ fontSize: 15, fontWeight: 700, margin: '6px 0' }}>{toVietnameseRoadmapText(act.action) || `Hành động ${i + 1}`}</h3>
-                                <div className="sub" style={{ fontSize: 13 }}>{desc}</div>
-                              </div>
-                              <button className="btn ghost sm mt16" onClick={() => nav(link)}>
-                                {actionText} →
-                              </button>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-            </motion.div>
-          )}
-
-          {/* TAB 3: Insights & Prediction */}
-          {tab === 'insights' && (
-            <motion.div
-              key="insights"
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -6 }}
-              transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
-            >
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-              {/* Progress Prediction Card */}
-              {!prediction ? (
-                <div
-                  className="card"
-                  style={{
-                    background: 'linear-gradient(135deg, #1e1b4b 0%, #312e81 100%)',
-                    color: '#fff',
-                    padding: '36px 28px',
-                    borderRadius: 16,
-                    textAlign: 'center',
-                  }}
-                >
-                  <div style={{ fontSize: 36, marginBottom: 12 }}>📈</div>
-                  <h2 style={{ fontSize: 20, fontWeight: 800, margin: '0 0 8px', color: '#fff' }}>
-                    Chưa có dự đoán tiến độ
-                  </h2>
-                  <p style={{ color: '#c7d2fe', maxWidth: 440, margin: '0 auto 20px', fontSize: 14 }}>
-                    Chạy phân tích để AI dự đoán thời gian hoàn thành mục tiêu.
-                  </p>
-                  <button
-                    className="btn primary sm"
-                    onClick={startAnalysis}
-                    disabled={isAnalyzing}
-                    style={{
-                      fontWeight: 700,
-                      padding: '10px 22px',
-                      borderRadius: 10,
-                      background: 'linear-gradient(135deg, #38bdf8 0%, #0284c7 100%)',
-                      color: '#0A2540',
-                      border: 'none',
-                      cursor: isAnalyzing ? 'not-allowed' : 'pointer',
-                    }}
-                  >
-                    <Icon n="spark" s={15} /> Chạy phân tích AI
-                  </button>
-                  <div style={{ fontSize: 12, color: '#a5b4fc', marginTop: 8 }}>
-                    ⚡ Thao tác này tốn 1 lượt tạo lộ trình
-                  </div>
-                </div>
-              ) : (
-                <div
-                  className="card"
-                  style={{
-                    background: 'linear-gradient(135deg, #1e1b4b 0%, #312e81 100%)',
-                    color: '#fff',
-                    padding: 28,
-                    borderRadius: 16,
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 20 }}>
-                    <div>
-                      <span className="pill" style={{ background: '#4338ca', color: '#e0e7ff', fontSize: 12 }}>
-                        Dự báo tiến độ AI (Predictive Analytics)
-                      </span>
-                      <h2 style={{ fontSize: 26, fontWeight: 900, marginTop: 10, color: '#fff' }}>
-                        {nextLevel(currentLevel)
-                          ? `Dự kiến hoàn thành mục tiêu ${nextLevel(currentLevel)}`
-                          : 'Duy trì trình độ C1'}
-                      </h2>
-                      {prediction.estimatedCompletionDate && (
-                        <div style={{ color: '#c7d2fe', fontSize: 15, marginTop: 6 }}>
-                          Thời điểm dự kiến: <b>{new Date(prediction.estimatedCompletionDate).toLocaleDateString('vi-VN')}</b>
-                        </div>
-                      )}
-                    </div>
-
-                    <div style={{ textAlign: 'right' }}>
-                      <div style={{ fontSize: 36, fontWeight: 900, color: '#38bdf8' }}>
-                        {prediction.onTimeCompletionProbability != null
-                          ? Math.round(prediction.onTimeCompletionProbability * 100)
-                          : 0}%
-                      </div>
-                      <div style={{ fontSize: 13, color: '#a5b4fc' }}>Xác suất đạt đúng hạn</div>
-                      <span className="pill green mt8" style={{ display: 'inline-block' }}>
-                        {prediction.status === 'AHEAD' ? '🚀 Đang vượt tiến độ' : '✅ Đang bám sát lộ trình'}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Quick Wins & Long Term */}
-              <div className="cols2" style={{ alignItems: 'start' }}>
-                <div className="card">
-                  <h2>⚡ Nhiệm vụ ăn điểm nhanh (Quick Wins)</h2>
-                  <div className="sub mt8">Các hoạt động tốn dưới 5 phút mang lại hiệu quả tức thì:</div>
-
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 16 }}>
-                    {[
-                      ...(stats && stats.wordsNeedingReview === 0
-                        ? []
-                        : [
-                            {
-                              text: stats?.wordsNeedingReview != null
-                                ? `Lướt ${stats.wordsNeedingReview} flashcard từ vựng đang trễ hạn`
-                                : 'Lướt flashcard từ vựng đang trễ hạn',
-                              dur: '3 phút',
-                              link: '/review',
-                            },
-                          ]),
-                      { text: 'Gửi 1 đoạn văn tiếng Anh vào Chat với Vi để kiểm tra lỗi ngữ pháp', dur: '4 phút', link: '/chat' },
-                      { text: 'Nghe phát âm chuẩn của 3 từ vựng mới trong kho từ', dur: '2 phút', link: '/words' },
-                    ].map((item, idx) => (
-                      <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 14px', background: 'var(--bg-tag, #f8fafc)', borderRadius: 10 }}>
+                    <div
+                      className="card"
+                      style={{
+                        background: 'linear-gradient(135deg, #1e1b4b 0%, #312e81 100%)',
+                        color: '#fff',
+                        padding: 28,
+                        borderRadius: 16,
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 20 }}>
                         <div>
-                          <div style={{ fontWeight: 600, fontSize: 14 }}>{item.text}</div>
-                          <div className="sub" style={{ fontSize: 12 }}>Thời lượng: {item.dur}</div>
+                          <span className="pill" style={{ background: '#4338ca', color: '#e0e7ff', fontSize: 12 }}>
+                            Dự báo tiến độ AI (Predictive Analytics)
+                          </span>
+                          <h2 style={{ fontSize: 26, fontWeight: 900, marginTop: 10, color: '#fff' }}>
+                            {nextLevel(currentLevel)
+                              ? `Dự kiến hoàn thành mục tiêu ${nextLevel(currentLevel)}`
+                              : 'Duy trì trình độ C1'}
+                          </h2>
+                          {prediction.estimatedCompletionDate && (
+                            <div style={{ color: '#c7d2fe', fontSize: 15, marginTop: 6 }}>
+                              Thời điểm dự kiến: <b>{new Date(prediction.estimatedCompletionDate).toLocaleDateString('vi-VN')}</b>
+                            </div>
+                          )}
                         </div>
-                        <button className="btn sm ghost" onClick={() => nav(item.link)}>Làm</button>
+
+                        <div style={{ textAlign: 'right' }}>
+                          <div style={{ fontSize: 36, fontWeight: 900, color: '#38bdf8' }}>
+                            {prediction.onTimeCompletionProbability != null
+                                ? (prediction.onTimeCompletionProbability > 1
+                                  ? Math.min(100, Math.round(prediction.onTimeCompletionProbability))
+                                  : Math.min(100, Math.round(prediction.onTimeCompletionProbability * 100)))
+                                : 0}%
+                          </div>
+                          <div style={{ fontSize: 13, color: '#a5b4fc' }}>Xác suất đạt đúng hạn</div>
+                          <span className="pill green mt8" style={{ display: 'inline-block' }}>
+                            {prediction.status === 'AHEAD' ? '🚀 Đang vượt tiến độ' : 'Đang bám sát lộ trình'}
+                          </span>
+                        </div>
                       </div>
-                    ))}
+                    </div>
+                  )}
+
+                  {/* Quick Wins & Long Term */}
+                  <div className="cols2" style={{ alignItems: 'start' }}>
+                    <div className="card">
+                      <h2>⚡ Nhiệm vụ ăn điểm nhanh (Quick Wins)</h2>
+                      <div className="sub mt8">Các hoạt động tốn dưới 5 phút mang lại hiệu quả tức thì:</div>
+
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 16 }}>
+                        {[
+                          ...(stats && stats.wordsNeedingReview === 0
+                            ? []
+                            : [
+                              {
+                                text: stats?.wordsNeedingReview != null
+                                  ? `Lướt ${stats.wordsNeedingReview} flashcard từ vựng đang trễ hạn`
+                                  : 'Lướt flashcard từ vựng đang trễ hạn',
+                                dur: '3 phút',
+                                link: '/review',
+                              },
+                            ]),
+                          { text: 'Gửi 1 đoạn văn tiếng Anh vào Chat với Vi để kiểm tra lỗi ngữ pháp', dur: '4 phút', link: '/chat' },
+                          { text: 'Nghe phát âm chuẩn của 3 từ vựng mới trong kho từ', dur: '2 phút', link: '/words' },
+                        ].map((item, idx) => (
+                          <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 14px', background: 'var(--bg-tag, #f8fafc)', borderRadius: 10 }}>
+                            <div>
+                              <div style={{ fontWeight: 600, fontSize: 14 }}>{item.text}</div>
+                              <div className="sub" style={{ fontSize: 12 }}>Thời lượng: {item.dur}</div>
+                            </div>
+                            <button className="btn sm ghost" onClick={() => nav(item.link)}>Làm</button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="card">
+                      <h2>🎯 Mục tiêu dài hạn</h2>
+                      <div className="sub mt8">Định hướng nâng cao kỹ năng toàn diện:</div>
+
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginTop: 16 }}>
+                        {(() => {
+                          const totalVocab = stats ? (stats.masteredWords || 0) + (stats.learningWords || 0) : 0;
+                          const vocabPct = stats ? Math.min(100, Math.round((totalVocab / 500) * 100)) : 0;
+                          const vocabSub = stats
+                            ? `${stats.masteredWords || 0} đã thuộc · ${stats.learningWords || 0} đang học`
+                            : 'Chưa tải được số liệu';
+
+                          const longTermGoals = [
+                            {
+                              title: 'Làm chủ 500 từ vựng cốt lõi',
+                              progress: `${vocabPct}%`,
+                              sub: vocabSub,
+                            },
+                            {
+                              title: 'Tự tin giao tiếp phản xạ',
+                              progress: `${speakingScore}%`,
+                              sub: `Điểm phản xạ nói: ${speakingScore}/100`,
+                            },
+                            {
+                              title: 'Nâng cao độ chính xác ngữ pháp',
+                              progress: `${grammarScore}%`,
+                              sub: `Điểm chính xác: ${grammarScore}/100`,
+                            },
+                          ];
+
+                          return longTermGoals.map((g, idx) => (
+                            <div key={idx} style={{ border: '1px solid var(--border)', padding: 14, borderRadius: 10 }}>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 600, fontSize: 14 }}>
+                                <span>{g.title}</span>
+                                <span style={{ color: 'var(--primary)' }}>{g.progress}</span>
+                              </div>
+                              <div className="progress mt8" style={{ height: 6 }}>
+                                <i style={{ width: g.progress }} />
+                              </div>
+                              <div className="sub mt4" style={{ fontSize: 11.5, color: 'var(--text-sub)' }}>
+                                {g.sub}
+                              </div>
+                            </div>
+                          ));
+                        })()}
+                      </div>
+                    </div>
                   </div>
                 </div>
-
-                <div className="card">
-                  <h2>🎯 Mục tiêu dài hạn</h2>
-                  <div className="sub mt8">Định hướng nâng cao kỹ năng toàn diện:</div>
-
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginTop: 16 }}>
-                    {(() => {
-                      const totalVocab = stats ? (stats.masteredWords || 0) + (stats.learningWords || 0) : 0;
-                      const vocabPct = stats ? Math.min(100, Math.round((totalVocab / 500) * 100)) : 0;
-                      const vocabSub = stats
-                        ? `${stats.masteredWords || 0} đã thuộc · ${stats.learningWords || 0} đang học`
-                        : 'Chưa tải được số liệu';
-
-                      const longTermGoals = [
-                        {
-                          title: 'Làm chủ 500 từ vựng cốt lõi',
-                          progress: `${vocabPct}%`,
-                          sub: vocabSub,
-                        },
-                        {
-                          title: 'Tự tin giao tiếp phản xạ',
-                          progress: `${speakingScore}%`,
-                          sub: `Điểm phản xạ nói: ${speakingScore}/100`,
-                        },
-                        {
-                          title: 'Nâng cao độ chính xác ngữ pháp',
-                          progress: `${grammarScore}%`,
-                          sub: `Điểm chính xác: ${grammarScore}/100`,
-                        },
-                      ];
-
-                      return longTermGoals.map((g, idx) => (
-                        <div key={idx} style={{ border: '1px solid var(--border)', padding: 14, borderRadius: 10 }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 600, fontSize: 14 }}>
-                            <span>{g.title}</span>
-                            <span style={{ color: 'var(--primary)' }}>{g.progress}</span>
-                          </div>
-                          <div className="progress mt8" style={{ height: 6 }}>
-                            <i style={{ width: g.progress }} />
-                          </div>
-                          <div className="sub mt4" style={{ fontSize: 11.5, color: 'var(--text-sub)' }}>
-                            {g.sub}
-                          </div>
-                        </div>
-                      ));
-                    })()}
-                  </div>
-                </div>
-              </div>
-            </div>
-            </motion.div>
-          )}
+              </motion.div>
+            )}
           </AnimatePresence>
         </>
       )}
