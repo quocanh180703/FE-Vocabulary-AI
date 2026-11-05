@@ -2,7 +2,7 @@ import { api } from './client';
 export { api, errMsg } from './client';
 
 /* ---------- types ---------- */
-export interface User { id: number; email: string; username: string; fullName?: string; role: 'ADMIN' | 'STUDENT'; status: string; avatarUrl?: string; emailRemindersEnabled?: boolean; createdAt?: string; provider?: string }
+export interface User { id: number; email: string; username: string; fullName?: string; role: 'ADMIN' | 'STUDENT' | 'INSTRUCTOR'; status: string; avatarUrl?: string; emailRemindersEnabled?: boolean; createdAt?: string; provider?: string }
 export interface AuthResp {
   accessToken?: string;
   access_token?: string;
@@ -1623,6 +1623,7 @@ export interface AdminStudent {
   username: string;
   email: string;
   fullName: string;
+  role?: 'ADMIN' | 'STUDENT' | 'INSTRUCTOR';
   status: 'ACTIVE' | 'INACTIVE' | 'BANNED';
   hasActiveSubscription: boolean;
   totalSessions: number;
@@ -1703,12 +1704,15 @@ export const adminApi = {
   systemOverview: () => api.get<any>('/api/admin/system/overview'),
 
   // User / Student management
-  students: (page = 0, size = 20, search = '', status = '') => {
+  students: (page = 0, size = 20, search = '', status = '', role = 'STUDENT') => {
     const params = new URLSearchParams({ page: String(page), size: String(size), sort: 'createdAt,desc' });
     if (search) params.append('search', search);
     if (status && status !== 'ALL') params.append('status', status);
+    if (role) params.append('role', role);
     return api.get<{ content: AdminStudent[]; totalElements: number; totalPages: number }>(`/admin/students?${params}`);
   },
+  createInstructor: (data: { username: string; email: string; fullName: string; password: string }) =>
+    api.post<any>('/admin/students/instructors', data),
   studentDetail: (userId: number) => api.get<AdminStudentDetail>(`/admin/students/${userId}`),
   updateUserStatus: (userId: number, status: 'ACTIVE' | 'INACTIVE' | 'BANNED') =>
     api.put<User>(`/users/${userId}/status?status=${status}`),
