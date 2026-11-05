@@ -563,10 +563,7 @@ export const wordApi = {
       localStorage.setItem(itemsKey, JSON.stringify(items));
 
       // IDs list contains strictly 1 ID per unique word
-      updatedIds = items.map((w) => String(w.id));
-      if (!updatedIds.includes(idStr)) {
-        updatedIds.push(idStr);
-      }
+      updatedIds = Array.from(new Set(items.map((w) => String(w.id))));
       localStorage.setItem(idsKey, JSON.stringify(updatedIds));
 
       const count = items.length;
@@ -2157,6 +2154,85 @@ export interface AdminPackageStats {
   inactivePackages: number;
   archivedPackages: number;
 }
+
+/* ---------- Content Reports API ---------- */
+export type ContentReportType =
+  | 'WRONG_MEANING'
+  | 'WRONG_EXAMPLE'
+  | 'WRONG_PRONUNCIATION'
+  | 'WRONG_LEVEL'
+  | 'OTHER';
+
+export type ContentReportStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'FIXED';
+
+export const CONTENT_REPORT_TYPE_LABELS: Record<ContentReportType, string> = {
+  WRONG_MEANING: 'Sai nghĩa tiếng Việt',
+  WRONG_EXAMPLE: 'Câu ví dụ chưa chuẩn',
+  WRONG_PRONUNCIATION: 'Phát âm / Phiên âm sai',
+  WRONG_LEVEL: 'Cấp độ CEFR chưa đúng',
+  OTHER: 'Lỗi khác',
+};
+
+export const CONTENT_REPORT_STATUS_LABELS: Record<ContentReportStatus, { label: string; color: string; bg: string }> = {
+  PENDING: { label: 'Chờ duyệt', color: 'var(--yellow-dark)', bg: 'var(--yellow-bg)' },
+  APPROVED: { label: 'Đã duyệt lỗi', color: 'var(--primary)', bg: 'rgba(21, 101, 192, 0.1)' },
+  REJECTED: { label: 'Từ chối', color: 'var(--red-dark)', bg: 'var(--red-bg)' },
+  FIXED: { label: 'Đã sửa xong', color: 'var(--green-dark)', bg: 'var(--green-bg)' },
+};
+
+export interface ContentReportItem {
+  id: number;
+  userId: number;
+  userFullName?: string;
+  userEmail?: string;
+  cefrWordId: string;
+  lemmaSnapshot: string;
+  type: ContentReportType;
+  description: string;
+  status: ContentReportStatus;
+  adminNote?: string;
+  resolvedBy?: number;
+  resolverName?: string;
+  createdAt: string;
+  resolvedAt?: string;
+}
+
+export const contentReportApi = {
+  create: (data: { cefrWordId: string; type: ContentReportType; description: string }) =>
+    api.post<any>('/content-reports', data),
+  listAdmin: (params?: { status?: ContentReportStatus; type?: ContentReportType; page?: number; size?: number }) =>
+    api.get<any>('/admin/content-reports', { params }),
+  resolve: (id: number, data: { status: ContentReportStatus; adminNote?: string }) =>
+    api.post<any>(`/admin/content-reports/${id}/resolve`, data),
+};
+
+/* ---------- User Custom Words API ---------- */
+export interface CustomWordItem {
+  id: number;
+  userId: number;
+  lemma: string;
+  vietnameseMeaning: string;
+  partOfSpeech?: string;
+  example?: string;
+  exampleTranslation?: string;
+  cefrLevel: string;
+  topic: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export const myWordsApi = {
+  list: (params?: { level?: string; topic?: string; search?: string; page?: number; size?: number }) =>
+    api.get<any>('/my-words', { params }),
+  get: (id: number) =>
+    api.get<any>(`/my-words/${id}`),
+  create: (data: { lemma: string; vietnameseMeaning: string; partOfSpeech?: string; example?: string; exampleTranslation?: string; cefrLevel: string; topic: string }) =>
+    api.post<any>('/my-words', data),
+  update: (id: number, data: { vietnameseMeaning: string; partOfSpeech?: string; example?: string; exampleTranslation?: string; cefrLevel: string; topic: string }) =>
+    api.put<any>(`/my-words/${id}`, data),
+  delete: (id: number) =>
+    api.delete<any>(`/my-words/${id}`),
+};
 
 
 

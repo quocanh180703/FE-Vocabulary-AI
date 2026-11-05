@@ -21,6 +21,7 @@ const ADMIN_TABS: AdminTabItem[] = [
   { to: '/admin/users', label: 'Quản lý Học viên', icon: 'user', roles: ['ADMIN', 'INSTRUCTOR'] },
   { to: '/admin/words', label: 'Từ vựng & CEFR', icon: 'book', roles: ['ADMIN', 'INSTRUCTOR'] },
   { to: '/admin/quizzes', label: 'Quản lý Trắc nghiệm', icon: 'zap', roles: ['ADMIN', 'INSTRUCTOR'] },
+  { to: '/admin/content-review', label: 'Duyệt nội dung', icon: 'spark', roles: ['ADMIN', 'INSTRUCTOR'] },
   { to: '/admin/reports', label: 'Báo cáo & Thống kê', icon: 'chart', roles: ['ADMIN', 'INSTRUCTOR'] },
   { to: '/admin/ai-assistant', label: 'Trợ lý AI & Giám sát', icon: 'spark', badge: 'AI', roles: ['ADMIN'] },
 ];

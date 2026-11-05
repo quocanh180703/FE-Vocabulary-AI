@@ -36,6 +36,7 @@ const AdminOrders = lazy(() => import('./pages/admin/AdminOrders'));
 const AdminUsers = lazy(() => import('./pages/admin/AdminUsers'));
 const AdminWords = lazy(() => import('./pages/admin/AdminWords'));
 const AdminQuizzes = lazy(() => import('./pages/admin/AdminQuizzes'));
+const AdminContentReview = lazy(() => import('./pages/admin/AdminContentReview'));
 const AdminReports = lazy(() => import('./pages/admin/AdminReports'));
 const AdminAiAssistant = lazy(() => import('./pages/admin/AdminAiAssistant'));
 const PlacementTest = lazy(() => import('./pages/PlacementTest'));
@@ -118,6 +119,7 @@ export default function App() {
                       <Route path="/admin/users" element={<AdminUsers />} />
                       <Route path="/admin/words" element={<AdminWords />} />
                       <Route path="/admin/quizzes" element={<AdminQuizzes />} />
+                      <Route path="/admin/content-review" element={<AdminContentReview />} />
                       <Route path="/admin/reports" element={<AdminReports />} />
                       <Route element={<AdminGuard />}>
                         <Route path="/admin/orders" element={<AdminOrders />} />

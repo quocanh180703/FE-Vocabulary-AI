@@ -78,10 +78,6 @@ export function Layout() {
         setFavCount(ce.detail.count);
         return;
       }
-      if (ce?.detail?.ids && Array.isArray(ce.detail.ids)) {
-        setFavCount(ce.detail.ids.length);
-        return;
-      }
 
       try {
         const uid = user.id || user.username;
@@ -89,14 +85,6 @@ export function Layout() {
           const cachedItems = JSON.parse(localStorage.getItem(`vocab_fav_items_${uid}`) || '[]');
           if (Array.isArray(cachedItems) && cachedItems.length > 0) {
             setFavCount(cachedItems.length);
-            return;
-          }
-          const cachedIds = JSON.parse(localStorage.getItem(`vocab_favs_${uid}`) || '[]');
-          if (Array.isArray(cachedIds)) {
-            // Deduplicate in case old dirty cache had words mixed into ids
-            const clean = cachedIds.filter((id: string) => !id.includes(' ') && (/^\d+$/.test(id) || id.includes('-')));
-            setFavCount(clean.length || cachedIds.length);
-            return;
           }
         }
       } catch {}
