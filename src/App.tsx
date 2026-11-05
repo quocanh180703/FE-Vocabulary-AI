@@ -6,7 +6,7 @@ import { UsageProvider } from './context/UsageContext';
 import { UpgradeModal } from './components/UpgradeModal';
 import { Layout } from './components/Layout';
 import { AdminLayout } from './components/AdminLayout';
-import { Protected, Guest, AdminGuard } from './components/Guards';
+import { Protected, Guest, AdminGuard, InstructorGuard } from './components/Guards';
 import { ErrorBoundary } from './components/ErrorBoundary';
 
 // Landing Page is loaded directly for optimal LCP & FCP
@@ -48,7 +48,18 @@ function HomeSwitcher() {
   if (!user) {
     return <LandingPage />;
   }
+  if (user.role === 'INSTRUCTOR') {
+    return <Navigate to="/admin/reports" replace />;
+  }
   return <Navigate to="/dashboard" replace />;
+}
+
+function AdminDashboardRedirect() {
+  const { user } = useAuth();
+  if (user?.role === 'INSTRUCTOR') {
+    return <Navigate to="/admin/reports" replace />;
+  }
+  return <AdminDashboard />;
 }
 
 const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
@@ -100,16 +111,18 @@ export default function App() {
                     </Route>
                   </Route>
 
-                  {/* Admin Portal Routes */}
-                  <Route element={<AdminGuard />}>
+                  {/* Admin & Instructor Portal Routes */}
+                  <Route element={<InstructorGuard />}>
                     <Route element={<AdminLayout />}>
-                      <Route path="/admin" element={<AdminDashboard />} />
-                      <Route path="/admin/orders" element={<AdminOrders />} />
+                      <Route path="/admin" element={<AdminDashboardRedirect />} />
                       <Route path="/admin/users" element={<AdminUsers />} />
                       <Route path="/admin/words" element={<AdminWords />} />
                       <Route path="/admin/quizzes" element={<AdminQuizzes />} />
                       <Route path="/admin/reports" element={<AdminReports />} />
-                      <Route path="/admin/ai-assistant" element={<AdminAiAssistant />} />
+                      <Route element={<AdminGuard />}>
+                        <Route path="/admin/orders" element={<AdminOrders />} />
+                        <Route path="/admin/ai-assistant" element={<AdminAiAssistant />} />
+                      </Route>
                     </Route>
                   </Route>
 

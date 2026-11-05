@@ -174,22 +174,32 @@ export function Layout() {
           </NavLink>
         ))}
 
-        {user?.role === 'ADMIN' && (
+        {(user?.role === 'ADMIN' || user?.role === 'INSTRUCTOR') && (
           <NavLink
-            to="/admin"
+            to={user?.role === 'INSTRUCTOR' ? '/admin/reports' : '/admin'}
             className="nav"
-            title="Quản trị Admin"
+            title={user?.role === 'INSTRUCTOR' ? 'Trang Giảng viên' : 'Quản trị Admin'}
             style={{
               marginTop: 6,
-              background: 'rgba(21, 101, 192, 0.08)',
-              color: 'var(--primary-dark)',
+              background: user?.role === 'INSTRUCTOR' ? 'rgba(79, 70, 229, 0.08)' : 'rgba(21, 101, 192, 0.08)',
+              color: user?.role === 'INSTRUCTOR' ? '#4F46E5' : 'var(--primary-dark)',
               fontWeight: 800,
             }}
           >
-            <span className="nic" style={{ background: 'var(--primary)', color: '#fff' }}>
-              <Icon n="spark" s={18} />
+            <span
+              className="nic"
+              style={{
+                background: user?.role === 'INSTRUCTOR' ? '#4F46E5' : 'var(--primary)',
+                color: '#fff',
+              }}
+            >
+              <Icon n={user?.role === 'INSTRUCTOR' ? 'user' : 'spark'} s={18} />
             </span>
-            {!isSidebarCollapsed && <span className="nav-label">Quản trị Admin</span>}
+            {!isSidebarCollapsed && (
+              <span className="nav-label">
+                {user?.role === 'INSTRUCTOR' ? 'Trang Giảng viên' : 'Quản trị Admin'}
+              </span>
+            )}
           </NavLink>
         )}
 

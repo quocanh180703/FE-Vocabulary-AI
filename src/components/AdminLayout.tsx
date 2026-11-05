@@ -6,14 +6,23 @@ import { motion, AnimatePresence } from 'motion/react';
 import { PageTransition } from '../motion';
 import { ErrorBoundary } from './ErrorBoundary';
 
-const ADMIN_TABS = [
-  { to: '/admin', label: 'Tổng quan Hệ thống', icon: 'home' as const, end: true },
-  { to: '/admin/orders', label: 'Đơn hàng & Gói cước', icon: 'creditCard' as const },
-  { to: '/admin/users', label: 'Quản lý Học viên', icon: 'user' as const },
-  { to: '/admin/words', label: 'Từ vựng & CEFR', icon: 'book' as const },
-  { to: '/admin/quizzes', label: 'Quản lý Trắc nghiệm', icon: 'zap' as const },
-  { to: '/admin/reports', label: 'Báo cáo & Thống kê', icon: 'chart' as const },
-  { to: '/admin/ai-assistant', label: 'Trợ lý AI & Giám sát', icon: 'spark' as const, badge: 'AI' },
+interface AdminTabItem {
+  to: string;
+  label: string;
+  icon: 'home' | 'creditCard' | 'user' | 'book' | 'zap' | 'chart' | 'spark';
+  end?: boolean;
+  badge?: string;
+  roles?: ('ADMIN' | 'INSTRUCTOR')[];
+}
+
+const ADMIN_TABS: AdminTabItem[] = [
+  { to: '/admin', label: 'Tổng quan Hệ thống', icon: 'home', end: true, roles: ['ADMIN'] },
+  { to: '/admin/orders', label: 'Đơn hàng & Gói cước', icon: 'creditCard', roles: ['ADMIN'] },
+  { to: '/admin/users', label: 'Quản lý Học viên', icon: 'user', roles: ['ADMIN', 'INSTRUCTOR'] },
+  { to: '/admin/words', label: 'Từ vựng & CEFR', icon: 'book', roles: ['ADMIN', 'INSTRUCTOR'] },
+  { to: '/admin/quizzes', label: 'Quản lý Trắc nghiệm', icon: 'zap', roles: ['ADMIN', 'INSTRUCTOR'] },
+  { to: '/admin/reports', label: 'Báo cáo & Thống kê', icon: 'chart', roles: ['ADMIN', 'INSTRUCTOR'] },
+  { to: '/admin/ai-assistant', label: 'Trợ lý AI & Giám sát', icon: 'spark', badge: 'AI', roles: ['ADMIN'] },
 ];
 
 export function AdminLayout() {
@@ -52,6 +61,11 @@ export function AdminLayout() {
 
   const [isNavigating, setIsNavigating] = useState(false);
   const displayName = user?.fullName || user?.username || 'Administrator';
+  const isInstructor = user?.role === 'INSTRUCTOR';
+
+  const visibleTabs = ADMIN_TABS.filter(
+    (t) => !t.roles || (user?.role && t.roles.includes(user.role as any))
+  );
 
   const handleTransitionNavigate = (to: string) => (e: React.MouseEvent) => {
     e.preventDefault();
@@ -75,7 +89,12 @@ export function AdminLayout() {
       {/* Sidebar Admin Portal chuẩn theo thiết kế */}
       <aside className={'sidebar' + (isSidebarCollapsed ? ' collapsed' : '')}>
         <div className="sidebar-header">
-          <div className="brand" onClick={() => nav('/admin')} title="VocabularyAI Admin" style={{ cursor: 'pointer' }}>
+          <div
+            className="brand"
+            onClick={() => nav(isInstructor ? '/admin/reports' : '/admin')}
+            title={isInstructor ? 'VocabularyAI Instructor' : 'VocabularyAI Admin'}
+            style={{ cursor: 'pointer' }}
+          >
             <Mascot s={isSidebarCollapsed ? 34 : 36} />
             {!isSidebarCollapsed && <span className="brand-text">VocabularyAI</span>}
           </div>
@@ -83,13 +102,24 @@ export function AdminLayout() {
 
         {!isSidebarCollapsed && (
           <div style={{ padding: '0 10px 10px' }}>
-            <span className="adminbadge" style={{ fontSize: '11px', padding: '4px 10px', width: '100%', justifyContent: 'center' }}>
-              ADMIN PORTAL · QUẢN TRỊ
+            <span
+              className="adminbadge"
+              style={{
+                fontSize: '11px',
+                padding: '4px 10px',
+                width: '100%',
+                justifyContent: 'center',
+                background: isInstructor ? 'rgba(79, 70, 229, 0.12)' : undefined,
+                color: isInstructor ? '#4F46E5' : undefined,
+                borderColor: isInstructor ? 'rgba(79, 70, 229, 0.25)' : undefined,
+              }}
+            >
+              {isInstructor ? 'INSTRUCTOR PORTAL · GIẢNG VIÊN' : 'ADMIN PORTAL · QUẢN TRỊ'}
             </span>
           </div>
         )}
 
-        {ADMIN_TABS.map((t) => (
+        {visibleTabs.map((t) => (
           <NavLink
             key={t.to}
             to={t.to}
@@ -174,8 +204,16 @@ export function AdminLayout() {
               <div style={{ fontWeight: 900, fontSize: '14.5px', lineHeight: 1.2, color: 'var(--ink)' }}>
                 {displayName}
               </div>
-              <div className="sub" style={{ fontSize: '12.5px', marginTop: '2px' }}>
-                Quản trị viên
+              <div
+                className="sub"
+                style={{
+                  fontSize: '12.5px',
+                  marginTop: '2px',
+                  color: isInstructor ? '#4F46E5' : undefined,
+                  fontWeight: 700,
+                }}
+              >
+                {isInstructor ? 'Giảng viên' : 'Quản trị viên'}
               </div>
             </div>
 
@@ -184,12 +222,12 @@ export function AdminLayout() {
               onClick={() => nav('/profile')}
               style={{
                 cursor: 'pointer',
-                background: 'var(--primary)',
+                background: isInstructor ? '#4F46E5' : 'var(--primary)',
                 color: '#fff',
                 overflow: 'hidden',
                 padding: 0,
               }}
-              title="Thông tin Quản trị viên"
+              title={isInstructor ? 'Thông tin Giảng viên' : 'Thông tin Quản trị viên'}
             >
               {user?.avatarUrl && !user.avatarUrl.startsWith('#') ? (
                 <img
@@ -201,7 +239,7 @@ export function AdminLayout() {
                   }}
                 />
               ) : (
-                (user?.fullName || user?.username || 'A')[0].toUpperCase()
+                (user?.fullName || user?.username || (isInstructor ? 'I' : 'A'))[0].toUpperCase()
               )}
             </div>
           </div>
