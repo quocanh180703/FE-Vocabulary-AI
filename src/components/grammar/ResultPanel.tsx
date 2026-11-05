@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'motion/react';
-import type { GrammarResp } from '../../api';
+import type { GrammarResp, GrammarErr } from '../../api';
 import { MotionCard, AnimatedCounter, staggerContainer, staggerItem } from '../../motion';
 import viAvatar from '../../assets/vi-3d.webp';
 
@@ -14,14 +14,85 @@ export interface OutlineReport {
   outlineFeedback?: string;
 }
 
+export interface TranslationVerdict {
+  meaningMatch?: 'MATCH' | 'PARTIAL' | 'MISMATCH';
+  overall?: 'PASS' | 'FAIL';
+  isTargetWordUsed?: boolean;
+  targetWord?: string;
+  feedback?: string;
+}
+
 interface ResultPanelProps {
   res: GrammarResp;
   outlineReport?: OutlineReport;
+  translationVerdict?: TranslationVerdict;
   extraActions?: React.ReactNode;
 }
 
-export default function ResultPanel({ res, outlineReport, extraActions }: ResultPanelProps) {
+function renderHighlightedSentence(text: string, errors: GrammarErr[], activeIdx: number | null) {
+  if (!text) return null;
+  if (!errors || errors.length === 0) return text;
+
+  // Filter errors with valid character offsets
+  const validErrors = errors
+    .map((e, originalIndex) => ({ ...e, originalIndex }))
+    .filter(
+      (e) =>
+        typeof e.startOffset === 'number' &&
+        typeof e.endOffset === 'number' &&
+        e.startOffset >= 0 &&
+        e.endOffset <= text.length &&
+        e.startOffset < e.endOffset
+    )
+    .sort((a, b) => a.startOffset! - b.startOffset!);
+
+  if (validErrors.length === 0) return text;
+
+  const nodes: React.ReactNode[] = [];
+  let cursor = 0;
+
+  validErrors.forEach((err, idx) => {
+    const start = Math.max(cursor, err.startOffset!);
+    const end = Math.max(start, err.endOffset!);
+
+    if (start > cursor) {
+      nodes.push(text.substring(cursor, start));
+    }
+
+    if (end > start) {
+      const isSelected = activeIdx === err.originalIndex;
+      nodes.push(
+        <mark
+          key={`err-${idx}`}
+          title={`${err.message || 'Lỗi ngữ pháp'}${err.suggestion ? ` 👉 Gợi ý: ${err.suggestion}` : ''}`}
+          style={{
+            background: isSelected ? '#FCA5A5' : '#FEE2E2',
+            color: '#991B1B',
+            fontWeight: 700,
+            padding: '2px 5px',
+            borderRadius: 4,
+            borderBottom: isSelected ? '2.5px solid #DC2626' : '2px solid #EF4444',
+            cursor: 'pointer',
+            transition: 'background 0.2s',
+          }}
+        >
+          {text.substring(start, end)}
+        </mark>
+      );
+      cursor = end;
+    }
+  });
+
+  if (cursor < text.length) {
+    nodes.push(text.substring(cursor));
+  }
+
+  return nodes;
+}
+
+export default function ResultPanel({ res, outlineReport, translationVerdict, extraActions }: ResultPanelProps) {
   const [copied, setCopied] = useState(false);
+  const [activeErrorIdx, setActiveErrorIdx] = useState<number | null>(null);
 
   const copyCorrected = () => {
     if (!res.correctedText) return;
@@ -31,6 +102,76 @@ export default function ResultPanel({ res, outlineReport, extraActions }: Result
   };
 
   const hasErrors = res.errors && res.errors.length > 0;
+
+  // Header Status Badge:
+  let statusBadge = (
+    <span className={hasErrors ? 'pill redsoft' : 'pill greensoft'} style={{ fontWeight: 700 }}>
+      {hasErrors ? `${res.errors.length} lỗi cần sửa` : 'Hoàn hảo'}
+    </span>
+  );
+
+  if (translationVerdict) {
+    const isFail = translationVerdict.overall === 'FAIL';
+    const isMismatch = translationVerdict.meaningMatch === 'MISMATCH';
+    const isWordMissing = translationVerdict.isTargetWordUsed === false;
+
+    if (isFail) {
+      if (isMismatch) {
+        statusBadge = (
+          <span className="pill redsoft" style={{ fontWeight: 800, background: '#FEE2E2', color: '#DC2626', border: '1px solid #FCA5A5' }}>
+            ✕ Chưa đạt — Sai nghĩa
+          </span>
+        );
+      } else if (isWordMissing) {
+        statusBadge = (
+          <span className="pill warn" style={{ fontWeight: 800 }}>
+            ⚠ Chưa đạt — Thiếu từ mục tiêu
+          </span>
+        );
+      } else {
+        statusBadge = (
+          <span className="pill redsoft" style={{ fontWeight: 800 }}>
+            ✕ Chưa đạt
+          </span>
+        );
+      }
+    } else if (translationVerdict.meaningMatch === 'PARTIAL') {
+      statusBadge = (
+        <span className="pill warn" style={{ fontWeight: 800 }}>
+          ⚠ Tạm đạt — Cần chỉnh nghĩa
+        </span>
+      );
+    } else {
+      if (hasErrors) {
+        statusBadge = (
+          <span className="pill warn" style={{ fontWeight: 800 }}>
+            ✓ Đạt nghĩa · {res.errors.length} lỗi nhỏ
+          </span>
+        );
+      } else {
+        statusBadge = (
+          <span className="pill greensoft" style={{ fontWeight: 800 }}>
+            ✓ Hoàn hảo — Đạt
+          </span>
+        );
+      }
+    }
+  }
+
+  // Coach Vi Feedback:
+  let coachFeedback = hasErrors
+    ? 'Hãy đọc to câu đã sửa 3 lần theo nhịp điệu tự nhiên — cơ miệng và não bộ sẽ ghi nhớ cấu trúc chuẩn nhanh gấp đôi so với chỉ đọc nhẩm!'
+    : 'Tuyệt vời! Câu của bạn rất chuẩn ngữ pháp và tự nhiên. Tiếp tục phát huy nhé!';
+
+  if (translationVerdict) {
+    if (translationVerdict.feedback) {
+      coachFeedback = translationVerdict.feedback;
+    } else if (translationVerdict.overall === 'FAIL') {
+      coachFeedback = 'Bản dịch chưa sát nghĩa câu tiếng Việt gốc hoặc chưa dùng từ mục tiêu. Hãy xem câu gợi ý chuẩn bên trên và thử lại nhé!';
+    } else {
+      coachFeedback = 'Xuất sắc! Bạn đã truyền tải chuẩn xác nghĩa tiếng Việt và vận dụng rất tốt từ mục tiêu.';
+    }
+  }
 
   return (
     <div className="colstack" style={{ gap: 16 }}>
@@ -45,9 +186,7 @@ export default function ResultPanel({ res, outlineReport, extraActions }: Result
             <span className="pill level" style={{ fontWeight: 800 }}>
               Điểm: <AnimatedCounter value={res.score} />/100
             </span>
-            <span className={hasErrors ? 'pill redsoft' : 'pill greensoft'} style={{ fontWeight: 700 }}>
-              {hasErrors ? `${res.errors.length} lỗi cần sửa` : 'Hoàn hảo'}
-            </span>
+            {statusBadge}
           </div>
         </div>
 
@@ -124,13 +263,20 @@ export default function ResultPanel({ res, outlineReport, extraActions }: Result
           </div>
         )}
 
-        {/* Original Sentence */}
+        {/* Original Sentence with Safe Error Highlighting */}
         <div style={{ marginTop: 14, padding: '12px 16px', background: '#F8FAFC', borderRadius: 10, border: '1px solid var(--line)' }}>
-          <span className="sub" style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: 0.5 }}>
-            Câu gốc của bạn:
-          </span>
-          <div style={{ fontWeight: 600, color: 'var(--ink)', marginTop: 4, fontSize: 14.5, lineHeight: 1.5 }}>
-            {res.originalText}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span className="sub" style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+              Câu gốc của bạn:
+            </span>
+            {hasErrors && (
+              <span className="sub" style={{ fontSize: 11, color: '#94A3B8' }}>
+                (Vùng tô sáng là vị trí phát hiện lỗi)
+              </span>
+            )}
+          </div>
+          <div style={{ fontWeight: 600, color: 'var(--ink)', marginTop: 4, fontSize: 14.5, lineHeight: 1.6 }}>
+            {renderHighlightedSentence(res.originalText, res.errors, activeErrorIdx)}
           </div>
         </div>
 
@@ -184,7 +330,19 @@ export default function ResultPanel({ res, outlineReport, extraActions }: Result
             animate="visible"
           >
             {res.errors.map((e, idx) => (
-              <motion.div key={idx} variants={staggerItem} className="taskrow">
+              <motion.div
+                key={idx}
+                variants={staggerItem}
+                className="taskrow"
+                onClick={() => setActiveErrorIdx(idx === activeErrorIdx ? null : idx)}
+                style={{
+                  cursor: 'pointer',
+                  borderRadius: 10,
+                  transition: 'all 0.15s ease',
+                  border: idx === activeErrorIdx ? '1.5px solid #EF4444' : undefined,
+                  background: idx === activeErrorIdx ? '#FEF2F2' : undefined,
+                }}
+              >
                 <span className="tk" style={{ color: 'var(--primary)', fontWeight: 800 }}>
                   <b>{idx + 1}</b>
                 </span>
@@ -212,10 +370,7 @@ export default function ResultPanel({ res, outlineReport, extraActions }: Result
         <div className="coach">
           <img src={viAvatar} alt="Vi" style={{ width: 48, height: 48, objectFit: 'contain' }} />
           <div className="bubble" style={{ fontSize: 13.5, lineHeight: 1.5 }}>
-            <b>Gợi ý của Vi:</b>{' '}
-            {hasErrors
-              ? 'Hãy đọc to câu đã sửa 3 lần theo nhịp điệu tự nhiên — cơ miệng và não bộ sẽ ghi nhớ cấu trúc chuẩn nhanh gấp đôi so với chỉ đọc nhẩm!'
-              : 'Tuyệt vời! Câu của bạn rất chuẩn ngữ pháp và tự nhiên. Tiếp tục phát huy nhé!'}
+            <b>Gợi ý của Vi:</b> {coachFeedback}
           </div>
         </div>
       </MotionCard>
@@ -225,4 +380,3 @@ export default function ResultPanel({ res, outlineReport, extraActions }: Result
     </div>
   );
 }
-

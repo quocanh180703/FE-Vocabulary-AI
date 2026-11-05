@@ -39,6 +39,7 @@ export default function Words() {
   const [totalElements, setTotalElements] = useState(0);
   const [loading, setLoading] = useState(false);
   const [fav, setFav] = useState<Set<string>>(new Set());
+  const [favCount, setFavCount] = useState<number>(0);
   const [err, setErr] = useState('');
   const nav = useNavigate();
 
@@ -88,6 +89,9 @@ export default function Words() {
   useEffect(() => {
     const loadFavs = (e?: Event) => {
       const ce = e as CustomEvent;
+      if (typeof ce?.detail?.count === 'number') {
+        setFavCount(ce.detail.count);
+      }
       if (ce?.detail?.ids && Array.isArray(ce.detail.ids)) {
         setFav(new Set(ce.detail.ids.map(String)));
         return;
@@ -99,6 +103,10 @@ export default function Words() {
           const u = JSON.parse(raw);
           const uid = u?.id || u?.username;
           if (uid) {
+            const cachedItems = JSON.parse(localStorage.getItem(`vocab_fav_items_${uid}`) || '[]');
+            if (Array.isArray(cachedItems) && cachedItems.length > 0) {
+              setFavCount(cachedItems.length);
+            }
             const cachedIds: string[] = JSON.parse(localStorage.getItem(`vocab_favs_${uid}`) || '[]');
             if (Array.isArray(cachedIds) && cachedIds.length > 0) {
               setFav(new Set(cachedIds.map(String)));
@@ -109,10 +117,19 @@ export default function Words() {
 
       wordApi.favorites(0, 100)
         .then(({ data }) => {
-          const ids = new Set<string>([
-            ...data.content.map((w) => String(w.id)),
-            ...(data.localIds || []).map((id) => String(id)),
-          ]);
+          const count = typeof data?.totalElements === 'number'
+            ? data.totalElements
+            : (Array.isArray(data?.content) ? data.content.length : 0);
+          setFavCount(count);
+          const ids = new Set<string>();
+          (data?.content || []).forEach((w: any) => {
+            if (w.id != null) ids.add(String(w.id).toLowerCase().trim());
+            if (w.word) ids.add(String(w.word).toLowerCase().trim());
+            if (w.lemma) ids.add(String(w.lemma).toLowerCase().trim());
+          });
+          (data?.localIds || []).forEach((id: any) => {
+            if (id != null) ids.add(String(id).toLowerCase().trim());
+          });
           setFav(ids);
         })
         .catch(() => {});
@@ -126,30 +143,40 @@ export default function Words() {
   }, []);
 
   const toggleFav = async (id: number | string, wordObj?: Word) => {
-    const idStr = String(id);
-    const isFav = fav.has(idStr);
+    const idStr = String(id).toLowerCase().trim();
+    const wordKey = wordObj?.word ? wordObj.word.toLowerCase().trim() : '';
+    const isFav = fav.has(idStr) || (!!wordKey && fav.has(wordKey));
+    setFavCount((c) => Math.max(0, isFav ? c - 1 : c + 1));
     setFav((s) => {
       const n = new Set(s);
       if (isFav) {
         n.delete(idStr);
+        if (wordKey) n.delete(wordKey);
       } else {
         n.add(idStr);
+        if (wordKey) n.add(wordKey);
       }
       return n;
     });
 
     try {
       if (isFav) {
-        await wordApi.unfavorite(id);
+        await wordApi.unfavorite(id, wordObj?.word);
       } else {
         await wordApi.favorite(id, wordObj);
       }
     } catch (e) {
       setErr(errMsg(e));
+      setFavCount((c) => (isFav ? c + 1 : Math.max(0, c - 1)));
       setFav((s) => {
         const n = new Set(s);
-        if (isFav) n.add(idStr);
-        else n.delete(idStr);
+        if (isFav) {
+          n.add(idStr);
+          if (wordKey) n.add(wordKey);
+        } else {
+          n.delete(idStr);
+          if (wordKey) n.delete(wordKey);
+        }
         return n;
       });
     }
@@ -192,7 +219,7 @@ export default function Words() {
         <div style={{ display: 'flex', gap: 10 }}>
           <button className="btn ghost" onClick={() => nav('/favorites')} style={{ minHeight: 46, padding: '0 20px', fontSize: 14 }}>
             <svg viewBox="0 0 24 24" className="ic" style={{ color: 'var(--red)' }}><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
-            Từ yêu thích ({fav.size})
+            Từ yêu thích ({favCount})
           </button>
           <button className="btn" onClick={() => nav('/review')} style={{ minHeight: 46, padding: '0 22px', fontSize: 14 }}>
             Ôn tập ngay
@@ -314,7 +341,7 @@ export default function Words() {
             key={`${level}-${page}-${q}`}
           >
             {words.map((w) => {
-              const isSaved = fav.has(String(w.id));
+              const isSaved = fav.has(String(w.id).toLowerCase().trim()) || (!!w.word && fav.has(w.word.toLowerCase().trim())) || (!!w.lemma && fav.has(w.lemma.toLowerCase().trim()));
               const badge = w.partOfSpeech ? getPartOfSpeechBadgeStyle(w.partOfSpeech) : null;
               return (
                 <motion.div key={w.id} variants={staggerItem}>

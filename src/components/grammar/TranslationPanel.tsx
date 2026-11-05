@@ -39,6 +39,8 @@ interface TranslationResult extends GrammarResp {
   isTargetWordUsed?: boolean;
   viPrompt?: string;
   feedback?: string;
+  meaningMatch?: 'MATCH' | 'PARTIAL' | 'MISMATCH';
+  overall?: 'PASS' | 'FAIL';
 }
 
 const LEVEL_CONFIG: Record<string, { label: string; color: string; bg: string; border: string }> = {
@@ -985,6 +987,13 @@ export default function TranslationPanel() {
           >
             <ResultPanel
               res={result}
+              translationVerdict={{
+                meaningMatch: result.meaningMatch,
+                overall: result.overall,
+                isTargetWordUsed: result.isTargetWordUsed,
+                targetWord: result.targetWord,
+                feedback: result.feedback,
+              }}
               outlineReport={{
                 targetWordCount: 1,
                 usedWordCount: result.isTargetWordUsed ? 1 : 0,

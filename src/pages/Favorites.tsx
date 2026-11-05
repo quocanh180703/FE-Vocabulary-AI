@@ -28,13 +28,19 @@ export default function Favorites() {
 
       // Nếu có localIds mà danh sách chưa có đủ từ (ví dụ CEFR words lưu ở client)
       if (data.localIds && data.localIds.length > 0) {
-        const existingIds = new Set(list.map((w) => String(w.id)));
-        const missingIds = data.localIds.filter((id: string) => !existingIds.has(String(id)));
+        const existingKeys = new Set(
+          list.flatMap((w) => [
+            String(w.id).toLowerCase().trim(),
+            (w.word || '').toLowerCase().trim(),
+            (w.lemma || '').toLowerCase().trim(),
+          ]).filter(Boolean)
+        );
+        const missingIds = data.localIds.filter((id: string) => !existingKeys.has(String(id).toLowerCase().trim()));
         if (missingIds.length > 0) {
           const fetchedMissing = await Promise.all(
             missingIds.slice(0, 30).map((id: string) => wordApi.get(id).then((r) => r.data).catch(() => null))
           );
-          const validMissing = fetchedMissing.filter((w): w is Word => w !== null);
+          const validMissing = fetchedMissing.filter((w): w is Word => w !== null && !existingKeys.has((w.word || '').toLowerCase().trim()));
           list = [...list, ...validMissing];
         }
       }

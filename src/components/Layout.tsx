@@ -86,20 +86,27 @@ export function Layout() {
       try {
         const uid = user.id || user.username;
         if (uid) {
+          const cachedItems = JSON.parse(localStorage.getItem(`vocab_fav_items_${uid}`) || '[]');
+          if (Array.isArray(cachedItems) && cachedItems.length > 0) {
+            setFavCount(cachedItems.length);
+            return;
+          }
           const cachedIds = JSON.parse(localStorage.getItem(`vocab_favs_${uid}`) || '[]');
           if (Array.isArray(cachedIds)) {
-            setFavCount(cachedIds.length);
+            // Deduplicate in case old dirty cache had words mixed into ids
+            const clean = cachedIds.filter((id: string) => !id.includes(' ') && (/^\d+$/.test(id) || id.includes('-')));
+            setFavCount(clean.length || cachedIds.length);
+            return;
           }
         }
       } catch {}
 
       wordApi.favorites(0, 100)
         .then(({ data }) => {
-          const set = new Set([
-            ...data.content.map((w) => String(w.id)),
-            ...(data.localIds || []).map((id) => String(id)),
-          ]);
-          setFavCount(set.size);
+          const count = typeof data?.totalElements === 'number'
+            ? data.totalElements
+            : (Array.isArray(data?.content) ? data.content.length : 0);
+          setFavCount(count);
         })
         .catch(() => {});
     };

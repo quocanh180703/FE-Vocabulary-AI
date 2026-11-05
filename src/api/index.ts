@@ -129,8 +129,10 @@ export interface QuizHistoryItem {
   submittedAt: string;
 }
 export interface Explain { wordId: number | string; word: string; meaning: string; examples: string[]; synonyms: string[]; usageTips: string; tokensUsed: number; source: string }
-export interface GrammarErr { errorType: string; message: string; suggestion: string }
-export interface GrammarResp { originalText: string; correctedText: string; score: number; errors: GrammarErr[]; tokensUsed: number }
+export interface GrammarErr { errorType: string; message: string; suggestion: string; startOffset?: number; endOffset?: number }
+export interface GrammarResp { originalText: string; correctedText: string; score: number; errors: GrammarErr[]; tokensUsed: number; meaningMatch?: 'MATCH' | 'PARTIAL' | 'MISMATCH'; overall?: 'PASS' | 'FAIL' }
+export interface GrammarHistoryItem { id: number; mode: 'FREE' | 'TOPIC' | 'TRANSLATION'; label?: string; score: number; preview: string; createdAt: string }
+export interface GrammarHistoryDetail { id: number; mode: 'FREE' | 'TOPIC' | 'TRANSLATION'; label?: string; score: number; inputText: string; contextJson?: string; resultJson: string; createdAt: string }
 export interface Hint { progressId: number; word: string; attemptCount: number; hint: string; difficulty: string; tokensUsed: number }
 export interface Conversation { id: number; type: string; title: string; createdAt: string; isPinned?: boolean }
 export interface ChatMsg { id: number; conversationId: number; role: 'USER' | 'ASSISTANT'; content: string; tokensUsed?: number }
@@ -536,52 +538,72 @@ export const wordApi = {
   favorite: async (id: number | string, wordObj?: Word) => {
     const { idsKey, itemsKey } = getFavStorageKeys();
     const idStr = String(id);
+    const wKey = wordObj?.word ? wordObj.word.toLowerCase().trim() : '';
     let updatedIds: string[] = [];
     try {
-      const local: string[] = JSON.parse(localStorage.getItem(idsKey) || '[]');
-      if (!local.includes(idStr)) {
-        local.push(idStr);
-      }
-      updatedIds = local;
-      localStorage.setItem(idsKey, JSON.stringify(local));
-
-      const items: Word[] = JSON.parse(localStorage.getItem(itemsKey) || '[]');
+      let items: Word[] = JSON.parse(localStorage.getItem(itemsKey) || '[]');
       const targetObj = wordObj || KNOWN_CEFR_FALLBACKS[idStr];
-      if (targetObj) {
-        const idx = items.findIndex((x) => String(x.id) === idStr);
-        if (idx === -1) {
+      const matchIdx = items.findIndex((x) =>
+        String(x.id) === idStr ||
+        (wKey && x.word && x.word.toLowerCase().trim() === wKey) ||
+        (wKey && x.lemma && x.lemma.toLowerCase().trim() === wKey)
+      );
+
+      if (matchIdx === -1) {
+        if (targetObj) {
           items.push(targetObj);
         } else {
-          items[idx] = targetObj;
+          items.push({ id, word: wKey || idStr, meaning: '', level: 'A1' });
         }
-        localStorage.setItem(itemsKey, JSON.stringify(items));
+      } else if (targetObj) {
+        items[matchIdx] = { ...items[matchIdx], ...targetObj };
       }
+
+      // Save exact unique words list
+      localStorage.setItem(itemsKey, JSON.stringify(items));
+
+      // IDs list contains strictly 1 ID per unique word
+      updatedIds = items.map((w) => String(w.id));
+      if (!updatedIds.includes(idStr)) {
+        updatedIds.push(idStr);
+      }
+      localStorage.setItem(idsKey, JSON.stringify(updatedIds));
+
+      const count = items.length;
       try {
         window.dispatchEvent(
           new CustomEvent('vocab_favorites_changed', {
-            detail: { count: updatedIds.length, ids: updatedIds, added: idStr },
+            detail: { count, ids: updatedIds, added: idStr, word: wordObj?.word },
           })
         );
       } catch {}
     } catch { /* ignore */ }
     return api.post(`/words/${id}/favorite`).catch(() => ({ data: {} }));
   },
-  unfavorite: async (id: number | string) => {
+  unfavorite: async (id: number | string, wordText?: string) => {
     const { idsKey, itemsKey } = getFavStorageKeys();
     const idStr = String(id);
+    const wKey = wordText?.toLowerCase().trim();
     let updatedIds: string[] = [];
     try {
-      const local: string[] = JSON.parse(localStorage.getItem(idsKey) || '[]');
-      updatedIds = local.filter((x: string) => x !== idStr);
+      let items: Word[] = JSON.parse(localStorage.getItem(itemsKey) || '[]');
+      items = items.filter((x) => {
+        const matchId = String(x.id) === idStr;
+        const matchWord = wKey && x.word && x.word.toLowerCase().trim() === wKey;
+        const matchLemma = wKey && x.lemma && x.lemma.toLowerCase().trim() === wKey;
+        return !matchId && !matchWord && !matchLemma;
+      });
+
+      localStorage.setItem(itemsKey, JSON.stringify(items));
+
+      updatedIds = items.map((w) => String(w.id));
       localStorage.setItem(idsKey, JSON.stringify(updatedIds));
 
-      const items: Word[] = JSON.parse(localStorage.getItem(itemsKey) || '[]');
-      const filteredItems = items.filter((x) => String(x.id) !== idStr);
-      localStorage.setItem(itemsKey, JSON.stringify(filteredItems));
+      const count = items.length;
       try {
         window.dispatchEvent(
           new CustomEvent('vocab_favorites_changed', {
-            detail: { count: updatedIds.length, ids: updatedIds, removed: idStr },
+            detail: { count, ids: updatedIds, removed: idStr, word: wordText },
           })
         );
       } catch {}
@@ -614,19 +636,33 @@ export const wordApi = {
 
     if (beSuccess) {
       // Backend is authoritative for the currently authenticated user
-      const beIds = beItems.map((w) => String(w.id));
+      // Deduplicate backend items by unique word text
+      const seenWords = new Set<string>();
+      const dedupedItems: Word[] = [];
+      beItems.forEach((w) => {
+        const key = (w.word || w.lemma || String(w.id)).toLowerCase().trim();
+        if (!seenWords.has(key)) {
+          seenWords.add(key);
+          dedupedItems.push(w);
+        }
+      });
+
+      const uniqueCount = dedupedItems.length;
+      const beIds = dedupedItems.map((w) => String(w.id));
+
       try {
         localStorage.setItem(idsKey, JSON.stringify(beIds));
-        localStorage.setItem(itemsKey, JSON.stringify(beItems));
+        localStorage.setItem(itemsKey, JSON.stringify(dedupedItems));
       } catch {}
 
       return {
         data: {
-          content: beItems,
+          content: dedupedItems,
           localIds: beIds,
-          pageable: { pageNumber: page, pageSize: size, totalElements: beItems.length, totalPages: Math.ceil(beItems.length / size) || 1 },
-          totalElements: beItems.length,
-          totalPages: Math.ceil(beItems.length / size) || 1,
+          pageable: { pageNumber: page, pageSize: size, totalElements: uniqueCount, totalPages: Math.ceil(uniqueCount / size) || 1 },
+          totalElements: uniqueCount,
+          count: uniqueCount,
+          totalPages: Math.ceil(uniqueCount / size) || 1,
         },
       };
     }
@@ -662,11 +698,19 @@ export const wordApi = {
       },
     };
   },
-  isFavorite: (id: number | string): boolean => {
-    const { idsKey } = getFavStorageKeys();
+  isFavorite: (idOrWord: number | string): boolean => {
+    const { idsKey, itemsKey } = getFavStorageKeys();
     try {
-      const local: string[] = JSON.parse(localStorage.getItem(idsKey) || '[]');
-      return local.includes(String(id));
+      const target = String(idOrWord).toLowerCase().trim();
+      const localIds: string[] = JSON.parse(localStorage.getItem(idsKey) || '[]');
+      if (localIds.some((x) => String(x).toLowerCase().trim() === target)) return true;
+
+      const items: Word[] = JSON.parse(localStorage.getItem(itemsKey) || '[]');
+      return items.some((x) =>
+        String(x.id).toLowerCase().trim() === target ||
+        (x.word && x.word.toLowerCase().trim() === target) ||
+        (x.lemma && x.lemma.toLowerCase().trim() === target)
+      );
     } catch {
       return false;
     }
@@ -679,6 +723,24 @@ export const wordApi = {
       return [];
     }
   },
+};
+
+export const isWordFavorited = (
+  item?: { id?: string | number; word?: string; lemma?: string } | null,
+  favSet?: Set<string>
+): boolean => {
+  if (!item) return false;
+  if (favSet) {
+    if (item.id != null && favSet.has(String(item.id).toLowerCase().trim())) return true;
+    if (item.word && favSet.has(item.word.toLowerCase().trim())) return true;
+    if (item.lemma && favSet.has(item.lemma.toLowerCase().trim())) return true;
+    return false;
+  }
+  return (
+    (item.id != null && wordApi.isFavorite(item.id)) ||
+    (!!item.word && wordApi.isFavorite(item.word)) ||
+    (!!item.lemma && wordApi.isFavorite(item.lemma))
+  );
 };
 
 /* ---------- learning ---------- */
@@ -940,12 +1002,16 @@ export const aiApi = {
             errorType: e.errorType || 'GRAMMAR',
             message: e.explanation || e.message || '',
             suggestion: e.suggestion || '',
+            startOffset: typeof e.startOffset === 'number' ? e.startOffset : undefined,
+            endOffset: typeof e.endOffset === 'number' ? e.endOffset : undefined,
           })),
           tokensUsed: 120,
           targetWord: d.targetWord,
           isTargetWordUsed: d.isTargetWordUsed,
           viPrompt: d.viPrompt,
           feedback: d.feedback,
+          meaningMatch: d.meaningMatch,
+          overall: d.overall,
         },
       };
     }),
@@ -963,6 +1029,8 @@ export const aiApi = {
             errorType: e.errorType || 'GRAMMAR',
             message: e.explanation || e.message || '',
             suggestion: e.suggestion || '',
+            startOffset: typeof e.startOffset === 'number' ? e.startOffset : undefined,
+            endOffset: typeof e.endOffset === 'number' ? e.endOffset : undefined,
           })),
           tokensUsed: 120,
           outlineReport: d.outlineReport,
@@ -982,11 +1050,17 @@ export const aiApi = {
             errorType: e.errorType || 'GRAMMAR',
             message: e.explanation || e.message || '',
             suggestion: e.suggestion || '',
+            startOffset: typeof e.startOffset === 'number' ? e.startOffset : undefined,
+            endOffset: typeof e.endOffset === 'number' ? e.endOffset : undefined,
           })),
           tokensUsed: 120,
         } as GrammarResp,
       };
     }),
+  getGrammarHistory: (params?: { mode?: string; page?: number; size?: number }) =>
+    api.get<any>('/api/v1/ai/grammar/history', { params }).then((res) => res.data),
+  getGrammarHistoryDetail: (id: number) =>
+    api.get<any>(`/api/v1/ai/grammar/history/${id}`).then((res) => res.data),
   hint: (progressId: number, attemptCount: number) =>
     api.post<any>('/api/v1/ai/hints/generate', { learningProgressId: progressId, attemptCount }).then((res) => {
       const d = res.data;

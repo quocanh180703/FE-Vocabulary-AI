@@ -5,20 +5,21 @@ import { Icon } from '../components/icons';
 import FreeCheckPanel from '../components/grammar/FreeCheckPanel';
 import TopicPanel from '../components/grammar/TopicPanel';
 import TranslationPanel from '../components/grammar/TranslationPanel';
+import HistoryPanel from '../components/grammar/HistoryPanel';
 
-export type GrammarTabType = 'topics' | 'translate' | 'free';
+export type GrammarTabType = 'topics' | 'translate' | 'free' | 'history';
 
 export default function Grammar() {
   const [searchParams, setSearchParams] = useSearchParams();
   const queryTab = searchParams.get('tab') as GrammarTabType;
   const initialTab: GrammarTabType =
-    queryTab === 'translate' || queryTab === 'free' ? queryTab : 'topics';
+    queryTab === 'translate' || queryTab === 'free' || queryTab === 'history' ? queryTab : 'topics';
 
   const [activeTab, setActiveTab] = useState<GrammarTabType>(initialTab);
 
   useEffect(() => {
     const t = searchParams.get('tab') as GrammarTabType;
-    if (t && (t === 'topics' || t === 'translate' || t === 'free')) {
+    if (t && (t === 'topics' || t === 'translate' || t === 'free' || t === 'history')) {
       if (t !== activeTab) {
         setActiveTab(t);
       }
@@ -28,6 +29,24 @@ export default function Grammar() {
   const handleTabChange = (t: GrammarTabType) => {
     setActiveTab(t);
     setSearchParams(t === 'topics' ? {} : { tab: t });
+  };
+
+  const handleReplay = (data: {
+    mode: 'FREE' | 'TOPIC' | 'TRANSLATION';
+    text?: string;
+    context?: any;
+  }) => {
+    if (data.mode === 'TOPIC') {
+      setActiveTab('topics');
+      setSearchParams({});
+    } else if (data.mode === 'TRANSLATION') {
+      const wordId = data.context?.wordId;
+      setActiveTab('translate');
+      setSearchParams(wordId ? { tab: 'translate', wordId: String(wordId) } : { tab: 'translate' });
+    } else {
+      setActiveTab('free');
+      setSearchParams({ tab: 'free' });
+    }
   };
 
   return (
@@ -52,7 +71,7 @@ export default function Grammar() {
         <QuotaBadge featureKey="grammar" labelSuffix="lượt kiểm tra hôm nay" />
       </div>
 
-      {/* 3 Tabs Switcher */}
+      {/* 4 Tabs Switcher */}
       <div className="chips" style={{ marginBottom: 22, gap: 10 }}>
         <button
           type="button"
@@ -80,12 +99,27 @@ export default function Grammar() {
         >
           <Icon n="spark" s={18} /> 3. Viết tự do
         </button>
+
+        <button
+          type="button"
+          className={'chip' + (activeTab === 'history' ? ' on' : '')}
+          onClick={() => handleTabChange('history')}
+          style={{ padding: '8px 20px', fontSize: 14, fontWeight: 700 }}
+        >
+          <Icon n="clock" s={18} /> 4. Lịch sử
+        </button>
       </div>
 
       {/* Tab Panels */}
       {activeTab === 'topics' && <TopicPanel />}
       {activeTab === 'translate' && <TranslationPanel />}
       {activeTab === 'free' && <FreeCheckPanel />}
+      {activeTab === 'history' && (
+        <HistoryPanel
+          onReplay={handleReplay}
+          onGoToTopics={() => handleTabChange('topics')}
+        />
+      )}
     </div>
   );
 }

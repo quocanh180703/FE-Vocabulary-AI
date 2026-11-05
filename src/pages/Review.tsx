@@ -11,6 +11,7 @@ import {
   cleanDefinitionText,
   analyzeWordRelations,
   generateFallbackExplanation,
+  isWordFavorited,
 } from '../api';
 import type { Word, ProgressItem } from '../api';
 import { Mascot, Icon } from '../components/icons';
@@ -93,15 +94,27 @@ export default function Review() {
   const [remembered, setRemembered] = useState(0);
   const [forgotten, setForgotten] = useState(0);
 
-  // Favorite tracking for flashcard heart button
-  const [favoriteIds, setFavoriteIds] = useState<Set<string | number>>(new Set());
+  // Favorite tracking for flashcard heart button (tracks both IDs and word texts)
+  const [favoriteKeys, setFavoriteKeys] = useState<Set<string>>(new Set());
+
+  const isCurFavorited = (card?: FlashcardWord | null): boolean => {
+    return isWordFavorited(card, favoriteKeys);
+  };
 
   useEffect(() => {
     const fetchFavs = () => {
       wordApi.favorites(0, 500)
         .then(({ data }) => {
-          const ids = new Set((data?.content || []).map((w: any) => String(w.id)));
-          setFavoriteIds(ids);
+          const keys = new Set<string>();
+          (data?.content || []).forEach((w: any) => {
+            if (w.id != null) keys.add(String(w.id).toLowerCase().trim());
+            if (w.word) keys.add(String(w.word).toLowerCase().trim());
+            if (w.lemma) keys.add(String(w.lemma).toLowerCase().trim());
+          });
+          (data?.localIds || []).forEach((id: any) => {
+            if (id != null) keys.add(String(id).toLowerCase().trim());
+          });
+          setFavoriteKeys(keys);
         })
         .catch(() => {});
     };
@@ -117,31 +130,54 @@ export default function Review() {
   const toggleFavorite = async (e: React.MouseEvent) => {
     e.stopPropagation();
     const cur = cards[i];
-    if (!cur?.id) return;
-    const wordId = String(cur.id);
-    const isFav = favoriteIds.has(wordId);
+    if (!cur?.id && !cur?.word) return;
+    const idKey = cur.id != null ? String(cur.id).toLowerCase().trim() : '';
+    const wordKey = cur.word ? cur.word.toLowerCase().trim() : '';
+    const isFav = isCurFavorited(cur);
 
-    // Optimistic UI update
-    setFavoriteIds((prev) => {
+    // Optimistic UI update: immediately toggle in set
+    setFavoriteKeys((prev) => {
       const next = new Set(prev);
-      if (isFav) next.delete(wordId);
-      else next.add(wordId);
+      if (isFav) {
+        if (idKey) next.delete(idKey);
+        if (wordKey) next.delete(wordKey);
+      } else {
+        if (idKey) next.add(idKey);
+        if (wordKey) next.add(wordKey);
+      }
       return next;
     });
 
     try {
       if (isFav) {
-        await wordApi.unfavorite(cur.id);
+        await wordApi.unfavorite(cur.id, cur.word);
       } else {
-        await wordApi.favorite(cur.id);
+        await wordApi.favorite(cur.id, {
+          id: cur.id,
+          word: cur.word,
+          lemma: cur.word,
+          meaning: cur.meaning || cur.vietnameseMeaning || '',
+          vietnameseMeaning: cur.vietnameseMeaning || cur.meaning || '',
+          level: cur.level,
+          partOfSpeech: cur.partOfSpeech,
+          pronunciation: cur.pronunciation,
+          definition: cur.definition,
+          example: cur.example,
+          audioUrl: cur.audioUrl,
+        });
       }
       window.dispatchEvent(new CustomEvent('vocab_favorites_changed'));
     } catch {
       // Revert if API fails
-      setFavoriteIds((prev) => {
+      setFavoriteKeys((prev) => {
         const next = new Set(prev);
-        if (isFav) next.add(wordId);
-        else next.delete(wordId);
+        if (isFav) {
+          if (idKey) next.add(idKey);
+          if (wordKey) next.add(wordKey);
+        } else {
+          if (idKey) next.delete(idKey);
+          if (wordKey) next.delete(wordKey);
+        }
         return next;
       });
     }
@@ -687,29 +723,46 @@ export default function Review() {
                 </div>
 
                 <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                  <button
-                    type="button"
-                    className="btn ghost sm"
-                    onClick={toggleFavorite}
-                    title={favoriteIds.has(String(cur.id)) ? 'Bỏ yêu thích' : 'Thêm vào yêu thích'}
-                    style={{
-                      borderRadius: '50%',
-                      width: 38,
-                      height: 38,
-                      padding: 0,
-                      background: favoriteIds.has(String(cur.id)) ? '#FEE2E2' : 'rgba(100, 116, 139, 0.08)',
-                      color: favoriteIds.has(String(cur.id)) ? '#EF4444' : '#94A3B8',
-                      border: `1.5px solid ${favoriteIds.has(String(cur.id)) ? '#FCA5A5' : 'var(--line)'}`,
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      cursor: 'pointer',
-                      transition: 'all 0.15s ease',
-                    }}
-                    aria-label="yêu thích"
-                  >
-                    <Icon n="heart" s={18} />
-                  </button>
+                  {(() => {
+                    const curIsFav = isCurFavorited(cur);
+                    return (
+                      <button
+                        type="button"
+                        className="btn ghost sm"
+                        onClick={toggleFavorite}
+                        title={curIsFav ? 'Bỏ yêu thích' : 'Thêm vào yêu thích'}
+                        style={{
+                          borderRadius: '50%',
+                          width: 38,
+                          height: 38,
+                          padding: 0,
+                          background: curIsFav ? '#FEE2E2' : 'rgba(100, 116, 139, 0.08)',
+                          color: curIsFav ? '#EF4444' : '#94A3B8',
+                          border: `1.5px solid ${curIsFav ? '#FCA5A5' : 'var(--line)'}`,
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          cursor: 'pointer',
+                          transition: 'all 0.15s ease',
+                        }}
+                        aria-label="yêu thích"
+                      >
+                        <svg
+                          width={18}
+                          height={18}
+                          viewBox="0 0 24 24"
+                          fill={curIsFav ? '#EF4444' : 'none'}
+                          stroke={curIsFav ? '#EF4444' : 'currentColor'}
+                          strokeWidth={2}
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          style={{ display: 'block', transition: 'fill 0.15s ease, stroke 0.15s ease' }}
+                        >
+                          <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" />
+                        </svg>
+                      </button>
+                    );
+                  })()}
 
                   <button
                     type="button"

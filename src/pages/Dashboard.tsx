@@ -62,10 +62,15 @@ export default function Dashboard() {
 
       wordApi.favorites(0, 100)
         .then(({ data }) => {
-          const ids = new Set<string>([
-            ...data.content.map((w) => String(w.id)),
-            ...(data.localIds || []).map((id) => String(id)),
-          ]);
+          const ids = new Set<string>();
+          (data?.content || []).forEach((w: any) => {
+            if (w.id != null) ids.add(String(w.id).toLowerCase().trim());
+            if (w.word) ids.add(String(w.word).toLowerCase().trim());
+            if (w.lemma) ids.add(String(w.lemma).toLowerCase().trim());
+          });
+          (data?.localIds || []).forEach((id: any) => {
+            if (id != null) ids.add(String(id).toLowerCase().trim());
+          });
           setFavs(ids);
         })
         .catch(() => {});
@@ -93,19 +98,26 @@ export default function Dashboard() {
 
   const toggleFav = async (w: Word, e: React.MouseEvent) => {
     e.stopPropagation();
-    const idStr = String(w.id);
-    const isFav = favs.has(idStr);
+    const idStr = String(w.id).toLowerCase().trim();
+    const wordKey = w.word ? w.word.toLowerCase().trim() : '';
+    const isFav = favs.has(idStr) || (!!wordKey && favs.has(wordKey));
     try {
       if (isFav) {
-        await wordApi.unfavorite(w.id);
+        await wordApi.unfavorite(w.id, w.word);
         setFavs((s) => {
           const n = new Set(s);
           n.delete(idStr);
+          if (wordKey) n.delete(wordKey);
           return n;
         });
       } else {
         await wordApi.favorite(w.id, w);
-        setFavs((s) => new Set(s).add(idStr));
+        setFavs((s) => {
+          const n = new Set(s);
+          n.add(idStr);
+          if (wordKey) n.add(wordKey);
+          return n;
+        });
       }
     } catch {}
   };
@@ -417,7 +429,7 @@ export default function Dashboard() {
                 { id: 102, word: 'efficient', pronunciation: '/ɪˈfɪʃnt/', meaning: 'hiệu quả, năng suất', level: 'B2' },
                 { id: 103, word: 'deadline', pronunciation: '/ˈdedlaɪn/', meaning: 'hạn chót, thời hạn cuối', level: 'A2' },
               ]).map((w: any) => {
-                const isSaved = favs.has(String(w.id));
+                const isSaved = favs.has(String(w.id).toLowerCase().trim()) || (!!w.word && favs.has(w.word.toLowerCase().trim())) || (!!w.lemma && favs.has(w.lemma.toLowerCase().trim()));
                 return (
                   <div
                     className="wrow"
