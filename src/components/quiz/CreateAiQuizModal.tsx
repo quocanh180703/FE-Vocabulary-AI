@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'motion/react';
 import { documentApi, errMsg } from '../../api';
-import type { DocumentItem, DocumentAnalysis, DocumentChatMessage, Quiz } from '../../api';
+import type { DocumentItem, DocumentAnalysis, DocumentChatMessage, Quiz, DraftQuestion } from '../../api';
 import { Icon, Mascot } from '../icons';
 import { useUsage } from '../../context/UsageContext';
 import { QuotaBadge } from '../QuotaBadge';
@@ -53,6 +53,7 @@ export const CreateAiQuizModal: React.FC<CreateAiQuizModalProps> = ({
   const [chatSending, setChatSending] = useState(false);
   const [chatErr, setChatErr] = useState('');
   const chatScrollRef = useRef<HTMLDivElement>(null);
+  const [draftQuestions, setDraftQuestions] = useState<DraftQuestion[]>([]);
 
   // Step 4: Quiz Config state
   const [quizTitle, setQuizTitle] = useState('');
@@ -81,6 +82,7 @@ export const CreateAiQuizModal: React.FC<CreateAiQuizModalProps> = ({
     setDocErr('');
     setAnalysisData(null);
     setAnalysisErr('');
+    setDraftQuestions([]);
     setChatMessages([
       {
         role: 'assistant',
@@ -191,6 +193,9 @@ export const CreateAiQuizModal: React.FC<CreateAiQuizModalProps> = ({
         const replyMsg: DocumentChatMessage = { role: 'assistant', content: res.reply };
         const updated = [...newMsgs, replyMsg];
         setChatMessages(updated);
+        if (res.draftQuestions && res.draftQuestions.length > 0) {
+          setDraftQuestions(res.draftQuestions);
+        }
         // append user prompts to extraPrompt
         const promptSummary = newMsgs
           .filter((m) => m.role === 'user')
@@ -207,6 +212,19 @@ export const CreateAiQuizModal: React.FC<CreateAiQuizModalProps> = ({
           chatScrollRef.current?.scrollTo({ top: chatScrollRef.current.scrollHeight, behavior: 'smooth' });
         }, 50);
       });
+  };
+
+  const handleUseDraft = () => {
+    if (draftQuestions.length === 0) return;
+    setQuestionCount(draftQuestions.length);
+    const draftFormatted = draftQuestions.map((q, i) =>
+      `Câu ${i + 1}: ${q.content} (Đáp án: ${q.options[q.correctAnswer ?? 0] || 'A'})`
+    ).join('\n');
+    setExtraPrompt((prev) =>
+      prev ? `${prev}\n\nƯu tiên sử dụng bản nháp sau:\n${draftFormatted}`
+           : `Ưu tiên sử dụng bản nháp sau:\n${draftFormatted}`
+    );
+    setStep(4);
   };
 
   // Step 4 Quiz generation handler
@@ -941,6 +959,33 @@ export const CreateAiQuizModal: React.FC<CreateAiQuizModalProps> = ({
                   Gửi
                 </button>
               </div>
+
+              {/* Draft Questions Preview */}
+              {draftQuestions.length > 0 && (
+                <div style={{ marginTop: 14, padding: 14, background: '#F8FAFC', borderRadius: 12, border: '1px solid #E2E8F0' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10, flexWrap: 'wrap', gap: 8 }}>
+                    <b style={{ fontSize: 13.5, color: '#1E293B' }}>📝 Bản nháp câu hỏi gợi ý từ AI ({draftQuestions.length} câu):</b>
+                    <button
+                      type="button"
+                      className="btn primary sm"
+                      onClick={handleUseDraft}
+                      style={{ fontSize: 12.5, fontWeight: 700 }}
+                    >
+                      ✨ Dùng bản nháp này ({draftQuestions.length} câu)
+                    </button>
+                  </div>
+                  <div style={{ maxHeight: 180, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    {draftQuestions.map((dq, idx) => (
+                      <div key={idx} style={{ padding: '8px 10px', background: '#FFFFFF', borderRadius: 8, border: '1px solid #E2E8F0', fontSize: 12.5 }}>
+                        <b>Câu {idx + 1}:</b> {dq.content}
+                        <div style={{ color: '#059669', marginTop: 3 }}>
+                          ✓ Đáp án đúng: {dq.options?.[dq.correctAnswer ?? 0] || 'Chưa rõ'}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {/* Step 3 Navigation */}
               <div

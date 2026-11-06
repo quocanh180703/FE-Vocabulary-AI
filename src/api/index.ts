@@ -1022,8 +1022,16 @@ export interface DocumentChatMessage {
   content: string;
 }
 
+export interface DraftQuestion {
+  content: string;
+  options: string[];
+  correctAnswer?: number;
+  explanation?: string;
+}
+
 export interface DocumentChatResponse {
   reply: string;
+  draftQuestions?: DraftQuestion[];
 }
 
 export interface GenerateQuizRequest {
