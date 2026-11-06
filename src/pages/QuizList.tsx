@@ -279,6 +279,13 @@ export default function QuizList() {
           <Icon n="book" s={18} /> Bài thi
         </button>
         <button
+          className={'chip' + (activeTab === 'my-quizzes' ? ' on' : '')}
+          onClick={() => handleTabChange('my-quizzes')}
+          style={{ padding: '8px 20px', fontSize: 14, fontWeight: 700 }}
+        >
+          <Icon n="user" s={18} /> Bài tập của tôi
+        </button>
+        <button
           className={'chip' + (activeTab === 'history' ? ' on' : '')}
           onClick={() => handleTabChange('history')}
           style={{ padding: '8px 20px', fontSize: 14, fontWeight: 700 }}
@@ -372,7 +379,26 @@ export default function QuizList() {
                     <MotionCard>
                       <div className="row">
                         <b style={{ fontSize: '18.5px' }}>{qz.title}</b>
-                        <span className="pill level">Cấp {qz.level}</span>
+                        <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                          {qz.isAiGenerated && (
+                            <span
+                              className="pill"
+                              style={{
+                                background: '#F3E8FF',
+                                color: '#7E22CE',
+                                border: '1px solid #D8B4FE',
+                                fontWeight: 700,
+                                fontSize: 11.5,
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: 4,
+                              }}
+                            >
+                              <Icon n="spark" s={12} /> Do AI tạo
+                            </span>
+                          )}
+                          <span className="pill level">Cấp {qz.level}</span>
+                        </div>
                       </div>
                       {(() => {
                         const mins = qz.timeLimit > 60 ? Math.round(qz.timeLimit / 60) : qz.timeLimit;
@@ -651,21 +677,23 @@ export default function QuizList() {
                         {/* Badges row */}
                         <div className="row mt12" style={{ gap: 8, flexWrap: 'wrap' }}>
                           {/* Sparkle AI Badge */}
-                          <span
-                            className="pill"
-                            style={{
-                              background: '#F3E8FF',
-                              color: '#7E22CE',
-                              border: '1px solid #D8B4FE',
-                              fontWeight: 700,
-                              fontSize: 12,
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: 4,
-                            }}
-                          >
-                            <Icon n="spark" s={13} /> Do AI tạo
-                          </span>
+                          {qz.isAiGenerated && (
+                            <span
+                              className="pill"
+                              style={{
+                                background: '#F3E8FF',
+                                color: '#7E22CE',
+                                border: '1px solid #D8B4FE',
+                                fontWeight: 700,
+                                fontSize: 12,
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: 4,
+                              }}
+                            >
+                              <Icon n="spark" s={13} /> Do AI tạo
+                            </span>
+                          )}
 
                           {/* Visibility Badge */}
                           {isPublic ? (
