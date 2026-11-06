@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { adminApi } from '../../api';
 import type { AdminStudent, AdminStudentDetail } from '../../api';
+import { useAuth } from '../../auth/AuthContext';
 import { AutocompleteSearch } from '../../components/AutocompleteSearch';
 import { Icon } from '../../components/icons';
 import { MotionCard, AnimatedCounter, modalVariants, backdropVariants } from '../../motion';
@@ -14,7 +15,16 @@ const STATUS_FILTERS = [
   { id: 'BANNED', label: 'Đã khóa' },
 ];
 
+const ROLE_TABS = [
+  { id: 'STUDENT', label: 'Học viên', icon: 'user' },
+  { id: 'INSTRUCTOR', label: 'Instructor', icon: 'zap' },
+] as const;
+
 export default function AdminUsers() {
+  const { user: currentUser } = useAuth();
+  const isAdmin = currentUser?.role === 'ADMIN';
+
+  const [roleTab, setRoleTab] = useState<'STUDENT' | 'INSTRUCTOR'>('STUDENT');
   const [students, setStudents] = useState<AdminStudent[]>([]);
   const [totalElements, setTotalElements] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
@@ -26,8 +36,20 @@ export default function AdminUsers() {
   const [actionMsg, setActionMsg] = useState<{ text: string; error?: boolean } | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
 
+  // Modal tạo tài khoản Instructor
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [createForm, setCreateForm] = useState({
+    username: '',
+    email: '',
+    fullName: '',
+    password: '',
+    confirmPassword: '',
+  });
+  const [createError, setCreateError] = useState<string | null>(null);
+  const [createSubmitting, setCreateSubmitting] = useState(false);
+
   useEffect(() => {
-    if (selectedUser) {
+    if (selectedUser || showCreateModal) {
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = '';
@@ -35,13 +57,13 @@ export default function AdminUsers() {
     return () => {
       document.body.style.overflow = '';
     };
-  }, [selectedUser]);
+  }, [selectedUser, showCreateModal]);
 
   const fetchUsers = async (overrideSearch?: string) => {
     setLoading(true);
     try {
       const queryToUse = typeof overrideSearch === 'string' ? overrideSearch : search;
-      const res = await adminApi.students(page, 15, queryToUse, statusFilter);
+      const res = await adminApi.students(page, 15, queryToUse, statusFilter, roleTab);
       if (res.data) {
         setStudents(res.data.content || []);
         setTotalElements(res.data.totalElements || 0);
@@ -56,7 +78,7 @@ export default function AdminUsers() {
 
   useEffect(() => {
     fetchUsers();
-  }, [page, statusFilter]);
+  }, [page, statusFilter, roleTab]);
 
   const handleSearch = (customQuery?: string) => {
     const q = typeof customQuery === 'string' ? customQuery : search;
@@ -89,20 +111,106 @@ export default function AdminUsers() {
         setSelectedUser(res.data);
       }
     } catch (e: any) {
-      alert('Không thể tải chi tiết học viên: ' + (e?.message || 'Lỗi server'));
+      alert('Không thể tải chi tiết: ' + (e?.message || 'Lỗi server'));
     } finally {
       setDetailLoading(false);
     }
   };
 
+  const handleCreateInstructorSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setCreateError(null);
+
+    // Validation
+    const username = createForm.username.trim();
+    const email = createForm.email.trim();
+    const fullName = createForm.fullName.trim();
+    const password = createForm.password;
+    const confirmPassword = createForm.confirmPassword;
+
+    if (!username || username.length < 3) {
+      setCreateError('Tên đăng nhập phải có ít nhất 3 ký tự (chữ cái, số, gạch dưới).');
+      return;
+    }
+    if (!/^[a-zA-Z0-9_]+$/.test(username)) {
+      setCreateError('Tên đăng nhập chỉ được chứa chữ cái, số và dấu gạch dưới (_).');
+      return;
+    }
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setCreateError('Email không hợp lệ.');
+      return;
+    }
+    if (!fullName || fullName.length < 2) {
+      setCreateError('Họ và tên phải có ít nhất 2 ký tự.');
+      return;
+    }
+    if (!password || password.length < 6) {
+      setCreateError('Mật khẩu phải có ít nhất 6 ký tự.');
+      return;
+    }
+    if (password !== confirmPassword) {
+      setCreateError('Mật khẩu xác nhận không khớp.');
+      return;
+    }
+
+    setCreateSubmitting(true);
+    try {
+      await adminApi.createInstructor({ username, email, fullName, password });
+      setShowCreateModal(false);
+      setCreateForm({ username: '', email: '', fullName: '', password: '', confirmPassword: '' });
+      setActionMsg({ text: `Tạo tài khoản Instructor "${username}" thành công!` });
+      setTimeout(() => setActionMsg(null), 5000);
+
+      // Chuyển sang tab Instructor để xem ngay tài khoản vừa tạo
+      if (roleTab !== 'INSTRUCTOR') {
+        setRoleTab('INSTRUCTOR');
+      } else {
+        setPage(0);
+        fetchUsers();
+      }
+    } catch (err: any) {
+      console.error('Create instructor error:', err);
+      const msg = err?.response?.data?.message || err?.message || 'Lỗi khi tạo tài khoản Instructor.';
+      setCreateError(msg);
+    } finally {
+      setCreateSubmitting(false);
+    }
+  };
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
-      {/* Title */}
-      <div className="pagehead">
-        <h1>Quản lý Học viên</h1>
-        <div className="sub">
-          <AnimatedCounter value={totalElements} /> học viên · tìm kiếm, lọc theo trạng thái và quản lý tài khoản
+      {/* Title + Action */}
+      <div className="pagehead" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12 }}>
+        <div>
+          <h1>{roleTab === 'STUDENT' ? 'Quản lý Học viên' : 'Quản lý Instructor'}</h1>
+          <div className="sub">
+            <AnimatedCounter value={totalElements} /> {roleTab === 'STUDENT' ? 'học viên' : 'instructor'} · tìm kiếm, lọc theo trạng thái và quản lý tài khoản
+          </div>
         </div>
+
+        {isAdmin && (
+          <button
+            type="button"
+            className="btn primary"
+            onClick={() => {
+              setCreateError(null);
+              setCreateForm({ username: '', email: '', fullName: '', password: '', confirmPassword: '' });
+              setShowCreateModal(true);
+            }}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 8,
+              fontWeight: 700,
+              padding: '10px 18px',
+              borderRadius: 12,
+              boxShadow: '0 4px 14px rgba(24, 119, 242, 0.25)',
+              cursor: 'pointer',
+            }}
+          >
+            <span style={{ fontSize: 16 }}>＋</span> Tạo tài khoản Instructor
+          </button>
+        )}
       </div>
 
       {actionMsg && (
@@ -111,6 +219,43 @@ export default function AdminUsers() {
         </div>
       )}
 
+      {/* Role Tabs */}
+      <div style={{ display: 'flex', gap: 8, borderBottom: '1px solid var(--border-soft, #E2E8F0)', paddingBottom: 12 }}>
+        {ROLE_TABS.map((tab) => {
+          const isActive = roleTab === tab.id;
+          return (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => {
+                if (roleTab !== tab.id) {
+                  setRoleTab(tab.id);
+                  setPage(0);
+                }
+              }}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 8,
+                padding: '9px 18px',
+                borderRadius: 12,
+                fontSize: 14,
+                fontWeight: 700,
+                border: 'none',
+                cursor: 'pointer',
+                transition: 'all 0.15s ease',
+                background: isActive ? 'var(--primary, #1877F2)' : 'var(--card-bg, #FFFFFF)',
+                color: isActive ? '#FFFFFF' : 'var(--muted, #64748B)',
+                boxShadow: isActive ? '0 4px 12px rgba(24, 119, 242, 0.22)' : 'none',
+              }}
+            >
+              <Icon n={tab.icon as any} s={16} />
+              {tab.label}
+            </button>
+          );
+        })}
+      </div>
+
       {/* Toolbar: Search + Filter Chips */}
       <div className="toolbar">
         <div style={{ flex: 1, minWidth: 260 }}>
@@ -118,7 +263,7 @@ export default function AdminUsers() {
             value={search}
             onChange={setSearch}
             onSearch={handleSearch}
-            placeholder="Tìm theo tên đăng nhập, email, họ tên..."
+            placeholder={roleTab === 'STUDENT' ? "Tìm theo tên đăng nhập, email, họ tên học viên..." : "Tìm theo tên đăng nhập, email, họ tên instructor..."}
             type="admin-users"
             showButton={true}
             buttonText="Tìm kiếm"
@@ -149,11 +294,12 @@ export default function AdminUsers() {
         <table className="atable">
           <thead>
             <tr>
-              <th>Học viên</th>
+              <th>{roleTab === 'STUDENT' ? 'Học viên' : 'Giảng viên'}</th>
               <th>Mã ID</th>
+              <th>Vai trò</th>
               <th>Trạng thái</th>
-              <th>Từ đã học</th>
-              <th>Số buổi học</th>
+              <th>{roleTab === 'STUDENT' ? 'Từ đã học' : 'Từ vựng'}</th>
+              <th>{roleTab === 'STUDENT' ? 'Số buổi học' : 'Phiên hoạt động'}</th>
               <th>Ngày tham gia</th>
               <th style={{ textAlign: 'right' }}>Thao tác</th>
             </tr>
@@ -161,20 +307,23 @@ export default function AdminUsers() {
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={7} style={{ padding: 40, textAlign: 'center', color: 'var(--muted)' }}>
-                  Đang tải danh sách người dùng...
+                <td colSpan={8} style={{ padding: 40, textAlign: 'center', color: 'var(--muted)' }}>
+                  Đang tải danh sách...
                 </td>
               </tr>
             ) : students.length === 0 ? (
               <tr>
-                <td colSpan={7} style={{ padding: 40, textAlign: 'center', color: 'var(--muted)' }}>
-                  Không tìm thấy người dùng nào phù hợp.
+                <td colSpan={8} style={{ padding: 40, textAlign: 'center', color: 'var(--muted)' }}>
+                  {roleTab === 'STUDENT'
+                    ? 'Không tìm thấy học viên nào phù hợp.'
+                    : 'Không tìm thấy Instructor nào phù hợp.'}
                 </td>
               </tr>
             ) : (
               students.map((u, idx) => {
                 const isActive = u.status === 'ACTIVE';
                 const isBanned = u.status === 'BANNED';
+                const userRole = u.role || roleTab;
                 return (
                   <tr key={u.userId}>
                     <td>
@@ -183,14 +332,16 @@ export default function AdminUsers() {
                           className="uavatar sm"
                           style={{
                             background:
-                              idx % 3 === 0
+                              userRole === 'INSTRUCTOR'
+                                ? '#8B5CF6'
+                                : idx % 3 === 0
                                 ? 'var(--primary)'
                                 : idx % 3 === 1
                                 ? 'var(--green)'
                                 : 'var(--yellow-dark)',
                           }}
                         >
-                          {(u.fullName || u.username || 'H')[0].toUpperCase()}
+                          {(u.fullName || u.username || 'U')[0].toUpperCase()}
                         </span>
                         <div>
                           <b>{u.fullName || u.username}</b>
@@ -200,6 +351,18 @@ export default function AdminUsers() {
                     </td>
                     <td>
                       <b style={{ color: 'var(--muted)' }}>#{u.userId}</b>
+                    </td>
+                    <td>
+                      <span
+                        className="pill"
+                        style={{
+                          background: userRole === 'INSTRUCTOR' ? 'rgba(139, 92, 246, 0.12)' : 'rgba(24, 119, 242, 0.1)',
+                          color: userRole === 'INSTRUCTOR' ? '#7C3AED' : 'var(--primary)',
+                          fontWeight: 700,
+                        }}
+                      >
+                        {userRole}
+                      </span>
                     </td>
                     <td>
                       <span
@@ -226,41 +389,43 @@ export default function AdminUsers() {
                           className="btn ghost sm"
                           onClick={() => viewDetail(u.userId)}
                           disabled={detailLoading}
-                          title="Xem chi tiết học viên"
+                          title="Xem chi tiết"
                           style={{ padding: '4px 10px', fontSize: 12.5 }}
                         >
                           Chi tiết
                         </button>
-                        {isActive ? (
-                          <button
-                            type="button"
-                            className="btn ghost sm"
-                            onClick={() => handleStatusChange(u.userId, 'BANNED')}
-                            title="Khóa tài khoản này"
-                            style={{
-                              padding: '4px 10px',
-                              fontSize: 12.5,
-                              color: 'var(--red-dark)',
-                              borderColor: 'rgba(229,72,77,0.3)',
-                            }}
-                          >
-                            Khóa
-                          </button>
-                        ) : (
-                          <button
-                            type="button"
-                            className="btn ghost sm"
-                            onClick={() => handleStatusChange(u.userId, 'ACTIVE')}
-                            title="Mở khóa tài khoản"
-                            style={{
-                              padding: '4px 10px',
-                              fontSize: 12.5,
-                              color: 'var(--green-dark)',
-                              borderColor: 'rgba(53,158,125,0.3)',
-                            }}
-                          >
-                            Mở khóa
-                          </button>
+                        {isAdmin && (
+                          isActive ? (
+                            <button
+                              type="button"
+                              className="btn ghost sm"
+                              onClick={() => handleStatusChange(u.userId, 'BANNED')}
+                              title="Khóa tài khoản này"
+                              style={{
+                                padding: '4px 10px',
+                                fontSize: 12.5,
+                                color: 'var(--red-dark)',
+                                borderColor: 'rgba(229,72,77,0.3)',
+                              }}
+                            >
+                              Khóa
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              className="btn ghost sm"
+                              onClick={() => handleStatusChange(u.userId, 'ACTIVE')}
+                              title="Mở khóa tài khoản"
+                              style={{
+                                padding: '4px 10px',
+                                fontSize: 12.5,
+                                color: 'var(--green-dark)',
+                                borderColor: 'rgba(53,158,125,0.3)',
+                              }}
+                            >
+                              Mở khóa
+                            </button>
+                          )
                         )}
                       </div>
                     </td>
@@ -276,7 +441,7 @@ export default function AdminUsers() {
       {totalPages > 1 && (
         <div className="row" style={{ alignItems: 'center' }}>
           <span className="sub">
-            Trang <b>{page + 1}</b> / <b>{totalPages}</b> · {totalElements} học viên
+            Trang <b>{page + 1}</b> / <b>{totalPages}</b> · {totalElements} {roleTab === 'STUDENT' ? 'học viên' : 'instructor'}
           </span>
           <div style={{ display: 'flex', gap: 6 }}>
             <button
@@ -311,6 +476,205 @@ export default function AdminUsers() {
           </div>
         </div>
       )}
+
+      {/* Modal Tạo Tài Khoản Instructor */}
+      {showCreateModal &&
+        createPortal(
+          <AnimatePresence>
+            <div
+              style={{
+                position: 'fixed',
+                inset: 0,
+                zIndex: 99999,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: 16,
+              }}
+            >
+              <motion.div
+                className="scrim"
+                style={{
+                  position: 'fixed',
+                  inset: 0,
+                  zIndex: 1,
+                  background: 'rgba(10, 37, 64, 0.55)',
+                  backdropFilter: 'blur(8px)',
+                  WebkitBackdropFilter: 'blur(8px)',
+                }}
+                variants={backdropVariants}
+                initial="hidden"
+                animate="visible"
+                exit="exit"
+                onClick={() => {
+                  if (!createSubmitting) setShowCreateModal(false);
+                }}
+              />
+
+              <motion.div
+                className="modal"
+                style={{
+                  position: 'relative',
+                  top: 'auto',
+                  left: 'auto',
+                  transform: 'none',
+                  maxWidth: 500,
+                  width: '100%',
+                  zIndex: 2,
+                  margin: 0,
+                  borderRadius: 24,
+                  boxShadow: '0 25px 70px rgba(10, 37, 64, 0.35)',
+                  background: '#ffffff',
+                  padding: '28px 30px',
+                }}
+                variants={modalVariants}
+                initial="hidden"
+                animate="visible"
+                exit="exit"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="row" style={{ alignItems: 'flex-start', marginBottom: 18 }}>
+                  <div>
+                    <h2 style={{ fontSize: 20, fontWeight: 900, color: 'var(--ink)', margin: 0 }}>
+                      Tạo tài khoản Instructor
+                    </h2>
+                    <div className="sub mt8" style={{ fontSize: 13, color: 'var(--muted)' }}>
+                      Tài khoản sẽ được kích hoạt ngay với quyền Giảng viên (INSTRUCTOR)
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    className="btn ghost sm"
+                    onClick={() => setShowCreateModal(false)}
+                    disabled={createSubmitting}
+                    style={{ padding: '6px 10px', borderRadius: 8, cursor: 'pointer' }}
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                {createError && (
+                  <div
+                    style={{
+                      background: 'rgba(239, 68, 68, 0.1)',
+                      border: '1px solid rgba(239, 68, 68, 0.3)',
+                      color: '#DC2626',
+                      padding: '10px 14px',
+                      borderRadius: 12,
+                      fontSize: 13.5,
+                      fontWeight: 600,
+                      marginBottom: 16,
+                    }}
+                  >
+                    {createError}
+                  </div>
+                )}
+
+                <form onSubmit={handleCreateInstructorSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: 12.5, fontWeight: 700, marginBottom: 6, color: 'var(--ink)' }}>
+                      Tên đăng nhập (Username) <span style={{ color: '#EF4444' }}>*</span>
+                    </label>
+                    <input
+                      type="text"
+                      className="input"
+                      placeholder="ví dụ: giangvien_lan"
+                      value={createForm.username}
+                      onChange={(e) => setCreateForm({ ...createForm, username: e.target.value })}
+                      required
+                      disabled={createSubmitting}
+                      style={{ width: '100%', boxSizing: 'border-box' }}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ display: 'block', fontSize: 12.5, fontWeight: 700, marginBottom: 6, color: 'var(--ink)' }}>
+                      Email <span style={{ color: '#EF4444' }}>*</span>
+                    </label>
+                    <input
+                      type="email"
+                      className="input"
+                      placeholder="giangvien@example.com"
+                      value={createForm.email}
+                      onChange={(e) => setCreateForm({ ...createForm, email: e.target.value })}
+                      required
+                      disabled={createSubmitting}
+                      style={{ width: '100%', boxSizing: 'border-box' }}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ display: 'block', fontSize: 12.5, fontWeight: 700, marginBottom: 6, color: 'var(--ink)' }}>
+                      Họ và tên <span style={{ color: '#EF4444' }}>*</span>
+                    </label>
+                    <input
+                      type="text"
+                      className="input"
+                      placeholder="Nguyễn Thị Lan"
+                      value={createForm.fullName}
+                      onChange={(e) => setCreateForm({ ...createForm, fullName: e.target.value })}
+                      required
+                      disabled={createSubmitting}
+                      style={{ width: '100%', boxSizing: 'border-box' }}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ display: 'block', fontSize: 12.5, fontWeight: 700, marginBottom: 6, color: 'var(--ink)' }}>
+                      Mật khẩu khởi tạo <span style={{ color: '#EF4444' }}>*</span>
+                    </label>
+                    <input
+                      type="password"
+                      className="input"
+                      placeholder="Ít nhất 6 ký tự..."
+                      value={createForm.password}
+                      onChange={(e) => setCreateForm({ ...createForm, password: e.target.value })}
+                      required
+                      disabled={createSubmitting}
+                      style={{ width: '100%', boxSizing: 'border-box' }}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ display: 'block', fontSize: 12.5, fontWeight: 700, marginBottom: 6, color: 'var(--ink)' }}>
+                      Nhập lại mật khẩu <span style={{ color: '#EF4444' }}>*</span>
+                    </label>
+                    <input
+                      type="password"
+                      className="input"
+                      placeholder="Xác nhận mật khẩu..."
+                      value={createForm.confirmPassword}
+                      onChange={(e) => setCreateForm({ ...createForm, confirmPassword: e.target.value })}
+                      required
+                      disabled={createSubmitting}
+                      style={{ width: '100%', boxSizing: 'border-box' }}
+                    />
+                  </div>
+
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 12 }}>
+                    <button
+                      type="button"
+                      className="btn ghost"
+                      onClick={() => setShowCreateModal(false)}
+                      disabled={createSubmitting}
+                    >
+                      Hủy
+                    </button>
+                    <button
+                      type="submit"
+                      className="btn primary"
+                      disabled={createSubmitting}
+                      style={{ minWidth: 140, fontWeight: 700 }}
+                    >
+                      {createSubmitting ? 'Đang tạo...' : 'Tạo tài khoản'}
+                    </button>
+                  </div>
+                </form>
+              </motion.div>
+            </div>
+          </AnimatePresence>,
+          document.body
+        )}
 
       {/* User Detail Modal */}
       {selectedUser &&
@@ -371,7 +735,7 @@ export default function AdminUsers() {
                 <div className="row" style={{ alignItems: 'flex-start', marginBottom: 20 }}>
                   <div>
                     <h2 style={{ fontSize: 20, fontWeight: 900, color: 'var(--ink)', margin: 0 }}>
-                      Hồ sơ Học viên #{selectedUser.userId}
+                      {selectedUser.role === 'INSTRUCTOR' ? 'Hồ sơ Instructor' : 'Hồ sơ Học viên'} #{selectedUser.userId}
                     </h2>
                     <div className="sub mt8" style={{ fontSize: 13, color: 'var(--muted)' }}>
                       {selectedUser.email}
@@ -408,28 +772,19 @@ export default function AdminUsers() {
 
                   <div style={{ padding: '12px 14px', background: '#F8FAFC', borderRadius: 14, border: '1px solid #E2E8F0' }}>
                     <span className="sub" style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                      TỪ ĐÃ HỌC
+                      VAI TRÒ
                     </span>
-                    <div style={{ fontWeight: 800, fontSize: 15, color: 'var(--green-dark)', marginTop: 4 }}>
-                      {selectedUser.wordsLearned ?? 0} từ
-                    </div>
-                  </div>
-
-                  <div style={{ padding: '12px 14px', background: '#F8FAFC', borderRadius: 14, border: '1px solid #E2E8F0' }}>
-                    <span className="sub" style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                      TỔNG BUỔI HỌC
-                    </span>
-                    <div style={{ fontWeight: 800, fontSize: 15, color: 'var(--primary)', marginTop: 4 }}>
-                      {selectedUser.totalSessions ?? 0} buổi
-                    </div>
-                  </div>
-
-                  <div style={{ padding: '12px 14px', background: '#F8FAFC', borderRadius: 14, border: '1px solid #E2E8F0' }}>
-                    <span className="sub" style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                      ĐỘ CHÍNH XÁC
-                    </span>
-                    <div style={{ fontWeight: 800, fontSize: 15, color: 'var(--yellow-dark)', marginTop: 4 }}>
-                      {selectedUser.accuracyRate ? `${selectedUser.accuracyRate}%` : '—'}
+                    <div style={{ fontWeight: 800, fontSize: 15, marginTop: 4 }}>
+                      <span
+                        className="pill"
+                        style={{
+                          background: selectedUser.role === 'INSTRUCTOR' ? 'rgba(139, 92, 246, 0.12)' : 'rgba(24, 119, 242, 0.1)',
+                          color: selectedUser.role === 'INSTRUCTOR' ? '#7C3AED' : 'var(--primary)',
+                          fontWeight: 700,
+                        }}
+                      >
+                        {selectedUser.role || roleTab}
+                      </span>
                     </div>
                   </div>
 
@@ -451,27 +806,47 @@ export default function AdminUsers() {
                       </span>
                     </div>
                   </div>
+
+                  <div style={{ padding: '12px 14px', background: '#F8FAFC', borderRadius: 14, border: '1px solid #E2E8F0' }}>
+                    <span className="sub" style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                      TỪ ĐÃ HỌC
+                    </span>
+                    <div style={{ fontWeight: 800, fontSize: 15, color: 'var(--green-dark)', marginTop: 4 }}>
+                      {selectedUser.wordsLearned ?? 0} từ
+                    </div>
+                  </div>
+
+                  <div style={{ padding: '12px 14px', background: '#F8FAFC', borderRadius: 14, border: '1px solid #E2E8F0' }}>
+                    <span className="sub" style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                      TỔNG BUỔI HỌC
+                    </span>
+                    <div style={{ fontWeight: 800, fontSize: 15, color: 'var(--primary)', marginTop: 4 }}>
+                      {selectedUser.totalSessions ?? 0} buổi
+                    </div>
+                  </div>
                 </div>
 
                 <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
-                  {selectedUser.status === 'ACTIVE' ? (
-                    <button
-                      type="button"
-                      className="btn"
-                      style={{ background: 'var(--red)', border: 'none', display: 'inline-flex', alignItems: 'center', gap: 6 }}
-                      onClick={() => handleStatusChange(selectedUser.userId, 'BANNED')}
-                    >
-                      <Icon n="lock" s={16} /> Khóa tài khoản
-                    </button>
-                  ) : (
-                    <button
-                      type="button"
-                      className="btn"
-                      style={{ background: 'var(--green)', border: 'none', display: 'inline-flex', alignItems: 'center', gap: 6 }}
-                      onClick={() => handleStatusChange(selectedUser.userId, 'ACTIVE')}
-                    >
-                      <Icon n="check" s={16} /> Kích hoạt tài khoản
-                    </button>
+                  {isAdmin && (
+                    selectedUser.status === 'ACTIVE' ? (
+                      <button
+                        type="button"
+                        className="btn"
+                        style={{ background: 'var(--red)', border: 'none', display: 'inline-flex', alignItems: 'center', gap: 6 }}
+                        onClick={() => handleStatusChange(selectedUser.userId, 'BANNED')}
+                      >
+                        <Icon n="lock" s={16} /> Khóa tài khoản
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        className="btn"
+                        style={{ background: 'var(--green)', border: 'none', display: 'inline-flex', alignItems: 'center', gap: 6 }}
+                        onClick={() => handleStatusChange(selectedUser.userId, 'ACTIVE')}
+                      >
+                        <Icon n="check" s={16} /> Kích hoạt tài khoản
+                      </button>
+                    )
                   )}
                   <button
                     type="button"

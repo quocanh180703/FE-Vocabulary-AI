@@ -16,7 +16,20 @@ export function AdminGuard() {
   const { user, loading } = useAuth();
   if (loading) return <div className="loading">Đang tải...</div>;
   if (!user) return <Navigate to="/login" replace />;
+  if (user.role === 'INSTRUCTOR') {
+    return <Navigate to="/admin/reports" replace />;
+  }
   if (user.role !== 'ADMIN') {
+    return <Navigate to="/" replace />;
+  }
+  return <Outlet />;
+}
+
+export function InstructorGuard() {
+  const { user, loading } = useAuth();
+  if (loading) return <div className="loading">Đang tải...</div>;
+  if (!user) return <Navigate to="/login" replace />;
+  if (user.role !== 'ADMIN' && user.role !== 'INSTRUCTOR') {
     return <Navigate to="/" replace />;
   }
   return <Outlet />;

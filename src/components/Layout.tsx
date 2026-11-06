@@ -3,6 +3,7 @@ import { NavLink, useNavigate, useLocation, useOutlet } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import { wordApi, learnApi } from '../api';
 import { Icon, Mascot } from './icons';
+import { NotificationBell } from './NotificationBell';
 import { motion, AnimatePresence } from 'motion/react';
 import { PageTransition } from '../motion';
 import { ErrorBoundary } from './ErrorBoundary';
@@ -78,10 +79,6 @@ export function Layout() {
         setFavCount(ce.detail.count);
         return;
       }
-      if (ce?.detail?.ids && Array.isArray(ce.detail.ids)) {
-        setFavCount(ce.detail.ids.length);
-        return;
-      }
 
       try {
         const uid = user.id || user.username;
@@ -89,14 +86,6 @@ export function Layout() {
           const cachedItems = JSON.parse(localStorage.getItem(`vocab_fav_items_${uid}`) || '[]');
           if (Array.isArray(cachedItems) && cachedItems.length > 0) {
             setFavCount(cachedItems.length);
-            return;
-          }
-          const cachedIds = JSON.parse(localStorage.getItem(`vocab_favs_${uid}`) || '[]');
-          if (Array.isArray(cachedIds)) {
-            // Deduplicate in case old dirty cache had words mixed into ids
-            const clean = cachedIds.filter((id: string) => !id.includes(' ') && (/^\d+$/.test(id) || id.includes('-')));
-            setFavCount(clean.length || cachedIds.length);
-            return;
           }
         }
       } catch {}
@@ -174,22 +163,32 @@ export function Layout() {
           </NavLink>
         ))}
 
-        {user?.role === 'ADMIN' && (
+        {(user?.role === 'ADMIN' || user?.role === 'INSTRUCTOR') && (
           <NavLink
-            to="/admin"
+            to={user?.role === 'INSTRUCTOR' ? '/admin/reports' : '/admin'}
             className="nav"
-            title="Quản trị Admin"
+            title={user?.role === 'INSTRUCTOR' ? 'Trang Giảng viên' : 'Quản trị Admin'}
             style={{
               marginTop: 6,
-              background: 'rgba(21, 101, 192, 0.08)',
-              color: 'var(--primary-dark)',
+              background: user?.role === 'INSTRUCTOR' ? 'rgba(79, 70, 229, 0.08)' : 'rgba(21, 101, 192, 0.08)',
+              color: user?.role === 'INSTRUCTOR' ? '#4F46E5' : 'var(--primary-dark)',
               fontWeight: 800,
             }}
           >
-            <span className="nic" style={{ background: 'var(--primary)', color: '#fff' }}>
-              <Icon n="spark" s={18} />
+            <span
+              className="nic"
+              style={{
+                background: user?.role === 'INSTRUCTOR' ? '#4F46E5' : 'var(--primary)',
+                color: '#fff',
+              }}
+            >
+              <Icon n={user?.role === 'INSTRUCTOR' ? 'user' : 'spark'} s={18} />
             </span>
-            {!isSidebarCollapsed && <span className="nav-label">Quản trị Admin</span>}
+            {!isSidebarCollapsed && (
+              <span className="nav-label">
+                {user?.role === 'INSTRUCTOR' ? 'Trang Giảng viên' : 'Quản trị Admin'}
+              </span>
+            )}
           </NavLink>
         )}
 
@@ -259,6 +258,8 @@ export function Layout() {
             </span>
             <span style={{ color: 'var(--yellow-dark)' }}>{streak}</span>
           </div>
+
+          <NotificationBell />
 
           <div
             className="statpill"

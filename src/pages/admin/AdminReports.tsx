@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo } from 'react';
+import { useAuth } from '../../auth/AuthContext';
 import { adminApi } from '../../api';
 import type {
   AdminRevenueMetrics,
@@ -17,7 +18,17 @@ import type { QuizPerformanceItem, ActivityTrendData } from '../../components/ad
 import { AnimatedCounter } from '../../motion';
 
 export default function AdminReports() {
-  const [activeTab, setActiveTab] = useState<'progress' | 'content' | 'revenue' | 'system'>('revenue');
+  const { user } = useAuth();
+  const isInstructor = user?.role === 'INSTRUCTOR';
+  const [activeTab, setActiveTab] = useState<'progress' | 'content' | 'revenue' | 'system'>(
+    isInstructor ? 'progress' : 'revenue'
+  );
+
+  useEffect(() => {
+    if (isInstructor && (activeTab === 'revenue' || activeTab === 'system')) {
+      setActiveTab('progress');
+    }
+  }, [isInstructor, activeTab]);
   const [loading, setLoading] = useState(true);
   const [learningReport, setLearningReport] = useState<AdminLearningProgressReport | null>(null);
   const [contentReport, setContentReport] = useState<AdminContentPerformanceItem[]>([]);
@@ -92,7 +103,7 @@ export default function AdminReports() {
       <div className="pagehead" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12 }}>
         <div>
           <h1>Báo cáo &amp; Thống kê</h1>
-          <div className="sub">Bốn nhóm báo cáo vận hành và đo lường hệ thống dựa trên dữ liệu thực tế</div>
+          <div className="sub">{isInstructor ? 'Nhóm báo cáo vận hành và đo lường học tập dựa trên dữ liệu thực tế' : 'Bốn nhóm báo cáo vận hành và đo lường hệ thống dựa trên dữ liệu thực tế'}</div>
         </div>
         <button
           type="button"
@@ -417,7 +428,7 @@ export default function AdminReports() {
           )}
 
           {/* TAB 4: HỆ THỐNG & HẠ TẦNG */}
-          {activeTab === 'system' && (
+          {!isInstructor && activeTab === 'system' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
               {/* Dynamic Gauges */}
               <SystemHealthGauges health={systemHealth} />

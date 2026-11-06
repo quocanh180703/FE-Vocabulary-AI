@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { motion } from 'motion/react';
-import { wordApi, aiApi, learnApi, errMsg, formatPartOfSpeech, analyzeWordRelations, ttsApi, TOPIC_MAP } from '../api';
+import { wordApi, aiApi, learnApi, errMsg, formatPartOfSpeech, analyzeWordRelations, ttsApi, TOPIC_MAP, contentReportApi, CONTENT_REPORT_TYPE_LABELS } from '../api';
+import type { ContentReportType } from '../api';
 import type { Word, Explain } from '../api';
 import { Icon } from '../components/icons';
 import { AiExplanationBox } from '../components/AiExplanationBox';
@@ -20,6 +21,41 @@ export default function WordDetail() {
   const [isFav, setIsFav] = useState(false);
   const [err, setErr] = useState('');
   const [actionErr, setActionErr] = useState('');
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [reportType, setReportType] = useState<ContentReportType>('WRONG_MEANING');
+  const [reportDesc, setReportDesc] = useState('');
+  const [submittingReport, setSubmittingReport] = useState(false);
+  const [reportErr, setReportErr] = useState('');
+  const [reportSuccess, setReportSuccess] = useState('');
+
+  const handleSubmitReport = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!word) return;
+    if (!reportDesc.trim()) {
+      setReportErr('Vui lòng nhập mô tả chi tiết lỗi.');
+      return;
+    }
+    setSubmittingReport(true);
+    setReportErr('');
+    setReportSuccess('');
+    try {
+      await contentReportApi.create({
+        cefrWordId: String(word.id),
+        type: reportType,
+        description: reportDesc.trim(),
+      });
+      setReportSuccess('Báo cáo lỗi đã được gửi thành công. Cảm ơn bạn!');
+      setReportDesc('');
+      setTimeout(() => {
+        setShowReportModal(false);
+        setReportSuccess('');
+      }, 1800);
+    } catch (e: any) {
+      setReportErr(errMsg(e, 'Không thể gửi báo cáo lỗi lúc này.'));
+    } finally {
+      setSubmittingReport(false);
+    }
+  };
 
   useEffect(() => {
     if (!id) return;
@@ -139,16 +175,40 @@ export default function WordDetail() {
           ← Quay lại danh sách từ
         </button>
 
-        {word && (
-          <button
-            onClick={toggleFav}
-            className={'heartbtn' + (isFav ? ' on' : '')}
-            style={{ width: 44, height: 44, borderRadius: '50%' }}
-            title={isFav ? 'Bỏ lưu yêu thích' : 'Lưu vào từ yêu thích'}
-          >
-            <svg viewBox="0 0 24 24" className="ic"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
-          </button>
-        )}
+        <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+          {word && (
+            <>
+              <button
+                type="button"
+                onClick={() => setShowReportModal(true)}
+                className="btn ghost sm"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  fontSize: 13,
+                  fontWeight: 700,
+                  color: 'var(--muted)',
+                  border: '1px solid var(--border)',
+                  padding: '8px 14px',
+                  borderRadius: 999,
+                }}
+                title="Báo cáo lỗi nội dung (sai nghĩa, sai chính tả, lỗi phát âm...)"
+              >
+                <span>⚠️</span>
+                <span>Báo lỗi từ</span>
+              </button>
+              <button
+                onClick={toggleFav}
+                className={'heartbtn' + (isFav ? ' on' : '')}
+                style={{ width: 44, height: 44, borderRadius: '50%' }}
+                title={isFav ? 'Bỏ lưu yêu thích' : 'Lưu vào từ yêu thích'}
+              >
+                <svg viewBox="0 0 24 24" className="ic"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
+              </button>
+            </>
+          )}
+        </div>
       </div>
 
       {err && !word && <div className="error">{err}</div>}
@@ -288,6 +348,148 @@ export default function WordDetail() {
             </motion.div>
           </motion.div>
         </>
+      )}
+
+      {/* Modal Báo lỗi từ */}
+      {showReportModal && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(15, 23, 42, 0.55)',
+            backdropFilter: 'blur(3px)',
+            zIndex: 9999,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: 16,
+          }}
+          onClick={() => !submittingReport && setShowReportModal(false)}
+        >
+          <div
+            style={{
+              background: '#fff',
+              borderRadius: 16,
+              maxWidth: 480,
+              width: '100%',
+              padding: '24px 26px',
+              boxShadow: '0 20px 40px rgba(0,0,0,0.2)',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+              <h2 style={{ fontSize: 18, fontWeight: 800, margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span>⚠️</span>
+                <span>Báo lỗi từ vựng: {word?.word}</span>
+              </h2>
+              <button
+                type="button"
+                className="btn ghost sm"
+                onClick={() => setShowReportModal(false)}
+                disabled={submittingReport}
+                style={{ padding: '4px 8px' }}
+              >
+                ✕
+              </button>
+            </div>
+
+            {reportErr && (
+              <div
+                style={{
+                  background: '#FEE2E2',
+                  border: '1px solid #FECACA',
+                  color: '#DC2626',
+                  borderRadius: 8,
+                  padding: '10px 14px',
+                  fontSize: 13,
+                  fontWeight: 600,
+                  marginBottom: 14,
+                }}
+              >
+                {reportErr}
+              </div>
+            )}
+
+            {reportSuccess && (
+              <div
+                style={{
+                  background: '#DCFCE7',
+                  border: '1px solid #BBF7D0',
+                  color: '#15803D',
+                  borderRadius: 8,
+                  padding: '10px 14px',
+                  fontSize: 13,
+                  fontWeight: 700,
+                  marginBottom: 14,
+                }}
+              >
+                {reportSuccess}
+              </div>
+            )}
+
+            <form onSubmit={handleSubmitReport}>
+              <div style={{ marginBottom: 14 }}>
+                <label style={{ display: 'block', fontSize: 13, fontWeight: 700, marginBottom: 6 }}>
+                  Loại lỗi phát hiện
+                </label>
+                <select
+                  className="input"
+                  value={reportType}
+                  onChange={(e) => setReportType(e.target.value as ContentReportType)}
+                  disabled={submittingReport}
+                  style={{ width: '100%' }}
+                >
+                  {(Object.keys(CONTENT_REPORT_TYPE_LABELS) as ContentReportType[]).map((t) => (
+                    <option key={t} value={t}>
+                      {CONTENT_REPORT_TYPE_LABELS[t]}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div style={{ marginBottom: 16 }}>
+                <label style={{ display: 'block', fontSize: 13, fontWeight: 700, marginBottom: 6 }}>
+                  Mô tả chi tiết <span style={{ color: 'var(--red)' }}>*</span>
+                </label>
+                <textarea
+                  className="input"
+                  rows={4}
+                  placeholder="Hãy giải thích rõ lỗi (ví dụ: nghĩa đúng phải là..., ví dụ chưa chuẩn ngữ pháp...)"
+                  value={reportDesc}
+                  onChange={(e) => setReportDesc(e.target.value)}
+                  disabled={submittingReport}
+                  maxLength={500}
+                  required
+                  style={{ width: '100%', resize: 'vertical' }}
+                />
+                <div style={{ fontSize: 11.5, color: 'var(--muted)', marginTop: 4, textAlign: 'right' }}>
+                  {reportDesc.length} / 500 ký tự
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
+                <button
+                  type="button"
+                  className="btn ghost"
+                  onClick={() => setShowReportModal(false)}
+                  disabled={submittingReport}
+                >
+                  Hủy
+                </button>
+                <button
+                  type="submit"
+                  className="btn"
+                  disabled={submittingReport}
+                >
+                  {submittingReport ? 'Đang gửi...' : 'Gửi báo cáo lỗi'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
       )}
     </div>
   );

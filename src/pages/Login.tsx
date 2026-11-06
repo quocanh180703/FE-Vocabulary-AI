@@ -51,6 +51,11 @@ export default function Login() {
       const refresh = data.refreshToken || data.refresh_token || '';
       login(data.user, access, refresh);
 
+      if (data.user?.role === 'INSTRUCTOR') {
+        nav('/admin/reports');
+        return;
+      }
+
       try {
         const { data: pStatus } = await placementApi.getStatus();
         if (!pStatus.completed && !sessionStorage.getItem('placement_dismissed')) {
@@ -86,6 +91,11 @@ export default function Login() {
         const access = data.accessToken || data.access_token || '';
         const refresh = data.refreshToken || data.refresh_token || '';
         login(data.user, access, refresh);
+
+        if (data.user?.role === 'INSTRUCTOR') {
+          nav('/admin/reports');
+          return;
+        }
 
         try {
           const { data: pStatus } = await placementApi.getStatus();

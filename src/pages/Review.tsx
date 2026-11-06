@@ -12,6 +12,7 @@ import {
   analyzeWordRelations,
   generateFallbackExplanation,
   isWordFavorited,
+  myWordsApi,
 } from '../api';
 import type { Word, ProgressItem } from '../api';
 import { Mascot, Icon } from '../components/icons';
@@ -42,6 +43,7 @@ const MODES = [
   { id: 'RECOMMENDED', label: '✨ AI gợi ý', badge: true },
   { id: 'SRS', label: '⏰ Cần ôn (SRS)' },
   { id: 'FAVORITES', label: '❤️ Yêu thích' },
+  { id: 'MY_WORDS', label: '📝 Từ của tôi' },
   { id: 'A1', label: 'A1' },
   { id: 'A2', label: 'A2' },
   { id: 'B1', label: 'B1' },
@@ -166,7 +168,6 @@ export default function Review() {
           audioUrl: cur.audioUrl,
         });
       }
-      window.dispatchEvent(new CustomEvent('vocab_favorites_changed'));
     } catch {
       // Revert if API fails
       setFavoriteKeys((prev) => {
@@ -233,6 +234,23 @@ export default function Review() {
             isSrs: false,
           };
         });
+        setCards(shuffleArray(formatted));
+      } else if (mode === 'MY_WORDS') {
+        const { data } = await myWordsApi.list({ size: 100 });
+        const list = data?.data?.content || data?.content || [];
+        const formatted: FlashcardWord[] = list.map((w: any) => ({
+          id: `custom_${w.id}`,
+          word: w.lemma,
+          pronunciation: w.partOfSpeech ? `(${w.partOfSpeech})` : '',
+          meaning: w.vietnameseMeaning,
+          vietnameseMeaning: w.vietnameseMeaning,
+          definition: w.vietnameseMeaning,
+          example: w.example,
+          level: w.cefrLevel || 'B1',
+          partOfSpeech: w.partOfSpeech,
+          isSrs: false,
+          overdue: 0,
+        }));
         setCards(shuffleArray(formatted));
       } else if (mode === 'SRS') {
         const { data } = await learnApi.queue(30);
@@ -387,6 +405,29 @@ export default function Review() {
 
   const answer = async (ok: boolean) => {
     if (!cur) return;
+
+    if (selectedMode === 'MY_WORDS') {
+      if (ok) {
+        setRemembered((r) => r + 1);
+        setFlip(false);
+        setAiDetail(null);
+        if (i + 1 >= cards.length) {
+          setI(-1);
+        } else {
+          setI(i + 1);
+        }
+      } else {
+        setForgotten((f) => f + 1);
+        setFlip(false);
+        setAiDetail(null);
+        if (i > 0) {
+          setI(i - 1);
+        } else {
+          setFlip(false);
+        }
+      }
+      return;
+    }
 
     if (ok) {
       // 1. Người dùng nhớ từ này -> Chuyển sang từ tiếp theo

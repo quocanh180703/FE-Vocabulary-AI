@@ -2,7 +2,7 @@ import { api } from './client';
 export { api, errMsg } from './client';
 
 /* ---------- types ---------- */
-export interface User { id: number; email: string; username: string; fullName?: string; role: 'ADMIN' | 'STUDENT'; status: string; avatarUrl?: string; emailRemindersEnabled?: boolean; createdAt?: string; provider?: string }
+export interface User { id: number; email: string; username: string; fullName?: string; role: 'ADMIN' | 'STUDENT' | 'INSTRUCTOR'; status: string; avatarUrl?: string; emailRemindersEnabled?: boolean; createdAt?: string; provider?: string }
 export interface AuthResp {
   accessToken?: string;
   access_token?: string;
@@ -103,7 +103,24 @@ export const daysOverdue = (it: ProgressItem): number => {
   const d = Math.ceil((Date.now() - new Date(it.nextReviewAt).getTime()) / 86400000);
   return d > 0 ? d : 0;
 };
-export interface Quiz { id: number; title: string; description?: string; level: string; questionCount: number; timeLimit: number; category?: string; status: string }
+export interface Quiz {
+  id: number;
+  title: string;
+  description?: string;
+  level: string;
+  questionCount: number;
+  timeLimit: number;
+  category?: string;
+  status: string;
+  visibility?: 'PUBLIC' | 'PRIVATE' | 'PENDING' | 'REJECTED';
+  isAiGenerated?: boolean;
+  createdBy?: number;
+  creatorUsername?: string;
+  reviewNote?: string;
+  reviewedBy?: number;
+  reviewedAt?: string;
+  sourceDocumentId?: number;
+}
 export interface Question { id: number; content: string; options: string[]; correctAnswer?: number; explanation?: string }
 export interface QuizDetail extends Quiz { totalQuestions: number; questions: Question[] }
 export interface Attempt { attemptId: number; quizId: number; startedAt: string; expiresAt: string }
@@ -563,10 +580,7 @@ export const wordApi = {
       localStorage.setItem(itemsKey, JSON.stringify(items));
 
       // IDs list contains strictly 1 ID per unique word
-      updatedIds = items.map((w) => String(w.id));
-      if (!updatedIds.includes(idStr)) {
-        updatedIds.push(idStr);
-      }
+      updatedIds = Array.from(new Set(items.map((w) => String(w.id))));
       localStorage.setItem(idsKey, JSON.stringify(updatedIds));
 
       const count = items.length;
@@ -890,6 +904,70 @@ export const quizApi = {
         },
       };
     }),
+  getMyQuizDetail: (id: number) =>
+    api.get<any>('/quizzes/mine/' + id).then((res) => {
+      const d = res.data?.data || res.data || {};
+      const quizObj = d.quiz || d;
+      const questionsList = d.questions || [];
+      const detail: QuizDetail = {
+        id: quizObj.id,
+        title: quizObj.title,
+        description: quizObj.description,
+        level: quizObj.level || 'B1',
+        timeLimit: quizObj.timeLimit || 15,
+        questionCount: questionsList.length || quizObj.questionCount || 5,
+        totalQuestions: questionsList.length || 5,
+        category: quizObj.category?.name || quizObj.category,
+        status: quizObj.status,
+        visibility: quizObj.visibility,
+        reviewNote: quizObj.reviewNote,
+        isAiGenerated: quizObj.isAiGenerated,
+        questions: questionsList.map((q: any) => ({
+          id: q.id,
+          content: q.content,
+          options: Array.isArray(q.options) ? q.options : [],
+          correctAnswer: q.correctAnswer,
+          explanation: q.explanation,
+        })),
+      };
+      return { ...res, data: detail };
+    }),
+  updateMyQuiz: (id: number, data: { title: string; description?: string; level?: string; timeLimit?: number; questions?: any[] }) =>
+    api.put<any>('/quizzes/mine/' + id, data).then((res) => res.data?.data || res.data),
+  deleteMyQuiz: (id: number) =>
+    api.delete<any>('/quizzes/mine/' + id).then((res) => res.data?.data || res.data),
+  publishRequest: (id: number) =>
+    api.post<any>('/quizzes/mine/' + id + '/publish-request').then((res) => res.data?.data || res.data),
+  withdraw: (id: number) =>
+    api.post<any>('/quizzes/mine/' + id + '/withdraw').then((res) => res.data?.data || res.data),
+  hide: (id: number) =>
+    api.post<any>('/quizzes/mine/' + id + '/hide').then((res) => res.data?.data || res.data),
+  myQuizzes: (p?: { page?: number; size?: number }) => {
+    const params: Record<string, any> = { page: p?.page ?? 0, size: p?.size ?? 20 };
+    return api.get<any>('/quizzes/mine', { params }).then((res) => {
+      const pageData = res.data?.data || res.data || {};
+      const raw = Array.isArray(pageData.content) ? pageData.content : (Array.isArray(pageData) ? pageData : []);
+      const content: Quiz[] = raw.map((q: any) => ({
+        id: q.id,
+        title: q.title,
+        description: q.description,
+        level: q.level || 'B1',
+        timeLimit: q.timeLimit || 15,
+        questionCount: q.questionCount || 5,
+        category: q.categoryName || q.category?.name || q.category || 'Tự tạo',
+        status: q.status,
+        visibility: q.visibility || 'PRIVATE',
+        isAiGenerated: q.isAiGenerated ?? true,
+        createdBy: q.createdBy,
+        creatorUsername: q.creatorUsername,
+        reviewNote: q.reviewNote,
+        reviewedBy: q.reviewedBy,
+        reviewedAt: q.reviewedAt,
+        sourceDocumentId: q.sourceDocumentId,
+      }));
+      return { ...res, data: { ...pageData, content } };
+    });
+  },
   history: (p?: { page?: number; size?: number }) =>
     api.get<any>('/quizzes/history', {
       params: { page: p?.page ?? 0, size: p?.size ?? 6 },
@@ -914,6 +992,76 @@ export const quizApi = {
         },
       };
     }),
+};
+
+
+/* ---------- documents & AI exercise ---------- */
+export interface DocumentItem {
+  id: number;
+  originalName: string;
+  fileType: 'TXT' | 'MD' | 'PDF' | 'DOCX';
+  fileSize: number;
+  charCount: number;
+  status: 'PENDING' | 'READY' | 'FAILED';
+  errorMessage?: string;
+  createdAt: string;
+}
+
+export interface DocumentAnalysis {
+  summary: string;
+  suggestedLevel: string;
+  mainTopics: string[];
+  keyVocabularies: string[];
+}
+
+export interface DocumentChatMessage {
+  role: 'user' | 'assistant';
+  content: string;
+}
+
+export interface DocumentChatResponse {
+  reply: string;
+}
+
+export interface GenerateQuizRequest {
+  title?: string;
+  level?: string;
+  questionCount?: number;
+  extraPrompt?: string;
+}
+
+export const documentApi = {
+  upload: (file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return api.post<any>('/documents', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }).then((res) => res.data?.data || res.data);
+  },
+  list: (params?: { page?: number; size?: number }) =>
+    api.get<any>('/documents', { params }).then((res) => {
+      const d = res.data?.data || res.data || {};
+      const raw = Array.isArray(d.content) ? d.content : (Array.isArray(d) ? d : []);
+      return {
+        ...res,
+        data: {
+          content: raw as DocumentItem[],
+          pageable: d.pageable || { pageNumber: params?.page ?? 0, pageSize: params?.size ?? 10 },
+          totalElements: d.totalElements ?? raw.length,
+          totalPages: d.totalPages ?? 1,
+        },
+      };
+    }),
+  get: (id: number) =>
+    api.get<any>('/documents/' + id).then((res) => res.data?.data || res.data),
+  delete: (id: number) =>
+    api.delete<any>('/documents/' + id).then((res) => res.data?.data || res.data),
+  analyze: (id: number) =>
+    api.post<any>('/documents/' + id + '/analyze').then((res) => res.data?.data || res.data),
+  chat: (id: number, messages: DocumentChatMessage[]) =>
+    api.post<any>('/documents/' + id + '/generate-chat', { messages }).then((res) => res.data?.data || res.data),
+  generateQuiz: (id: number, data: GenerateQuizRequest) =>
+    api.post<any>('/documents/' + id + '/generate', data).then((res) => res.data?.data || res.data),
 };
 
 /* ---------- ai ---------- */
@@ -1623,6 +1771,7 @@ export interface AdminStudent {
   username: string;
   email: string;
   fullName: string;
+  role?: 'ADMIN' | 'STUDENT' | 'INSTRUCTOR';
   status: 'ACTIVE' | 'INACTIVE' | 'BANNED';
   hasActiveSubscription: boolean;
   totalSessions: number;
@@ -1703,12 +1852,15 @@ export const adminApi = {
   systemOverview: () => api.get<any>('/api/admin/system/overview'),
 
   // User / Student management
-  students: (page = 0, size = 20, search = '', status = '') => {
+  students: (page = 0, size = 20, search = '', status = '', role = 'STUDENT') => {
     const params = new URLSearchParams({ page: String(page), size: String(size), sort: 'createdAt,desc' });
     if (search) params.append('search', search);
     if (status && status !== 'ALL') params.append('status', status);
+    if (role) params.append('role', role);
     return api.get<{ content: AdminStudent[]; totalElements: number; totalPages: number }>(`/admin/students?${params}`);
   },
+  createInstructor: (data: { username: string; email: string; fullName: string; password: string }) =>
+    api.post<any>('/admin/students/instructors', data),
   studentDetail: (userId: number) => api.get<AdminStudentDetail>(`/admin/students/${userId}`),
   updateUserStatus: (userId: number, status: 'ACTIVE' | 'INACTIVE' | 'BANNED') =>
     api.put<User>(`/users/${userId}/status?status=${status}`),
@@ -1904,6 +2056,7 @@ export interface SubscriptionUsageResponse {
     roadmap: FeatureQuota;
     voice?: FeatureQuota;
     listening?: FeatureQuota;
+    exercise_generation?: FeatureQuota;
   };
 }
 
@@ -2154,8 +2307,211 @@ export interface AdminPackageStats {
   archivedPackages: number;
 }
 
+/* ---------- Content Reports API ---------- */
+export type ContentReportType =
+  | 'WRONG_MEANING'
+  | 'WRONG_EXAMPLE'
+  | 'WRONG_PRONUNCIATION'
+  | 'WRONG_LEVEL'
+  | 'OTHER';
+
+export type ContentReportStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'FIXED';
+
+export const CONTENT_REPORT_TYPE_LABELS: Record<ContentReportType, string> = {
+  WRONG_MEANING: 'Sai nghĩa tiếng Việt',
+  WRONG_EXAMPLE: 'Câu ví dụ chưa chuẩn',
+  WRONG_PRONUNCIATION: 'Phát âm / Phiên âm sai',
+  WRONG_LEVEL: 'Cấp độ CEFR chưa đúng',
+  OTHER: 'Lỗi khác',
+};
+
+export const CONTENT_REPORT_STATUS_LABELS: Record<ContentReportStatus, { label: string; color: string; bg: string }> = {
+  PENDING: { label: 'Chờ duyệt', color: 'var(--yellow-dark)', bg: 'var(--yellow-bg)' },
+  APPROVED: { label: 'Đã duyệt lỗi', color: 'var(--primary)', bg: 'rgba(21, 101, 192, 0.1)' },
+  REJECTED: { label: 'Từ chối', color: 'var(--red-dark)', bg: 'var(--red-bg)' },
+  FIXED: { label: 'Đã sửa xong', color: 'var(--green-dark)', bg: 'var(--green-bg)' },
+};
+
+export interface ContentReportItem {
+  id: number;
+  userId: number;
+  userFullName?: string;
+  userEmail?: string;
+  cefrWordId: string;
+  lemmaSnapshot: string;
+  type: ContentReportType;
+  description: string;
+  status: ContentReportStatus;
+  adminNote?: string;
+  resolvedBy?: number;
+  resolverName?: string;
+  createdAt: string;
+  resolvedAt?: string;
+}
+
+export const contentReportApi = {
+  create: (data: { cefrWordId: string; type: ContentReportType; description: string }) =>
+    api.post<any>('/content-reports', data),
+  listAdmin: (params?: { status?: ContentReportStatus; type?: ContentReportType; page?: number; size?: number }) =>
+    api.get<any>('/admin/content-reports', { params }),
+  resolve: (id: number, data: { status: ContentReportStatus; adminNote?: string }) =>
+    api.post<any>(`/admin/content-reports/${id}/resolve`, data),
+};
+
+/* ---------- User Custom Words API ---------- */
+export interface CustomWordItem {
+  id: number;
+  userId: number;
+  lemma: string;
+  vietnameseMeaning: string;
+  partOfSpeech?: string;
+  example?: string;
+  exampleTranslation?: string;
+  cefrLevel: string;
+  topic: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export const myWordsApi = {
+  list: (params?: { level?: string; topic?: string; search?: string; page?: number; size?: number }) =>
+    api.get<any>('/my-words', { params }),
+  get: (id: number) =>
+    api.get<any>(`/my-words/${id}`),
+  create: (data: { lemma: string; vietnameseMeaning: string; partOfSpeech?: string; example?: string; exampleTranslation?: string; cefrLevel: string; topic: string }) =>
+    api.post<any>('/my-words', data),
+  update: (id: number, data: { vietnameseMeaning: string; partOfSpeech?: string; example?: string; exampleTranslation?: string; cefrLevel: string; topic: string }) =>
+    api.put<any>(`/my-words/${id}`, data),
+  delete: (id: number) =>
+    api.delete<any>(`/my-words/${id}`),
+};
 
 
 
 
 
+
+
+/* ---------- In-App Notifications API ---------- */
+export interface InAppNotification {
+  id: number;
+  title: string;
+  content: string;
+  type: 'EXERCISE_PENDING_REVIEW' | 'EXERCISE_APPROVED' | 'EXERCISE_REJECTED' | 'SYSTEM' | string;
+  link?: string;
+  isRead: boolean;
+  createdAt: string;
+}
+
+export interface NotificationPage {
+  content: InAppNotification[];
+  unreadCount: number;
+  totalElements: number;
+  totalPages: number;
+  pageNumber: number;
+  pageSize: number;
+}
+
+export const notificationApi = {
+  list: (params?: { page?: number; size?: number }) => {
+    const p = { page: params?.page ?? 0, size: params?.size ?? 10 };
+    return api.get<any>('/notifications', { params: p }).then((res) => {
+      const d = res.data?.data || res.data || {};
+      return {
+        content: (d.content || []).map((n: any) => ({
+          id: n.id,
+          title: n.title,
+          content: n.content,
+          type: n.type,
+          link: n.link,
+          isRead: Boolean(n.read ?? n.isRead),
+          createdAt: n.createdAt,
+        })),
+        unreadCount: Number(d.unreadCount ?? 0),
+        totalElements: Number(d.totalElements ?? 0),
+        totalPages: Number(d.totalPages ?? 0),
+        pageNumber: Number(d.pageNumber ?? 0),
+        pageSize: Number(d.pageSize ?? 10),
+      } as NotificationPage;
+    });
+  },
+  read: (id: number) =>
+    api.post<any>(`/notifications/${id}/read`).then((res) => res.data?.data || res.data),
+  readAll: () =>
+    api.post<any>('/notifications/read-all').then((res) => res.data?.data || res.data),
+};
+
+/* ---------- Admin Exercise Review API ---------- */
+export interface PendingQuizItem {
+  id: number;
+  title: string;
+  description?: string;
+  level: string;
+  timeLimit: number;
+  questionCount: number;
+  category: string;
+  status: string;
+  visibility: string;
+  isAiGenerated: boolean;
+  creatorUsername?: string;
+  createdAt: string;
+}
+
+export const adminExerciseReviewApi = {
+  list: (params?: { page?: number; size?: number }) => {
+    const p = { page: params?.page ?? 0, size: params?.size ?? 10 };
+    return api.get<any>('/admin/exercise-reviews', { params: p }).then((res) => {
+      const pageData = res.data?.data || res.data || {};
+      const raw = Array.isArray(pageData.content) ? pageData.content : [];
+      return {
+        content: raw.map((q: any) => ({
+          id: q.id,
+          title: q.title,
+          description: q.description,
+          level: q.level || 'B1',
+          timeLimit: q.timeLimit || 15,
+          questionCount: q.questionCount || 0,
+          category: q.categoryName || 'Tổng hợp',
+          status: q.status,
+          visibility: q.visibility,
+          isAiGenerated: Boolean(q.isAiGenerated),
+          creatorUsername: q.creatorUsername,
+          createdAt: q.createdAt,
+        })) as PendingQuizItem[],
+        totalElements: Number(pageData.totalElements ?? 0),
+        totalPages: Number(pageData.totalPages ?? 0),
+      };
+    });
+  },
+  get: (id: number) =>
+    api.get<any>(`/admin/exercise-reviews/${id}`).then((res) => {
+      const d = res.data?.data || res.data || {};
+      const quizObj = d.quiz || d;
+      const questionsList = d.questions || [];
+      return {
+        quiz: {
+          id: quizObj.id,
+          title: quizObj.title,
+          description: quizObj.description,
+          level: quizObj.level || 'B1',
+          timeLimit: quizObj.timeLimit || 15,
+          questionCount: questionsList.length || quizObj.questionCount || 0,
+          category: quizObj.categoryName || 'Tổng hợp',
+          status: quizObj.status,
+          visibility: quizObj.visibility,
+          isAiGenerated: Boolean(quizObj.isAiGenerated),
+          creatorUsername: quizObj.creatorUsername,
+          createdAt: quizObj.createdAt,
+        },
+        questions: questionsList.map((q: any) => ({
+          id: q.id,
+          content: q.content,
+          options: Array.isArray(q.options) ? q.options : [],
+          correctAnswer: q.correctAnswer,
+          explanation: q.explanation,
+        })),
+      };
+    }),
+  review: (id: number, data: { decision: 'APPROVED' | 'REJECTED'; note?: string }) =>
+    api.post<any>(`/admin/exercise-reviews/${id}/review`, data).then((res) => res.data?.data || res.data),
+};
