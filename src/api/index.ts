@@ -904,6 +904,38 @@ export const quizApi = {
         },
       };
     }),
+  getMyQuizDetail: (id: number) =>
+    api.get<any>('/quizzes/mine/' + id).then((res) => {
+      const d = res.data?.data || res.data || {};
+      const quizObj = d.quiz || d;
+      const questionsList = d.questions || [];
+      const detail: QuizDetail = {
+        id: quizObj.id,
+        title: quizObj.title,
+        description: quizObj.description,
+        level: quizObj.level || 'B1',
+        timeLimit: quizObj.timeLimit || 15,
+        questionCount: questionsList.length || quizObj.questionCount || 5,
+        totalQuestions: questionsList.length || 5,
+        category: quizObj.category?.name || quizObj.category,
+        status: quizObj.status,
+        visibility: quizObj.visibility,
+        reviewNote: quizObj.reviewNote,
+        isAiGenerated: quizObj.isAiGenerated,
+        questions: questionsList.map((q: any) => ({
+          id: q.id,
+          content: q.content,
+          options: Array.isArray(q.options) ? q.options : [],
+          correctAnswer: q.correctAnswer,
+          explanation: q.explanation,
+        })),
+      };
+      return { ...res, data: detail };
+    }),
+  updateMyQuiz: (id: number, data: { title: string; description?: string; level?: string; timeLimit?: number; questions?: any[] }) =>
+    api.put<any>('/quizzes/mine/' + id, data).then((res) => res.data?.data || res.data),
+  deleteMyQuiz: (id: number) =>
+    api.delete<any>('/quizzes/mine/' + id).then((res) => res.data?.data || res.data),
   myQuizzes: (p?: { page?: number; size?: number }) => {
     const params: Record<string, any> = { page: p?.page ?? 0, size: p?.size ?? 20 };
     return api.get<any>('/quizzes/mine', { params }).then((res) => {

@@ -5,6 +5,7 @@ import { quizApi, personalizedApi, errMsg } from '../api';
 import type { Quiz, QuizHistoryItem } from '../api';
 import { Mascot, Icon } from '../components/icons';
 import { CreateAiQuizModal } from '../components/quiz/CreateAiQuizModal';
+import { QuizDetailEditModal } from '../components/quiz/QuizDetailEditModal';
 import { QuotaBadge } from '../components/QuotaBadge';
 import { useAuth } from '../auth/AuthContext';
 import { MotionCard, staggerContainer, staggerItem, AnimatedCounter } from '../motion';
@@ -47,6 +48,8 @@ export default function QuizList() {
   const [myQuizzesErr, setMyQuizzesErr] = useState('');
   const [myQuizzesLoaded, setMyQuizzesLoaded] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [selectedQuizIdForDetail, setSelectedQuizIdForDetail] = useState<number | null>(null);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
 
   // Storage key for roadmap data
   const storageKey = `vocab_ai_roadmap_${user?.id || user?.username || 'default'}`;
@@ -376,7 +379,7 @@ export default function QuizList() {
                         return (
                           <>
                             <div className="sub mt8">
-                              {qz.questionCount} câu · giới hạn {mins} phút{qz.category ? ` · ${qz.category}` : ''}
+                              {qz.questionCount} câu · giới hạn {mins} phút{qz.category ? ` · ${qz.category}` : ''}{qz.creatorUsername ? ` · bởi @${qz.creatorUsername}` : ''}
                             </div>
                             <div className="row mt16">
                               {recommended ? (
@@ -738,10 +741,21 @@ export default function QuizList() {
                           </div>
                         )}
 
-                        <div className="row mt16" style={{ justifyContent: 'flex-end', gap: 10 }}>
+                        <div className="row mt16" style={{ justifyContent: 'flex-end', gap: 10, flexWrap: 'wrap' }}>
+                          <button
+                            type="button"
+                            className="btn ghost sm"
+                            style={{ minHeight: 38, padding: '0 14px', fontWeight: 700, fontSize: 13 }}
+                            onClick={() => {
+                              setSelectedQuizIdForDetail(qz.id);
+                              setIsDetailModalOpen(true);
+                            }}
+                          >
+                            <Icon n="edit" s={15} /> Chi tiết / Sửa
+                          </button>
                           <button
                             className="btn primary sm"
-                            style={{ minHeight: 40, padding: '0 20px', fontWeight: 800 }}
+                            style={{ minHeight: 38, padding: '0 18px', fontWeight: 800 }}
                             onClick={() => nav('/quiz/' + qz.id)}
                           >
                             Bắt đầu làm
@@ -1101,6 +1115,21 @@ export default function QuizList() {
         onClose={() => setIsCreateModalOpen(false)}
         onSuccess={() => {
           handleTabChange('my-quizzes');
+          fetchMyQuizzes(0);
+        }}
+        onStartQuiz={(quizId) => nav('/quiz/' + quizId)}
+      />
+      <QuizDetailEditModal
+        quizId={selectedQuizIdForDetail}
+        isOpen={isDetailModalOpen}
+        onClose={() => {
+          setIsDetailModalOpen(false);
+          setSelectedQuizIdForDetail(null);
+        }}
+        onUpdated={() => {
+          fetchMyQuizzes(myQuizzesPage);
+        }}
+        onDeleted={() => {
           fetchMyQuizzes(0);
         }}
         onStartQuiz={(quizId) => nav('/quiz/' + quizId)}
