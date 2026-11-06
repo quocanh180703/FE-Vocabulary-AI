@@ -143,17 +143,16 @@ export function AdminLayout() {
         <div style={{ flex: 1 }} />
 
         {/* Lối về trang học viên */}
-        <button
-          type="button"
+        <NavLink
+          to="/dashboard"
           className="nav"
-          onClick={handleTransitionNavigate('/dashboard')}
           title="Quay lại giao diện học viên"
         >
           <span className="nic">
             <Icon n="home" s={18} />
           </span>
           {!isSidebarCollapsed && <span>Về trang học viên</span>}
-        </button>
+        </NavLink>
 
         {/* Đăng xuất */}
         <button
