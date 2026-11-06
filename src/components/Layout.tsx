@@ -29,14 +29,6 @@ const STUDENT_TABS: TabItem[] = [
   { to: '/profile', label: 'Cá nhân', icon: 'user' },
 ];
 
-const INSTRUCTOR_TABS: TabItem[] = [
-  { to: '/admin/reports', label: 'Báo cáo & Thống kê', icon: 'chart', end: true },
-  { to: '/admin/words', label: 'Từ vựng & CEFR', icon: 'book' },
-  { to: '/admin/quizzes', label: 'Quản lý Trắc nghiệm', icon: 'zap' },
-  { to: '/admin/content-review', label: 'Duyệt nội dung', icon: 'spark' },
-  { to: '/admin/users', label: 'Quản lý Học viên', icon: 'user' },
-  { to: '/profile', label: 'Cá nhân', icon: 'user' },
-];
 
 export function Layout() {
   const { user, subscription, logout } = useAuth();
@@ -155,7 +147,7 @@ export function Layout() {
         <div className="sidebar-header">
           <div
             className="brand"
-            onClick={() => nav(user?.role === 'INSTRUCTOR' ? '/admin/reports' : '/dashboard')}
+            onClick={() => nav('/dashboard')}
             title="VocabularyAI - Về tổng quan"
             style={{ cursor: 'pointer' }}
           >
@@ -164,7 +156,7 @@ export function Layout() {
           </div>
         </div>
 
-        {(user?.role === 'INSTRUCTOR' ? INSTRUCTOR_TABS : STUDENT_TABS).map((t) => (
+        {STUDENT_TABS.map((t) => (
           <NavLink
             key={t.to}
             to={t.to}
@@ -178,6 +170,35 @@ export function Layout() {
             {!isSidebarCollapsed && <span className="nav-label">{t.label}</span>}
           </NavLink>
         ))}
+
+        {user?.role === 'INSTRUCTOR' && (
+          <NavLink
+            to="/admin/reports"
+            className="nav"
+            title="Trang Giảng viên"
+            style={{
+              marginTop: 6,
+              background: 'rgba(79, 70, 229, 0.08)',
+              color: '#4F46E5',
+              fontWeight: 800,
+            }}
+          >
+            <span
+              className="nic"
+              style={{
+                background: '#4F46E5',
+                color: '#fff',
+              }}
+            >
+              <Icon n="spark" s={18} />
+            </span>
+            {!isSidebarCollapsed && (
+              <span className="nav-label">
+                Trang Giảng viên
+              </span>
+            )}
+          </NavLink>
+        )}
 
         {user?.role === 'ADMIN' && (
           <NavLink

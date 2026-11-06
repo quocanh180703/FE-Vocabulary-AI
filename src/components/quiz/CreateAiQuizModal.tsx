@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { motion } from 'motion/react';
 import { documentApi, errMsg } from '../../api';
 import type { DocumentItem, DocumentAnalysis, DocumentChatMessage, Quiz, DraftQuestion } from '../../api';
@@ -67,6 +68,18 @@ export const CreateAiQuizModal: React.FC<CreateAiQuizModalProps> = ({
   // Check quota
   const quotaRemaining = usage?.features?.exercise_generation?.remaining ?? 3;
   const isOutOfQuota = !isVip && quotaRemaining <= 0;
+
+  // Lock body scroll when modal is open
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isOpen]);
 
   // Load user docs when modal opens
   useEffect(() => {
@@ -259,14 +272,15 @@ export const CreateAiQuizModal: React.FC<CreateAiQuizModalProps> = ({
 
   if (!isOpen) return null;
 
-  return (
+  return createPortal(
     <div
       style={{
         position: 'fixed',
         inset: 0,
         backgroundColor: 'rgba(15, 23, 42, 0.65)',
-        backdropFilter: 'blur(4px)',
-        zIndex: 1000,
+        backdropFilter: 'blur(6px)',
+        WebkitBackdropFilter: 'blur(6px)',
+        zIndex: 99999,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -1294,6 +1308,7 @@ export const CreateAiQuizModal: React.FC<CreateAiQuizModalProps> = ({
           )}
         </div>
       </motion.div>
-    </div>
+    </div>,
+    document.body
   );
 };
