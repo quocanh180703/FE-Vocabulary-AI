@@ -103,7 +103,24 @@ export const daysOverdue = (it: ProgressItem): number => {
   const d = Math.ceil((Date.now() - new Date(it.nextReviewAt).getTime()) / 86400000);
   return d > 0 ? d : 0;
 };
-export interface Quiz { id: number; title: string; description?: string; level: string; questionCount: number; timeLimit: number; category?: string; status: string }
+export interface Quiz {
+  id: number;
+  title: string;
+  description?: string;
+  level: string;
+  questionCount: number;
+  timeLimit: number;
+  category?: string;
+  status: string;
+  visibility?: 'PUBLIC' | 'PRIVATE' | 'PENDING' | 'REJECTED';
+  isAiGenerated?: boolean;
+  createdBy?: number;
+  creatorUsername?: string;
+  reviewNote?: string;
+  reviewedBy?: number;
+  reviewedAt?: string;
+  sourceDocumentId?: number;
+}
 export interface Question { id: number; content: string; options: string[]; correctAnswer?: number; explanation?: string }
 export interface QuizDetail extends Quiz { totalQuestions: number; questions: Question[] }
 export interface Attempt { attemptId: number; quizId: number; startedAt: string; expiresAt: string }
@@ -887,6 +904,32 @@ export const quizApi = {
         },
       };
     }),
+  myQuizzes: (p?: { page?: number; size?: number }) => {
+    const params: Record<string, any> = { page: p?.page ?? 0, size: p?.size ?? 20 };
+    return api.get<any>('/quizzes/mine', { params }).then((res) => {
+      const pageData = res.data?.data || res.data || {};
+      const raw = Array.isArray(pageData.content) ? pageData.content : (Array.isArray(pageData) ? pageData : []);
+      const content: Quiz[] = raw.map((q: any) => ({
+        id: q.id,
+        title: q.title,
+        description: q.description,
+        level: q.level || 'B1',
+        timeLimit: q.timeLimit || 15,
+        questionCount: q.questionCount || 5,
+        category: q.categoryName || q.category?.name || q.category || 'Tự tạo',
+        status: q.status,
+        visibility: q.visibility || 'PRIVATE',
+        isAiGenerated: q.isAiGenerated ?? true,
+        createdBy: q.createdBy,
+        creatorUsername: q.creatorUsername,
+        reviewNote: q.reviewNote,
+        reviewedBy: q.reviewedBy,
+        reviewedAt: q.reviewedAt,
+        sourceDocumentId: q.sourceDocumentId,
+      }));
+      return { ...res, data: { ...pageData, content } };
+    });
+  },
   history: (p?: { page?: number; size?: number }) =>
     api.get<any>('/quizzes/history', {
       params: { page: p?.page ?? 0, size: p?.size ?? 6 },
@@ -911,6 +954,76 @@ export const quizApi = {
         },
       };
     }),
+};
+
+
+/* ---------- documents & AI exercise ---------- */
+export interface DocumentItem {
+  id: number;
+  originalName: string;
+  fileType: 'TXT' | 'MD' | 'PDF' | 'DOCX';
+  fileSize: number;
+  charCount: number;
+  status: 'PENDING' | 'READY' | 'FAILED';
+  errorMessage?: string;
+  createdAt: string;
+}
+
+export interface DocumentAnalysis {
+  summary: string;
+  suggestedLevel: string;
+  mainTopics: string[];
+  keyVocabularies: string[];
+}
+
+export interface DocumentChatMessage {
+  role: 'user' | 'assistant';
+  content: string;
+}
+
+export interface DocumentChatResponse {
+  reply: string;
+}
+
+export interface GenerateQuizRequest {
+  title?: string;
+  level?: string;
+  questionCount?: number;
+  extraPrompt?: string;
+}
+
+export const documentApi = {
+  upload: (file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return api.post<any>('/documents', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }).then((res) => res.data?.data || res.data);
+  },
+  list: (params?: { page?: number; size?: number }) =>
+    api.get<any>('/documents', { params }).then((res) => {
+      const d = res.data?.data || res.data || {};
+      const raw = Array.isArray(d.content) ? d.content : (Array.isArray(d) ? d : []);
+      return {
+        ...res,
+        data: {
+          content: raw as DocumentItem[],
+          pageable: d.pageable || { pageNumber: params?.page ?? 0, pageSize: params?.size ?? 10 },
+          totalElements: d.totalElements ?? raw.length,
+          totalPages: d.totalPages ?? 1,
+        },
+      };
+    }),
+  get: (id: number) =>
+    api.get<any>('/documents/' + id).then((res) => res.data?.data || res.data),
+  delete: (id: number) =>
+    api.delete<any>('/documents/' + id).then((res) => res.data?.data || res.data),
+  analyze: (id: number) =>
+    api.post<any>('/documents/' + id + '/analyze').then((res) => res.data?.data || res.data),
+  chat: (id: number, messages: DocumentChatMessage[]) =>
+    api.post<any>('/documents/' + id + '/generate-chat', { messages }).then((res) => res.data?.data || res.data),
+  generateQuiz: (id: number, data: GenerateQuizRequest) =>
+    api.post<any>('/documents/' + id + '/generate', data).then((res) => res.data?.data || res.data),
 };
 
 /* ---------- ai ---------- */
@@ -1905,6 +2018,7 @@ export interface SubscriptionUsageResponse {
     roadmap: FeatureQuota;
     voice?: FeatureQuota;
     listening?: FeatureQuota;
+    exercise_generation?: FeatureQuota;
   };
 }
 
