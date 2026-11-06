@@ -191,6 +191,10 @@ export default function Login() {
       const access = data.accessToken || data.access_token || '';
       const refresh = data.refreshToken || data.refresh_token || '';
       login(data.user, access, refresh);
+      if (data.user?.role === 'INSTRUCTOR') {
+        nav('/admin/reports');
+        return;
+      }
       nav('/dashboard');
     } catch (e) {
       setErr(errMsg(e));

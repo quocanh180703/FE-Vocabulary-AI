@@ -809,11 +809,14 @@ export const quizApi = {
       let content: Quiz[] = raw.map((q: any) => ({
         id: q.id,
         title: q.title,
+        description: q.description,
         level: q.level || 'B1',
         timeLimit: q.timeLimit || 15,
         questionCount: q.questionCount || 5,
         category: q.categoryName || q.category?.name || q.category || 'Tổng hợp',
         status: q.status,
+        creatorUsername: q.creatorUsername,
+        isAiGenerated: q.isAiGenerated ?? false,
       }));
       if (p.level && p.level !== 'Tất cả') {
         const targetLvl = p.level.toUpperCase();
@@ -957,7 +960,7 @@ export const quizApi = {
         category: q.categoryName || q.category?.name || q.category || 'Tự tạo',
         status: q.status,
         visibility: q.visibility || 'PRIVATE',
-        isAiGenerated: q.isAiGenerated ?? true,
+        isAiGenerated: q.isAiGenerated ?? false,
         createdBy: q.createdBy,
         creatorUsername: q.creatorUsername,
         reviewNote: q.reviewNote,
@@ -1019,8 +1022,16 @@ export interface DocumentChatMessage {
   content: string;
 }
 
+export interface DraftQuestion {
+  content: string;
+  options: string[];
+  correctAnswer?: number;
+  explanation?: string;
+}
+
 export interface DocumentChatResponse {
   reply: string;
+  draftQuestions?: DraftQuestion[];
 }
 
 export interface GenerateQuizRequest {

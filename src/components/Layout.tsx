@@ -9,17 +9,33 @@ import { PageTransition } from '../motion';
 import { ErrorBoundary } from './ErrorBoundary';
 import vi3dImg from '../assets/vi-3d.webp';
 
-const TABS = [
-  { to: '/dashboard', label: 'Tổng quan', icon: 'home' as const, end: true },
-  { to: '/words', label: 'Từ vựng', icon: 'book' as const },
-  { to: '/review', label: 'Ôn tập', icon: 'bulb' as const },
-  { to: '/roadmap', label: 'Lộ trình AI', icon: 'chart' as const },
-  { to: '/quiz', label: 'Trắc nghiệm', icon: 'zap' as const },
-  { to: '/grammar', label: 'Sửa ngữ pháp', icon: 'spark' as const },
-  { to: '/chat', label: 'Trò chuyện AI', icon: 'msg' as const },
-  { to: '/speaking', label: 'Luyện nói', icon: 'mic' as const },
-  { to: '/listening', label: 'Luyện nghe', icon: 'headphones' as const },
-  { to: '/profile', label: 'Cá nhân', icon: 'user' as const },
+interface TabItem {
+  to: string;
+  label: string;
+  icon: 'home' | 'book' | 'bulb' | 'chart' | 'zap' | 'spark' | 'msg' | 'mic' | 'headphones' | 'user';
+  end?: boolean;
+}
+
+const STUDENT_TABS: TabItem[] = [
+  { to: '/dashboard', label: 'Tổng quan', icon: 'home', end: true },
+  { to: '/words', label: 'Từ vựng', icon: 'book' },
+  { to: '/review', label: 'Ôn tập', icon: 'bulb' },
+  { to: '/roadmap', label: 'Lộ trình AI', icon: 'chart' },
+  { to: '/quiz', label: 'Trắc nghiệm', icon: 'zap' },
+  { to: '/grammar', label: 'Sửa ngữ pháp', icon: 'spark' },
+  { to: '/chat', label: 'Trò chuyện AI', icon: 'msg' },
+  { to: '/speaking', label: 'Luyện nói', icon: 'mic' },
+  { to: '/listening', label: 'Luyện nghe', icon: 'headphones' },
+  { to: '/profile', label: 'Cá nhân', icon: 'user' },
+];
+
+const INSTRUCTOR_TABS: TabItem[] = [
+  { to: '/admin/reports', label: 'Báo cáo & Thống kê', icon: 'chart', end: true },
+  { to: '/admin/words', label: 'Từ vựng & CEFR', icon: 'book' },
+  { to: '/admin/quizzes', label: 'Quản lý Trắc nghiệm', icon: 'zap' },
+  { to: '/admin/content-review', label: 'Duyệt nội dung', icon: 'spark' },
+  { to: '/admin/users', label: 'Quản lý Học viên', icon: 'user' },
+  { to: '/profile', label: 'Cá nhân', icon: 'user' },
 ];
 
 export function Layout() {
@@ -139,7 +155,7 @@ export function Layout() {
         <div className="sidebar-header">
           <div
             className="brand"
-            onClick={() => nav('/dashboard')}
+            onClick={() => nav(user?.role === 'INSTRUCTOR' ? '/admin/reports' : '/dashboard')}
             title="VocabularyAI - Về tổng quan"
             style={{ cursor: 'pointer' }}
           >
@@ -148,7 +164,7 @@ export function Layout() {
           </div>
         </div>
 
-        {TABS.map((t) => (
+        {(user?.role === 'INSTRUCTOR' ? INSTRUCTOR_TABS : STUDENT_TABS).map((t) => (
           <NavLink
             key={t.to}
             to={t.to}
@@ -163,30 +179,30 @@ export function Layout() {
           </NavLink>
         ))}
 
-        {(user?.role === 'ADMIN' || user?.role === 'INSTRUCTOR') && (
+        {user?.role === 'ADMIN' && (
           <NavLink
-            to={user?.role === 'INSTRUCTOR' ? '/admin/reports' : '/admin'}
+            to="/admin"
             className="nav"
-            title={user?.role === 'INSTRUCTOR' ? 'Trang Giảng viên' : 'Quản trị Admin'}
+            title="Quản trị Admin"
             style={{
               marginTop: 6,
-              background: user?.role === 'INSTRUCTOR' ? 'rgba(79, 70, 229, 0.08)' : 'rgba(21, 101, 192, 0.08)',
-              color: user?.role === 'INSTRUCTOR' ? '#4F46E5' : 'var(--primary-dark)',
+              background: 'rgba(21, 101, 192, 0.08)',
+              color: 'var(--primary-dark)',
               fontWeight: 800,
             }}
           >
             <span
               className="nic"
               style={{
-                background: user?.role === 'INSTRUCTOR' ? '#4F46E5' : 'var(--primary)',
+                background: 'var(--primary)',
                 color: '#fff',
               }}
             >
-              <Icon n={user?.role === 'INSTRUCTOR' ? 'user' : 'spark'} s={18} />
+              <Icon n="spark" s={18} />
             </span>
             {!isSidebarCollapsed && (
               <span className="nav-label">
-                {user?.role === 'INSTRUCTOR' ? 'Trang Giảng viên' : 'Quản trị Admin'}
+                Quản trị Admin
               </span>
             )}
           </NavLink>

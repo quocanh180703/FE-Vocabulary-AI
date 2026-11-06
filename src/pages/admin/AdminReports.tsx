@@ -40,24 +40,36 @@ export default function AdminReports() {
   const fetchReports = async () => {
     setLoading(true);
     try {
-      const [progRes, contRes, revRes, sysRes, sumRes, trendRes] = await Promise.allSettled([
+      const promises: Promise<any>[] = [
         adminApi.learningProgressReport(),
         adminApi.contentPerformanceReport(),
-        adminApi.revenue(),
-        adminApi.systemHealth(),
-        adminApi.summary(),
-        adminApi.activityTrend(),
-      ]);
-
+      ];
+      if (!isInstructor) {
+        promises.push(
+          adminApi.revenue(),
+          adminApi.systemHealth(),
+          adminApi.summary(),
+          adminApi.activityTrend()
+        );
+      }
+      const results = await Promise.allSettled(promises);
+      const progRes = results[0];
+      const contRes = results[1];
       if (progRes.status === 'fulfilled' && progRes.value.data) setLearningReport(progRes.value.data);
       if (contRes.status === 'fulfilled' && contRes.value.data) {
         const rawContent = contRes.value.data;
         setContentReport(Array.isArray(rawContent) ? rawContent : (rawContent?.content || []));
       }
-      if (revRes.status === 'fulfilled' && revRes.value.data) setRevenueReport(revRes.value.data);
-      if (sysRes.status === 'fulfilled' && sysRes.value.data) setSystemHealth(sysRes.value.data);
-      if (sumRes.status === 'fulfilled' && sumRes.value.data) setSummary(sumRes.value.data);
-      if (trendRes.status === 'fulfilled' && trendRes.value.data) setActivityTrend(trendRes.value.data);
+      if (!isInstructor) {
+        const revRes = results[2];
+        const sysRes = results[3];
+        const sumRes = results[4];
+        const trendRes = results[5];
+        if (revRes && revRes.status === 'fulfilled' && revRes.value.data) setRevenueReport(revRes.value.data);
+        if (sysRes && sysRes.status === 'fulfilled' && sysRes.value.data) setSystemHealth(sysRes.value.data);
+        if (sumRes && sumRes.status === 'fulfilled' && sumRes.value.data) setSummary(sumRes.value.data);
+        if (trendRes && trendRes.status === 'fulfilled' && trendRes.value.data) setActivityTrend(trendRes.value.data);
+      }
     } catch (e) {
       console.error(e);
     } finally {
@@ -90,8 +102,8 @@ export default function AdminReports() {
       return {
         level: lvl,
         quizzesCount: count,
-        passRate: comp > 0 ? comp : 85,
-        avgScore: avg > 0 ? avg : 75,
+        passRate: comp,
+        avgScore: avg,
         color: colors[lvl] || '#4F46E5',
       };
     });
@@ -118,13 +130,15 @@ export default function AdminReports() {
 
       {/* Tab Switcher */}
       <div className="chiprow">
-        <button
-          type="button"
-          className={'fchip' + (activeTab === 'revenue' ? ' on' : '')}
-          onClick={() => setActiveTab('revenue')}
-        >
-          Doanh thu &amp; Gói cước
-        </button>
+        {!isInstructor && (
+          <button
+            type="button"
+            className={'fchip' + (activeTab === 'revenue' ? ' on' : '')}
+            onClick={() => setActiveTab('revenue')}
+          >
+            Doanh thu &amp; Gói cước
+          </button>
+        )}
         <button
           type="button"
           className={'fchip' + (activeTab === 'progress' ? ' on' : '')}
@@ -139,13 +153,15 @@ export default function AdminReports() {
         >
           Hiệu suất nội dung đề thi
         </button>
-        <button
-          type="button"
-          className={'fchip' + (activeTab === 'system' ? ' on' : '')}
-          onClick={() => setActiveTab('system')}
-        >
-          Hệ thống &amp; Hạ tầng
-        </button>
+        {!isInstructor && (
+          <button
+            type="button"
+            className={'fchip' + (activeTab === 'system' ? ' on' : '')}
+            onClick={() => setActiveTab('system')}
+          >
+            Hệ thống &amp; Hạ tầng
+          </button>
+        )}
       </div>
 
       {loading ? (

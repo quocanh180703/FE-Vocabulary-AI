@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
 import { adminApi, quizApi } from '../../api';
 import type { AdminQuiz, QuizDetail } from '../../api';
+import { useAuth } from '../../auth/AuthContext';
 import { Icon } from '../../components/icons';
 import { MotionCard, AnimatedCounter, staggerContainer, staggerItem } from '../../motion';
 
@@ -23,6 +24,8 @@ function generatePageNumbers(current: number, total: number): (number | '...')[]
 }
 
 export default function AdminQuizzes() {
+  const { user } = useAuth();
+  const isInstructor = user?.role === 'INSTRUCTOR';
   const [quizzes, setQuizzes] = useState<AdminQuiz[]>([]);
   const [levelFilter, setLevelFilter] = useState('ALL');
   const [statusFilter, setStatusFilter] = useState('ALL');
@@ -231,14 +234,16 @@ export default function AdminQuizzes() {
             <AnimatedCounter value={totalItems} /> bài trắc nghiệm {levelFilter !== 'ALL' ? `(Cấp độ ${levelFilter})` : 'theo chủ đề & cấp độ'} · 10 bài / trang · quản lý từng câu hỏi trong bài
           </div>
         </div>
-        <button
-          type="button"
-          className="btn"
-          onClick={openCreate}
-        >
-          <Icon n="plus" s={18} />
-          Tạo quiz mới
-        </button>
+        {!isInstructor && (
+          <button
+            type="button"
+            className="btn"
+            onClick={openCreate}
+          >
+            <Icon n="plus" s={18} />
+            Tạo quiz mới
+          </button>
+        )}
       </div>
 
       {message && (
@@ -327,22 +332,26 @@ export default function AdminQuizzes() {
                     >
                       Quản lý câu hỏi
                     </button>
-                    <button
-                      type="button"
-                      className="btn ghost"
-                      style={{ minHeight: 42, padding: '0 16px' }}
-                      onClick={() => openEdit(q)}
-                    >
-                      Sửa
-                    </button>
-                    <button
-                      type="button"
-                      className="btn ghost"
-                      style={{ minHeight: 42, padding: '0 14px', color: 'var(--red-dark)', borderColor: 'rgba(229,72,77,0.3)' }}
-                      onClick={() => handleDeleteQuiz(q)}
-                    >
-                      Xóa
-                    </button>
+                    {!isInstructor && (
+                      <>
+                        <button
+                          type="button"
+                          className="btn ghost"
+                          style={{ minHeight: 42, padding: '0 16px' }}
+                          onClick={() => openEdit(q)}
+                        >
+                          Sửa
+                        </button>
+                        <button
+                          type="button"
+                          className="btn ghost"
+                          style={{ minHeight: 42, padding: '0 14px', color: 'var(--red-dark)', borderColor: 'rgba(229,72,77,0.3)' }}
+                          onClick={() => handleDeleteQuiz(q)}
+                        >
+                          Xóa
+                        </button>
+                      </>
+                    )}
                   </div>
                 </MotionCard>
               );

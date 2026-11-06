@@ -327,6 +327,25 @@ export const QuizDetailEditModal: React.FC<QuizDetailEditModalProps> = ({
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            {/* Sparkle AI Badge */}
+            {quizDetail?.isAiGenerated && (
+              <span
+                className="pill"
+                style={{
+                  background: '#F3E8FF',
+                  color: '#7E22CE',
+                  border: '1px solid #D8B4FE',
+                  fontWeight: 700,
+                  fontSize: 12,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 4,
+                }}
+              >
+                <Icon n="spark" s={13} /> Do AI tạo
+              </span>
+            )}
+
             {/* Visibility Badge */}
             {isPublic ? (
               <span className="pill" style={{ background: '#DCFCE7', color: '#15803D', border: '1px solid #86EFAC' }}>
