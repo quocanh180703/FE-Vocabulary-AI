@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { motion } from 'motion/react';
 import { quizApi, errMsg } from '../../api';
 import type { QuizDetail, Question } from '../../api';
@@ -36,6 +37,17 @@ export const QuizDetailEditModal: React.FC<QuizDetailEditModalProps> = ({
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isOpen]);
 
   useEffect(() => {
     if (isOpen && quizId) {
@@ -253,14 +265,15 @@ export const QuizDetailEditModal: React.FC<QuizDetailEditModalProps> = ({
 
   if (!isOpen) return null;
 
-  return (
+  return createPortal(
     <div
       style={{
         position: 'fixed',
         inset: 0,
         backgroundColor: 'rgba(15, 23, 42, 0.65)',
-        backdropFilter: 'blur(4px)',
-        zIndex: 1000,
+        backdropFilter: 'blur(6px)',
+        WebkitBackdropFilter: 'blur(6px)',
+        zIndex: 99999,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -828,7 +841,8 @@ export const QuizDetailEditModal: React.FC<QuizDetailEditModalProps> = ({
           )}
         </div>
       </motion.div>
-    </div>
+    </div>,
+    document.body
   );
 };
 

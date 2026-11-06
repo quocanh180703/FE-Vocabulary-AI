@@ -213,7 +213,7 @@ export default function AdminReports() {
                     <AnimatedCounter value={revenueReport?.revenueThisMonth ?? 0} /> đ
                   </div>
                   <div className="delta up">
-                    {(revenueReport?.revenueThisMonth ?? 0) > 0 ? `${revenueReport?.paymentsToday ?? 0} giao dịch hôm nay` : 'Đơn 99k phát sinh ngày 31/10 (T10)'}
+                    {(revenueReport?.revenueThisMonth ?? 0) > 0 ? `${revenueReport?.paymentsToday ?? 0} giao dịch hôm nay` : 'Chưa có giao dịch'}
                   </div>
                 </div>
               </div>
@@ -251,7 +251,7 @@ export default function AdminReports() {
                     </div>
                     <div className="kv">
                       <span>Giá trị đơn hàng trung bình</span>
-                      <b>{(revenueReport?.averagePaymentAmount ?? 99000).toLocaleString('vi-VN')} đ</b>
+                      <b>{(revenueReport?.averagePaymentAmount ?? 0).toLocaleString('vi-VN')} đ</b>
                     </div>
                     <div className="kv">
                       <span>Cổng thanh toán tích hợp</span>
