@@ -3,6 +3,7 @@ import { NavLink, useNavigate, useLocation, useOutlet } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import { wordApi, learnApi } from '../api';
 import { Icon, Mascot } from './icons';
+import { NotificationBell } from './NotificationBell';
 import { motion, AnimatePresence } from 'motion/react';
 import { PageTransition } from '../motion';
 import { ErrorBoundary } from './ErrorBoundary';
@@ -257,6 +258,8 @@ export function Layout() {
             </span>
             <span style={{ color: 'var(--yellow-dark)' }}>{streak}</span>
           </div>
+
+          <NotificationBell />
 
           <div
             className="statpill"

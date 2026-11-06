@@ -741,7 +741,64 @@ export default function QuizList() {
                           </div>
                         )}
 
-                        <div className="row mt16" style={{ justifyContent: 'flex-end', gap: 10, flexWrap: 'wrap' }}>
+                        <div className="row mt16" style={{ justifyContent: 'flex-end', gap: 8, flexWrap: 'wrap' }}>
+                          {isPending && (
+                            <button
+                              type="button"
+                              className="btn ghost sm"
+                              style={{ minHeight: 38, padding: '0 12px', fontWeight: 700, fontSize: 12.5, borderColor: '#FCD34D', color: '#B45309', background: '#FFFBEB' }}
+                              onClick={async () => {
+                                if (window.confirm('Bạn có chắc muốn rút yêu cầu duyệt bài tập này về chế độ riêng tư?')) {
+                                  try {
+                                    await quizApi.withdraw(qz.id);
+                                    fetchMyQuizzes(myQuizzesPage);
+                                  } catch (e: any) {
+                                    alert(e?.response?.data?.message || 'Có lỗi xảy ra');
+                                  }
+                                }
+                              }}
+                            >
+                              ↩️ Rút yêu cầu
+                            </button>
+                          )}
+                          {isPublic && (
+                            <button
+                              type="button"
+                              className="btn ghost sm"
+                              style={{ minHeight: 38, padding: '0 12px', fontWeight: 700, fontSize: 12.5, borderColor: '#CBD5E1', color: '#475569' }}
+                              onClick={async () => {
+                                if (window.confirm('Chuyển bài tập về chế độ riêng tư (chỉ bạn thấy)? Người khác sẽ không thấy bài này trong danh sách chung nữa.')) {
+                                  try {
+                                    await quizApi.hide(qz.id);
+                                    fetchMyQuizzes(myQuizzesPage);
+                                  } catch (e: any) {
+                                    alert(e?.response?.data?.message || 'Có lỗi xảy ra');
+                                  }
+                                }
+                              }}
+                            >
+                              🔒 Ẩn bài
+                            </button>
+                          )}
+                          {!isPending && !isPublic && (
+                            <button
+                              type="button"
+                              className="btn ghost sm"
+                              style={{ minHeight: 38, padding: '0 12px', fontWeight: 700, fontSize: 12.5, borderColor: '#A5B4FC', color: '#4F46E5', background: '#EEF2FF' }}
+                              onClick={async () => {
+                                if (window.confirm('Gửi bài tập này cho Giảng viên duyệt để công khai cho cộng đồng?')) {
+                                  try {
+                                    await quizApi.publishRequest(qz.id);
+                                    fetchMyQuizzes(myQuizzesPage);
+                                  } catch (e: any) {
+                                    alert(e?.response?.data?.message || 'Có lỗi xảy ra');
+                                  }
+                                }
+                              }}
+                            >
+                              🚀 Gửi duyệt
+                            </button>
+                          )}
                           <button
                             type="button"
                             className="btn ghost sm"

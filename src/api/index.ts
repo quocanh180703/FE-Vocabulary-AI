@@ -936,6 +936,12 @@ export const quizApi = {
     api.put<any>('/quizzes/mine/' + id, data).then((res) => res.data?.data || res.data),
   deleteMyQuiz: (id: number) =>
     api.delete<any>('/quizzes/mine/' + id).then((res) => res.data?.data || res.data),
+  publishRequest: (id: number) =>
+    api.post<any>('/quizzes/mine/' + id + '/publish-request').then((res) => res.data?.data || res.data),
+  withdraw: (id: number) =>
+    api.post<any>('/quizzes/mine/' + id + '/withdraw').then((res) => res.data?.data || res.data),
+  hide: (id: number) =>
+    api.post<any>('/quizzes/mine/' + id + '/hide').then((res) => res.data?.data || res.data),
   myQuizzes: (p?: { page?: number; size?: number }) => {
     const params: Record<string, any> = { page: p?.page ?? 0, size: p?.size ?? 20 };
     return api.get<any>('/quizzes/mine', { params }).then((res) => {
@@ -2385,3 +2391,127 @@ export const myWordsApi = {
 
 
 
+
+/* ---------- In-App Notifications API ---------- */
+export interface InAppNotification {
+  id: number;
+  title: string;
+  content: string;
+  type: 'EXERCISE_PENDING_REVIEW' | 'EXERCISE_APPROVED' | 'EXERCISE_REJECTED' | 'SYSTEM' | string;
+  link?: string;
+  isRead: boolean;
+  createdAt: string;
+}
+
+export interface NotificationPage {
+  content: InAppNotification[];
+  unreadCount: number;
+  totalElements: number;
+  totalPages: number;
+  pageNumber: number;
+  pageSize: number;
+}
+
+export const notificationApi = {
+  list: (params?: { page?: number; size?: number }) => {
+    const p = { page: params?.page ?? 0, size: params?.size ?? 10 };
+    return api.get<any>('/notifications', { params: p }).then((res) => {
+      const d = res.data?.data || res.data || {};
+      return {
+        content: (d.content || []).map((n: any) => ({
+          id: n.id,
+          title: n.title,
+          content: n.content,
+          type: n.type,
+          link: n.link,
+          isRead: Boolean(n.read ?? n.isRead),
+          createdAt: n.createdAt,
+        })),
+        unreadCount: Number(d.unreadCount ?? 0),
+        totalElements: Number(d.totalElements ?? 0),
+        totalPages: Number(d.totalPages ?? 0),
+        pageNumber: Number(d.pageNumber ?? 0),
+        pageSize: Number(d.pageSize ?? 10),
+      } as NotificationPage;
+    });
+  },
+  read: (id: number) =>
+    api.post<any>(`/notifications/${id}/read`).then((res) => res.data?.data || res.data),
+  readAll: () =>
+    api.post<any>('/notifications/read-all').then((res) => res.data?.data || res.data),
+};
+
+/* ---------- Admin Exercise Review API ---------- */
+export interface PendingQuizItem {
+  id: number;
+  title: string;
+  description?: string;
+  level: string;
+  timeLimit: number;
+  questionCount: number;
+  category: string;
+  status: string;
+  visibility: string;
+  isAiGenerated: boolean;
+  creatorUsername?: string;
+  createdAt: string;
+}
+
+export const adminExerciseReviewApi = {
+  list: (params?: { page?: number; size?: number }) => {
+    const p = { page: params?.page ?? 0, size: params?.size ?? 10 };
+    return api.get<any>('/admin/exercise-reviews', { params: p }).then((res) => {
+      const pageData = res.data?.data || res.data || {};
+      const raw = Array.isArray(pageData.content) ? pageData.content : [];
+      return {
+        content: raw.map((q: any) => ({
+          id: q.id,
+          title: q.title,
+          description: q.description,
+          level: q.level || 'B1',
+          timeLimit: q.timeLimit || 15,
+          questionCount: q.questionCount || 0,
+          category: q.categoryName || 'Tổng hợp',
+          status: q.status,
+          visibility: q.visibility,
+          isAiGenerated: Boolean(q.isAiGenerated),
+          creatorUsername: q.creatorUsername,
+          createdAt: q.createdAt,
+        })) as PendingQuizItem[],
+        totalElements: Number(pageData.totalElements ?? 0),
+        totalPages: Number(pageData.totalPages ?? 0),
+      };
+    });
+  },
+  get: (id: number) =>
+    api.get<any>(`/admin/exercise-reviews/${id}`).then((res) => {
+      const d = res.data?.data || res.data || {};
+      const quizObj = d.quiz || d;
+      const questionsList = d.questions || [];
+      return {
+        quiz: {
+          id: quizObj.id,
+          title: quizObj.title,
+          description: quizObj.description,
+          level: quizObj.level || 'B1',
+          timeLimit: quizObj.timeLimit || 15,
+          questionCount: questionsList.length || quizObj.questionCount || 0,
+          category: quizObj.categoryName || 'Tổng hợp',
+          status: quizObj.status,
+          visibility: quizObj.visibility,
+          isAiGenerated: Boolean(quizObj.isAiGenerated),
+          creatorUsername: quizObj.creatorUsername,
+          createdAt: quizObj.createdAt,
+        },
+        questions: questionsList.map((q: any) => ({
+          id: q.id,
+          content: q.content,
+          options: Array.isArray(q.options) ? q.options : [],
+          correctAnswer: q.correctAnswer,
+          explanation: q.explanation,
+        })),
+      };
+    }),
+  review: (id: number, data: { decision: 'APPROVED' | 'REJECTED'; note?: string }) =>
+    api.post<any>(`/admin/exercise-reviews/${id}/review`, data).then((res) => res.data?.data || res.data),
+};

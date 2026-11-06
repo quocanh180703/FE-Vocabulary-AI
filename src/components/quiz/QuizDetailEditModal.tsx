@@ -35,6 +35,7 @@ export const QuizDetailEditModal: React.FC<QuizDetailEditModalProps> = ({
 
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [actionLoading, setActionLoading] = useState(false);
 
   useEffect(() => {
     if (isOpen && quizId) {
@@ -200,6 +201,54 @@ export const QuizDetailEditModal: React.FC<QuizDetailEditModalProps> = ({
         setErr(errMsg(e) || 'Không thể xóa bài tập');
       })
       .finally(() => setDeleting(false));
+  };
+
+  const handlePublishRequest = async () => {
+    if (!quizId) return;
+    if (!window.confirm('Gửi bài tập này cho Giảng viên duyệt để công khai cho cộng đồng?')) return;
+    try {
+      setActionLoading(true);
+      await quizApi.publishRequest(quizId);
+      setSuccessMsg('Đã gửi yêu cầu duyệt bài tập tới Giảng viên thành công!');
+      loadDetail(quizId);
+      onUpdated();
+    } catch (e: any) {
+      setErr(errMsg(e) || 'Không thể gửi yêu cầu duyệt');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleWithdraw = async () => {
+    if (!quizId) return;
+    if (!window.confirm('Bạn có chắc muốn rút yêu cầu duyệt bài tập này về chế độ riêng tư?')) return;
+    try {
+      setActionLoading(true);
+      await quizApi.withdraw(quizId);
+      setSuccessMsg('Đã rút yêu cầu duyệt bài tập thành công!');
+      loadDetail(quizId);
+      onUpdated();
+    } catch (e: any) {
+      setErr(errMsg(e) || 'Không thể rút yêu cầu');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleHide = async () => {
+    if (!quizId) return;
+    if (!window.confirm('Chuyển bài tập về chế độ riêng tư (chỉ bạn thấy)? Người khác sẽ không thấy bài này trong danh sách chung nữa.')) return;
+    try {
+      setActionLoading(true);
+      await quizApi.hide(quizId);
+      setSuccessMsg('Đã chuyển bài tập về chế độ riêng tư!');
+      loadDetail(quizId);
+      onUpdated();
+    } catch (e: any) {
+      setErr(errMsg(e) || 'Không thể chuyển chế độ riêng tư');
+    } finally {
+      setActionLoading(false);
+    }
   };
 
   if (!isOpen) return null;
@@ -662,20 +711,67 @@ export const QuizDetailEditModal: React.FC<QuizDetailEditModalProps> = ({
                   gap: 12,
                 }}
               >
-                <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                   {!isReadOnly && (
                     <button
                       type="button"
                       className="btn ghost sm"
                       onClick={handleDelete}
-                      disabled={deleting || saving}
+                      disabled={deleting || saving || actionLoading}
                       style={{
                         borderColor: '#FCA5A5',
                         color: '#DC2626',
                         fontWeight: 700,
                       }}
                     >
-                      <Icon n="trash" s={14} /> {deleting ? 'Đang xóa...' : 'Xóa bài tập'}
+                      <Icon n="trash" s={14} /> {deleting ? 'Đang xóa...' : 'Xóa bài'}
+                    </button>
+                  )}
+                  {isPending && (
+                    <button
+                      type="button"
+                      className="btn ghost sm"
+                      onClick={handleWithdraw}
+                      disabled={actionLoading}
+                      style={{
+                        borderColor: '#FCD34D',
+                        color: '#B45309',
+                        background: '#FFFBEB',
+                        fontWeight: 700,
+                      }}
+                    >
+                      {actionLoading ? 'Đang xử lý...' : '↩️ Rút yêu cầu duyệt'}
+                    </button>
+                  )}
+                  {isPublic && (
+                    <button
+                      type="button"
+                      className="btn ghost sm"
+                      onClick={handleHide}
+                      disabled={actionLoading}
+                      style={{
+                        borderColor: '#CBD5E1',
+                        color: '#475569',
+                        fontWeight: 700,
+                      }}
+                    >
+                      {actionLoading ? 'Đang xử lý...' : '🔒 Chuyển về riêng tư'}
+                    </button>
+                  )}
+                  {!isPending && !isPublic && (
+                    <button
+                      type="button"
+                      className="btn ghost sm"
+                      onClick={handlePublishRequest}
+                      disabled={actionLoading || saving}
+                      style={{
+                        borderColor: '#A5B4FC',
+                        color: '#4F46E5',
+                        background: '#EEF2FF',
+                        fontWeight: 700,
+                      }}
+                    >
+                      {actionLoading ? 'Đang xử lý...' : '🚀 Gửi duyệt công khai'}
                     </button>
                   )}
                 </div>
@@ -716,3 +812,4 @@ export const QuizDetailEditModal: React.FC<QuizDetailEditModalProps> = ({
     </div>
   );
 };
+

@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { AdminExerciseReviewTab } from './AdminExerciseReviewTab';
 import {
   contentReportApi,
   CONTENT_REPORT_TYPE_LABELS,
@@ -21,6 +23,12 @@ const STATUS_FILTERS: { value: ContentReportStatus | 'ALL'; label: string }[] = 
 ];
 
 export default function AdminContentReview() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeTab = searchParams.get('tab') === 'exercise-review' ? 'exercise-review' : 'content-reports';
+
+  const handleTabChange = (tab: 'content-reports' | 'exercise-review') => {
+    setSearchParams({ tab });
+  };
   const [reports, setReports] = useState<ContentReportItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState('');
@@ -119,6 +127,59 @@ export default function AdminContentReview() {
         </button>
       </div>
 
+      {/* Main Tabs Navigation */}
+      <div style={{ display: 'flex', gap: 10, borderBottom: '2px solid var(--border)', paddingBottom: 2 }}>
+        <button
+          type="button"
+          onClick={() => handleTabChange('content-reports')}
+          style={{
+            padding: '10px 18px',
+            fontSize: 14,
+            fontWeight: 800,
+            cursor: 'pointer',
+            border: 'none',
+            background: 'transparent',
+            color: activeTab === 'content-reports' ? 'var(--primary, #2563eb)' : 'var(--muted, #64748b)',
+            borderBottom: activeTab === 'content-reports' ? '3px solid var(--primary, #2563eb)' : '3px solid transparent',
+            marginBottom: -2,
+            transition: 'all 0.15s ease',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+          }}
+        >
+          <Icon n="spark" s={16} />
+          Báo lỗi từ vựng
+        </button>
+
+        <button
+          type="button"
+          onClick={() => handleTabChange('exercise-review')}
+          style={{
+            padding: '10px 18px',
+            fontSize: 14,
+            fontWeight: 800,
+            cursor: 'pointer',
+            border: 'none',
+            background: 'transparent',
+            color: activeTab === 'exercise-review' ? 'var(--primary, #2563eb)' : 'var(--muted, #64748b)',
+            borderBottom: activeTab === 'exercise-review' ? '3px solid var(--primary, #2563eb)' : '3px solid transparent',
+            marginBottom: -2,
+            transition: 'all 0.15s ease',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+          }}
+        >
+          <Icon n="zap" s={16} />
+          Bài tập chờ duyệt
+        </button>
+      </div>
+
+      {activeTab === 'exercise-review' ? (
+        <AdminExerciseReviewTab />
+      ) : (
+        <>
       {/* Filter Row */}
       <div className="card" style={{ padding: '16px 20px', display: 'flex', flexWrap: 'wrap', gap: 14, alignItems: 'center', justifyContent: 'space-between' }}>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
@@ -273,6 +334,8 @@ export default function AdminContentReview() {
           </div>
         )}
       </div>
+        </>
+      )}
 
       {/* Modal Xử lý Báo Cáo */}
       {activeReport && (
