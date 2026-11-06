@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
 import {
@@ -90,6 +91,17 @@ export default function Words() {
   const [formExampleTranslation, setFormExampleTranslation] = useState('');
   const [modalSubmitting, setModalSubmitting] = useState(false);
   const [modalErr, setModalErr] = useState('');
+
+  useEffect(() => {
+    if (isModalOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isModalOpen]);
 
   // Load CEFR Dictionary
   const loadCefr = () => {
@@ -1010,37 +1022,38 @@ export default function Words() {
       )}
 
       {/* ========================================================================= */}
-      {/* MODAL: THÊM / SỬA TỪ RIÊNG                                                */}
+      {/* MODAL: THÊM / SỬA TỪ RIÊNG (Render qua portal để phủ toàn bộ màn hình)    */}
       {/* ========================================================================= */}
-      {isModalOpen && (
-        <div
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background: 'rgba(15, 23, 42, 0.55)',
-            backdropFilter: 'blur(3px)',
-            zIndex: 9999,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: 16,
-          }}
-          onClick={() => !modalSubmitting && setIsModalOpen(false)}
-        >
+      {isModalOpen &&
+        createPortal(
           <div
             style={{
-              background: '#fff',
-              borderRadius: 16,
-              maxWidth: 540,
-              width: '100%',
-              padding: '24px 26px',
-              boxShadow: '0 20px 40px rgba(0,0,0,0.2)',
+              position: 'fixed',
+              inset: 0,
+              zIndex: 99999,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: 16,
+              background: 'rgba(15, 23, 42, 0.65)',
+              backdropFilter: 'blur(6px)',
+              WebkitBackdropFilter: 'blur(6px)',
             }}
-            onClick={(e) => e.stopPropagation()}
+            onClick={() => !modalSubmitting && setIsModalOpen(false)}
           >
+            <div
+              style={{
+                background: '#fff',
+                borderRadius: 20,
+                maxWidth: 560,
+                width: '100%',
+                maxHeight: '92vh',
+                overflowY: 'auto',
+                padding: '26px 28px',
+                boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
               <h2 style={{ fontSize: 19, fontWeight: 800, margin: 0 }}>
                 {editingWord ? 'Chỉnh sửa từ riêng' : 'Thêm từ riêng mới'}
@@ -1223,7 +1236,8 @@ export default function Words() {
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
