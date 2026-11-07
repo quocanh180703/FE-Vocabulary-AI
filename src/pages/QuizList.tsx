@@ -51,6 +51,52 @@ export default function QuizList() {
   const [selectedQuizIdForDetail, setSelectedQuizIdForDetail] = useState<number | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
 
+  // Action confirmation modal (Gửi duyệt, Rút yêu cầu, Ẩn bài)
+  interface QuizActionModalState {
+    isOpen: boolean;
+    type: 'publish' | 'withdraw' | 'hide';
+    quizId: number;
+    quizTitle: string;
+  }
+  const [actionModal, setActionModal] = useState<QuizActionModalState>({
+    isOpen: false,
+    type: 'publish',
+    quizId: 0,
+    quizTitle: '',
+  });
+  const [actionSubmitting, setActionSubmitting] = useState(false);
+  const [actionFeedback, setActionFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+
+  const showActionFeedback = (type: 'success' | 'error', message: string) => {
+    setActionFeedback({ type, message });
+    setTimeout(() => {
+      setActionFeedback(null);
+    }, 4500);
+  };
+
+  const handleConfirmAction = async () => {
+    if (!actionModal.quizId || actionSubmitting) return;
+    setActionSubmitting(true);
+    try {
+      if (actionModal.type === 'publish') {
+        await quizApi.publishRequest(actionModal.quizId);
+        showActionFeedback('success', `Đã gửi yêu cầu duyệt bài tập "${actionModal.quizTitle}" tới Giảng viên thành công!`);
+      } else if (actionModal.type === 'withdraw') {
+        await quizApi.withdraw(actionModal.quizId);
+        showActionFeedback('success', `Đã rút yêu cầu duyệt bài tập "${actionModal.quizTitle}" về riêng tư.`);
+      } else if (actionModal.type === 'hide') {
+        await quizApi.hide(actionModal.quizId);
+        showActionFeedback('success', `Đã chuyển bài tập "${actionModal.quizTitle}" về chế độ riêng tư.`);
+      }
+      fetchMyQuizzes(myQuizzesPage);
+      setActionModal((prev) => ({ ...prev, isOpen: false }));
+    } catch (e: any) {
+      showActionFeedback('error', e?.response?.data?.message || errMsg(e) || 'Có lỗi xảy ra khi thực hiện thao tác.');
+    } finally {
+      setActionSubmitting(false);
+    }
+  };
+
   // Storage key for roadmap data
   const storageKey = `vocab_ai_roadmap_${user?.id || user?.username || 'default'}`;
   const getInitialLevel = () => {
@@ -380,7 +426,24 @@ export default function QuizList() {
                       <div className="row">
                         <b style={{ fontSize: '18.5px' }}>{qz.title}</b>
                         <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                          {qz.isAiGenerated && (
+                          {qz.creatorUsername ? (
+                            <span
+                              className="pill"
+                              style={{
+                                background: '#F3E8FF',
+                                color: '#7E22CE',
+                                border: '1px solid #D8B4FE',
+                                fontWeight: 700,
+                                fontSize: 11.5,
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: 4,
+                              }}
+                              title={`Người tạo và công khai: @${qz.creatorUsername}`}
+                            >
+                              <Icon n="user" s={12} /> @{qz.creatorUsername}
+                            </span>
+                          ) : qz.isAiGenerated ? (
                             <span
                               className="pill"
                               style={{
@@ -396,7 +459,7 @@ export default function QuizList() {
                             >
                               <Icon n="spark" s={12} /> Do AI tạo
                             </span>
-                          )}
+                          ) : null}
                           <span className="pill level">Cấp {qz.level}</span>
                         </div>
                       </div>
@@ -405,7 +468,7 @@ export default function QuizList() {
                         return (
                           <>
                             <div className="sub mt8">
-                              {qz.questionCount} câu · giới hạn {mins} phút{qz.category ? ` · ${qz.category}` : ''}{qz.creatorUsername ? ` · bởi @${qz.creatorUsername}` : ''}
+                              {qz.questionCount} câu · giới hạn {mins} phút{qz.category ? ` · ${qz.category}` : ''}
                             </div>
                             <div className="row mt16">
                               {recommended ? (
@@ -583,6 +646,28 @@ export default function QuizList() {
               </button>
             </div>
           </div>
+
+          {actionFeedback && (
+            <div
+              style={{
+                background: actionFeedback.type === 'success' ? '#F0FDF4' : '#FEF2F2',
+                border: `1px solid ${actionFeedback.type === 'success' ? '#86EFAC' : '#FCA5A5'}`,
+                borderRadius: 14,
+                padding: '12px 18px',
+                marginBottom: 16,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 10,
+                color: actionFeedback.type === 'success' ? '#15803D' : '#B91C1C',
+                fontSize: 13.5,
+                fontWeight: 600,
+                animation: 'fadeIn 0.2s ease',
+              }}
+            >
+              <Icon n={actionFeedback.type === 'success' ? 'check' : 'alert'} s={18} />
+              <span>{actionFeedback.message}</span>
+            </div>
+          )}
 
           {myQuizzesErr && (
             <div
@@ -775,15 +860,13 @@ export default function QuizList() {
                               type="button"
                               className="btn ghost sm"
                               style={{ minHeight: 38, padding: '0 12px', fontWeight: 700, fontSize: 12.5, borderColor: '#FCD34D', color: '#B45309', background: '#FFFBEB' }}
-                              onClick={async () => {
-                                if (window.confirm('Bạn có chắc muốn rút yêu cầu duyệt bài tập này về chế độ riêng tư?')) {
-                                  try {
-                                    await quizApi.withdraw(qz.id);
-                                    fetchMyQuizzes(myQuizzesPage);
-                                  } catch (e: any) {
-                                    alert(e?.response?.data?.message || 'Có lỗi xảy ra');
-                                  }
-                                }
+                              onClick={() => {
+                                setActionModal({
+                                  isOpen: true,
+                                  type: 'withdraw',
+                                  quizId: qz.id,
+                                  quizTitle: qz.title,
+                                });
                               }}
                             >
                               ↩️ Rút yêu cầu
@@ -794,15 +877,13 @@ export default function QuizList() {
                               type="button"
                               className="btn ghost sm"
                               style={{ minHeight: 38, padding: '0 12px', fontWeight: 700, fontSize: 12.5, borderColor: '#CBD5E1', color: '#475569' }}
-                              onClick={async () => {
-                                if (window.confirm('Chuyển bài tập về chế độ riêng tư (chỉ bạn thấy)? Người khác sẽ không thấy bài này trong danh sách chung nữa.')) {
-                                  try {
-                                    await quizApi.hide(qz.id);
-                                    fetchMyQuizzes(myQuizzesPage);
-                                  } catch (e: any) {
-                                    alert(e?.response?.data?.message || 'Có lỗi xảy ra');
-                                  }
-                                }
+                              onClick={() => {
+                                setActionModal({
+                                  isOpen: true,
+                                  type: 'hide',
+                                  quizId: qz.id,
+                                  quizTitle: qz.title,
+                                });
                               }}
                             >
                               🔒 Ẩn bài
@@ -813,15 +894,13 @@ export default function QuizList() {
                               type="button"
                               className="btn ghost sm"
                               style={{ minHeight: 38, padding: '0 12px', fontWeight: 700, fontSize: 12.5, borderColor: '#A5B4FC', color: '#4F46E5', background: '#EEF2FF' }}
-                              onClick={async () => {
-                                if (window.confirm('Gửi bài tập này cho Giảng viên duyệt để công khai cho cộng đồng?')) {
-                                  try {
-                                    await quizApi.publishRequest(qz.id);
-                                    fetchMyQuizzes(myQuizzesPage);
-                                  } catch (e: any) {
-                                    alert(e?.response?.data?.message || 'Có lỗi xảy ra');
-                                  }
-                                }
+                              onClick={() => {
+                                setActionModal({
+                                  isOpen: true,
+                                  type: 'publish',
+                                  quizId: qz.id,
+                                  quizTitle: qz.title,
+                                });
                               }}
                             >
                               🚀 Gửi duyệt
@@ -1219,6 +1298,233 @@ export default function QuizList() {
         }}
         onStartQuiz={(quizId) => nav('/quiz/' + quizId)}
       />
+
+      {/* Action Confirmation Modal (Gửi duyệt, Rút yêu cầu, Ẩn bài) */}
+      {actionModal.isOpen && (
+        <div
+          onClick={(e) => {
+            if (e.target === e.currentTarget && !actionSubmitting) {
+              setActionModal((prev) => ({ ...prev, isOpen: false }));
+            }
+          }}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 99999,
+            backgroundColor: 'rgba(15, 23, 42, 0.65)',
+            backdropFilter: 'blur(5px)',
+            WebkitBackdropFilter: 'blur(5px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: 16,
+          }}
+        >
+          <motion.div
+            initial={{ opacity: 0, scale: 0.94, y: 12 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.94 }}
+            transition={{ duration: 0.2 }}
+            style={{
+              background: '#FFFFFF',
+              borderRadius: 20,
+              width: '100%',
+              maxWidth: 460,
+              padding: '24px 24px 20px',
+              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+              border: '1px solid #F1F5F9',
+              textAlign: 'center',
+            }}
+          >
+            {/* Header Icon */}
+            <div
+              style={{
+                width: 56,
+                height: 56,
+                borderRadius: '50%',
+                background:
+                  actionModal.type === 'publish'
+                    ? '#EEF2FF'
+                    : actionModal.type === 'withdraw'
+                    ? '#FFFBEB'
+                    : '#F1F5F9',
+                color:
+                  actionModal.type === 'publish'
+                    ? '#4F46E5'
+                    : actionModal.type === 'withdraw'
+                    ? '#D97706'
+                    : '#475569',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                marginBottom: 16,
+              }}
+            >
+              {actionModal.type === 'publish' && <Icon n="send" s={26} />}
+              {actionModal.type === 'withdraw' && <Icon n="arrowLeft" s={24} />}
+              {actionModal.type === 'hide' && <Icon n="lock" s={24} />}
+            </div>
+
+            {/* Title */}
+            <h3 style={{ fontSize: 18, fontWeight: 800, color: '#0F172A', margin: '0 0 8px' }}>
+              {actionModal.type === 'publish' && 'Gửi bài tập cho Giảng viên duyệt'}
+              {actionModal.type === 'withdraw' && 'Rút yêu cầu duyệt bài tập'}
+              {actionModal.type === 'hide' && 'Chuyển bài tập về riêng tư'}
+            </h3>
+
+            {/* Content text */}
+            <div style={{ fontSize: 14, color: '#475569', lineHeight: 1.55, margin: '0 0 16px' }}>
+              {actionModal.type === 'publish' && (
+                <p style={{ margin: 0 }}>
+                  Bạn có chắc muốn gửi đề thi <b style={{ color: '#0F172A' }}>"{actionModal.quizTitle}"</b> cho Giảng viên duyệt để công khai cho cộng đồng?
+                </p>
+              )}
+              {actionModal.type === 'withdraw' && (
+                <p style={{ margin: 0 }}>
+                  Bạn có chắc muốn rút yêu cầu duyệt đề thi <b style={{ color: '#0F172A' }}>"{actionModal.quizTitle}"</b> về chế độ riêng tư?
+                </p>
+              )}
+              {actionModal.type === 'hide' && (
+                <p style={{ margin: 0 }}>
+                  Chuyển đề thi <b style={{ color: '#0F172A' }}>"{actionModal.quizTitle}"</b> về chế độ riêng tư (chỉ bạn thấy)? Người khác sẽ không thấy bài này trong danh sách chung nữa.
+                </p>
+              )}
+            </div>
+
+            {/* Helpful Callout Card */}
+            <div
+              style={{
+                borderRadius: 12,
+                padding: '12px 14px',
+                fontSize: 12.5,
+                lineHeight: 1.5,
+                textAlign: 'left',
+                marginBottom: 20,
+                display: 'flex',
+                gap: 10,
+                alignItems: 'flex-start',
+                background:
+                  actionModal.type === 'publish'
+                    ? '#F5F3FF'
+                    : actionModal.type === 'withdraw'
+                    ? '#FFFBEB'
+                    : '#F8FAFC',
+                border: `1px solid ${
+                  actionModal.type === 'publish'
+                    ? '#DDD6FE'
+                    : actionModal.type === 'withdraw'
+                    ? '#FDE68A'
+                    : '#E2E8F0'
+                }`,
+                color:
+                  actionModal.type === 'publish'
+                    ? '#6D28D9'
+                    : actionModal.type === 'withdraw'
+                    ? '#B45309'
+                    : '#475569',
+              }}
+            >
+              <div style={{ flexShrink: 0, marginTop: 1 }}>
+                <Icon n={actionModal.type === 'publish' ? 'spark' : 'alert'} s={16} />
+              </div>
+              <div>
+                {actionModal.type === 'publish' && (
+                  <span>
+                    Sau khi Giảng viên phê duyệt, bài tập sẽ xuất hiện công khai để tất cả học viên cùng luyện tập. Trong lúc chờ duyệt, bạn tạm thời không thể sửa câu hỏi.
+                  </span>
+                )}
+                {actionModal.type === 'withdraw' && (
+                  <span>
+                    Bài tập sẽ trở về trạng thái riêng tư và Giảng viên sẽ ngừng xét duyệt. Bạn có thể chỉnh sửa lại nội dung bất cứ lúc nào.
+                  </span>
+                )}
+                {actionModal.type === 'hide' && (
+                  <span>
+                    Bài tập sẽ được ẩn khỏi danh sách chung. Bạn vẫn có thể luyện tập bình thường trong mục Bài tập của tôi.
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {/* Action buttons */}
+            <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+              <button
+                type="button"
+                className="btn ghost"
+                onClick={() => setActionModal((prev) => ({ ...prev, isOpen: false }))}
+                disabled={actionSubmitting}
+                style={{
+                  flex: 1,
+                  padding: '10px 16px',
+                  borderRadius: 12,
+                  fontWeight: 700,
+                  fontSize: 13.5,
+                  borderColor: '#CBD5E1',
+                  color: '#475569',
+                }}
+              >
+                Hủy bỏ
+              </button>
+
+              <button
+                type="button"
+                className="btn"
+                onClick={handleConfirmAction}
+                disabled={actionSubmitting}
+                style={{
+                  flex: 1.25,
+                  padding: '10px 16px',
+                  borderRadius: 12,
+                  fontWeight: 800,
+                  fontSize: 13.5,
+                  color: '#FFFFFF',
+                  background:
+                    actionModal.type === 'publish'
+                      ? 'linear-gradient(135deg, #4F46E5 0%, #6366F1 100%)'
+                      : actionModal.type === 'withdraw'
+                      ? '#D97706'
+                      : '#475569',
+                  border: 'none',
+                  cursor: actionSubmitting ? 'wait' : 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 8,
+                  boxShadow:
+                    actionModal.type === 'publish'
+                      ? '0 4px 14px rgba(79, 70, 229, 0.3)'
+                      : '0 4px 12px rgba(0, 0, 0, 0.12)',
+                }}
+              >
+                {actionSubmitting ? (
+                  <>
+                    <div
+                      className="spinner"
+                      style={{
+                        width: 14,
+                        height: 14,
+                        borderWidth: 2,
+                        borderColor: '#FFFFFF',
+                        borderTopColor: 'transparent',
+                      }}
+                    />
+                    <span>Đang xử lý...</span>
+                  </>
+                ) : (
+                  <>
+                    {actionModal.type === 'publish' && <Icon n="send" s={15} />}
+                    <span>
+                      {actionModal.type === 'publish' && 'Xác nhận gửi duyệt'}
+                      {actionModal.type === 'withdraw' && 'Rút yêu cầu'}
+                      {actionModal.type === 'hide' && 'Chuyển riêng tư'}
+                    </span>
+                  </>
+                )}
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
     </div>
   );
 }

@@ -37,6 +37,24 @@ export const CreateAiQuizModal: React.FC<CreateAiQuizModalProps> = ({
   const [isDragOver, setIsDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Selection & Batch Delete state
+  const [isSelectMode, setIsSelectMode] = useState(false);
+  const [selectedDocIds, setSelectedDocIds] = useState<Set<number>>(new Set());
+
+  // Custom Delete Modal state
+  interface DeleteModalState {
+    isOpen: boolean;
+    type: 'single' | 'batch' | 'all';
+    targetDoc?: DocumentItem | null;
+  }
+  const [deleteModal, setDeleteModal] = useState<DeleteModalState>({
+    isOpen: false,
+    type: 'single',
+    targetDoc: null,
+  });
+  const [deleting, setDeleting] = useState(false);
+  const [docFeedback, setDocFeedback] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
   // Step 2: Analysis state
   const [analysisLoading, setAnalysisLoading] = useState(false);
   const [analysisData, setAnalysisData] = useState<DocumentAnalysis | null>(null);
@@ -153,9 +171,11 @@ export const CreateAiQuizModal: React.FC<CreateAiQuizModalProps> = ({
     setStep(2);
     setAnalysisLoading(true);
     setAnalysisErr('');
-    // Default quiz title from doc
-    const cleanName = doc.originalName.replace(/\.[^/.]+$/, '');
-    setQuizTitle(`Bài tập: ${cleanName}`);
+        // Default quiz title from doc (clean up underscores and hyphens)
+    const rawName = doc.originalName.replace(/\.[^/.]+$/, '');
+    const cleanName = rawName.replace(/[_-]+/g, ' ').trim();
+    const formattedName = cleanName ? cleanName.charAt(0).toUpperCase() + cleanName.slice(1) : 'Bài tập mới';
+    setQuizTitle(`Bài tập: ${formattedName}`);
 
     documentApi
       .analyze(doc.id)
@@ -171,18 +191,123 @@ export const CreateAiQuizModal: React.FC<CreateAiQuizModalProps> = ({
       .finally(() => setAnalysisLoading(false));
   };
 
-  const handleDeleteDoc = (docId: number, e: React.MouseEvent) => {
+  const showFeedback = (type: 'success' | 'error', text: string) => {
+    setDocFeedback({ type, text });
+    setTimeout(() => {
+      setDocFeedback(null);
+    }, 3500);
+  };
+
+  const toggleSelectDoc = (docId: number, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    setSelectedDocIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(docId)) {
+        next.delete(docId);
+      } else {
+        next.add(docId);
+      }
+      return next;
+    });
+  };
+
+  const handleSelectAll = () => {
+    if (selectedDocIds.size === recentDocs.length) {
+      setSelectedDocIds(new Set());
+    } else {
+      setSelectedDocIds(new Set(recentDocs.map((d) => d.id)));
+    }
+  };
+
+  const cancelSelectMode = () => {
+    setIsSelectMode(false);
+    setSelectedDocIds(new Set());
+  };
+
+  const handleRequestDeleteSingle = (doc: DocumentItem, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!window.confirm('Bạn có chắc muốn xóa tài liệu này?')) return;
-    documentApi
-      .delete(docId)
-      .then(() => {
+    setDeleteModal({
+      isOpen: true,
+      type: 'single',
+      targetDoc: doc,
+    });
+  };
+
+  const handleRequestDeleteBatch = () => {
+    if (selectedDocIds.size === 0) return;
+    setDeleteModal({
+      isOpen: true,
+      type: 'batch',
+      targetDoc: null,
+    });
+  };
+
+  const handleRequestDeleteAll = () => {
+    if (recentDocs.length === 0) return;
+    setDeleteModal({
+      isOpen: true,
+      type: 'all',
+      targetDoc: null,
+    });
+  };
+
+  const closeDeleteModal = () => {
+    if (deleting) return;
+    setDeleteModal({ isOpen: false, type: 'single', targetDoc: null });
+  };
+
+  const handleConfirmDelete = async () => {
+    if (deleting) return;
+    setDeleting(true);
+
+    try {
+      if (deleteModal.type === 'single' && deleteModal.targetDoc) {
+        const docId = deleteModal.targetDoc.id;
+        const docName = deleteModal.targetDoc.originalName;
+        await documentApi.delete(docId);
         setRecentDocs((prev) => prev.filter((d) => d.id !== docId));
         if (selectedDoc?.id === docId) setSelectedDoc(null);
-      })
-      .catch((err) => {
-        alert(errMsg(err) || 'Không thể xóa tài liệu');
-      });
+        setSelectedDocIds((prev) => {
+          const next = new Set(prev);
+          next.delete(docId);
+          return next;
+        });
+        showFeedback('success', `Đã xóa tài liệu "${docName}"`);
+      } else if (deleteModal.type === 'batch') {
+        const ids = Array.from(selectedDocIds);
+        const results = await Promise.allSettled(ids.map((id) => documentApi.delete(id)));
+        const successIds = new Set<number>();
+        results.forEach((res, index) => {
+          if (res.status === 'fulfilled') {
+            successIds.add(ids[index]);
+          }
+        });
+        setRecentDocs((prev) => prev.filter((d) => !successIds.has(d.id)));
+        if (selectedDoc && successIds.has(selectedDoc.id)) setSelectedDoc(null);
+        setSelectedDocIds(new Set());
+        setIsSelectMode(false);
+        showFeedback('success', `Đã xóa thành công ${successIds.size} tài liệu đã chọn`);
+      } else if (deleteModal.type === 'all') {
+        const allIds = recentDocs.map((d) => d.id);
+        const results = await Promise.allSettled(allIds.map((id) => documentApi.delete(id)));
+        const successIds = new Set<number>();
+        results.forEach((res, index) => {
+          if (res.status === 'fulfilled') {
+            successIds.add(allIds[index]);
+          }
+        });
+        setRecentDocs((prev) => prev.filter((d) => !successIds.has(d.id)));
+        if (selectedDoc && successIds.has(selectedDoc.id)) setSelectedDoc(null);
+        setSelectedDocIds(new Set());
+        setIsSelectMode(false);
+        showFeedback('success', `Đã xóa toàn bộ ${successIds.size} tài liệu trong thư viện`);
+      }
+      setDeleteModal({ isOpen: false, type: 'single', targetDoc: null });
+    } catch (err) {
+      showFeedback('error', errMsg(err) || 'Không thể xóa tài liệu. Vui lòng thử lại.');
+    } finally {
+      setDeleting(false);
+    }
   };
 
   // Step 3 Chat handlers
@@ -378,10 +503,10 @@ export const CreateAiQuizModal: React.FC<CreateAiQuizModalProps> = ({
             }}
           >
             {[
-              { num: 1, label: '1. Chọn tài liệu' },
-              { num: 2, label: '2. AI phân tích' },
-              { num: 3, label: '3. Chat tinh chỉnh' },
-              { num: 4, label: '4. Cấu hình & Tạo' },
+              { num: 1, label: 'Chọn tài liệu' },
+              { num: 2, label: 'AI phân tích' },
+              { num: 3, label: 'Chat tinh chỉnh' },
+              { num: 4, label: 'Cấu hình & Tạo' },
             ].map((s) => {
               const isActive = step === s.num;
               const isPassed = typeof step === 'number' && step > s.num;
@@ -391,20 +516,41 @@ export const CreateAiQuizModal: React.FC<CreateAiQuizModalProps> = ({
                   style={{
                     flex: 1,
                     textAlign: 'center',
-                    padding: '6px 8px',
-                    borderRadius: 8,
-                    fontSize: 12,
+                    padding: '8px 10px',
+                    borderRadius: 10,
+                    fontSize: 12.5,
                     fontWeight: isActive ? 800 : 600,
-                    color: isActive ? 'var(--primary)' : isPassed ? '#10B981' : '#94A3B8',
-                    background: isActive ? '#EFF6FF' : isPassed ? '#ECFDF5' : 'transparent',
-                    border: isActive ? '1px solid #BFDBFE' : '1px solid transparent',
+                    color: isActive ? '#4F46E5' : isPassed ? '#059669' : '#64748B',
+                    background: isActive ? '#EEF2FF' : isPassed ? '#ECFDF5' : '#F1F5F9',
+                    border: isActive
+                      ? '1.5px solid #C7D2FE'
+                      : isPassed
+                      ? '1.5px solid #A7F3D0'
+                      : '1.5px solid transparent',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     gap: 6,
+                    transition: 'all 0.2s ease',
                   }}
                 >
-                  {isPassed && <Icon n="check" s={14} />}
+                  <span
+                    style={{
+                      width: 18,
+                      height: 18,
+                      borderRadius: '50%',
+                      background: isActive ? '#4F46E5' : isPassed ? '#10B981' : '#CBD5E1',
+                      color: '#FFFFFF',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: 10.5,
+                      fontWeight: 800,
+                      flexShrink: 0,
+                    }}
+                  >
+                    {isPassed ? <Icon n="check" s={11} /> : s.num}
+                  </span>
                   <span>{s.label}</span>
                 </div>
               );
@@ -529,6 +675,27 @@ export const CreateAiQuizModal: React.FC<CreateAiQuizModalProps> = ({
 
               {docTab === 'library' && (
                 <div>
+                  {docFeedback && (
+                    <div
+                      style={{
+                        padding: '10px 14px',
+                        borderRadius: 12,
+                        fontSize: 13,
+                        fontWeight: 600,
+                        marginBottom: 12,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 8,
+                        background: docFeedback.type === 'success' ? '#F0FDF4' : '#FEF2F2',
+                        border: `1px solid ${docFeedback.type === 'success' ? '#BBF7D0' : '#FECDD3'}`,
+                        color: docFeedback.type === 'success' ? '#15803D' : '#BE123C',
+                      }}
+                    >
+                      <Icon n={docFeedback.type === 'success' ? 'checkc' : 'alert'} s={16} />
+                      <span>{docFeedback.text}</span>
+                    </div>
+                  )}
+
                   {docsLoading ? (
                     <div style={{ textAlign: 'center', padding: '30px 0' }}>
                       <div className="spinner" style={{ margin: '0 auto 10px' }} />
@@ -539,88 +706,318 @@ export const CreateAiQuizModal: React.FC<CreateAiQuizModalProps> = ({
                       Chưa có tài liệu nào được lưu. Hãy chuyển sang tab <b>Tải file mới</b> để upload.
                     </div>
                   ) : (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 10, maxHeight: 320, overflowY: 'auto' }}>
-                      {recentDocs.map((doc) => (
-                        <div
-                          key={doc.id}
-                          onClick={() => handleProceedToAnalyze(doc)}
-                          style={{
-                            padding: '12px 16px',
-                            borderRadius: 12,
-                            border: '1px solid #E2E8F0',
-                            background: '#FFFFFF',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'space-between',
-                            gap: 12,
-                            cursor: 'pointer',
-                            transition: 'all 0.15s ease',
-                          }}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.borderColor = 'var(--primary)';
-                            e.currentTarget.style.background = '#F8FAFC';
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.borderColor = '#E2E8F0';
-                            e.currentTarget.style.background = '#FFFFFF';
-                          }}
-                        >
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
-                            <div
+                    <div>
+                      {/* Top Action Bar: Xóa chọn lọc & Xóa tất cả */}
+                      <div
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          padding: isSelectMode ? '8px 12px' : '4px 2px 10px 2px',
+                          marginBottom: 10,
+                          background: isSelectMode ? '#F8FAFC' : 'transparent',
+                          borderRadius: 12,
+                          border: isSelectMode ? '1px solid #E2E8F0' : 'none',
+                          flexWrap: 'wrap',
+                          gap: 8,
+                        }}
+                      >
+                        {isSelectMode ? (
+                          <>
+                            <label
                               style={{
-                                width: 36,
-                                height: 36,
-                                borderRadius: 8,
-                                background: '#EDE9FE',
-                                color: '#7C3AED',
-                                display: 'flex',
+                                display: 'inline-flex',
                                 alignItems: 'center',
-                                justifyContent: 'center',
-                                fontWeight: 800,
-                                fontSize: 11,
-                                textTransform: 'uppercase',
+                                gap: 8,
+                                fontSize: 13,
+                                fontWeight: 700,
+                                color: '#1E293B',
+                                cursor: 'pointer',
+                                userSelect: 'none',
                               }}
                             >
-                              {doc.fileType}
-                            </div>
-                            <div style={{ minWidth: 0 }}>
-                              <b
+                              <input
+                                type="checkbox"
+                                checked={selectedDocIds.size > 0 && selectedDocIds.size === recentDocs.length}
+                                ref={(el) => {
+                                  if (el) {
+                                    el.indeterminate = selectedDocIds.size > 0 && selectedDocIds.size < recentDocs.length;
+                                  }
+                                }}
+                                onChange={handleSelectAll}
                                 style={{
-                                  fontSize: 14,
-                                  color: '#1E293B',
-                                  display: 'block',
-                                  overflow: 'hidden',
-                                  textOverflow: 'ellipsis',
-                                  whiteSpace: 'nowrap',
+                                  width: 17,
+                                  height: 17,
+                                  accentColor: 'var(--primary)',
+                                  cursor: 'pointer',
+                                }}
+                              />
+                              <span>
+                                {selectedDocIds.size === 0
+                                  ? 'Chọn tất cả'
+                                  : `Đã chọn ${selectedDocIds.size}/${recentDocs.length} tài liệu`}
+                              </span>
+                            </label>
+
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                              <button
+                                type="button"
+                                className="btn sm"
+                                disabled={selectedDocIds.size === 0}
+                                onClick={handleRequestDeleteBatch}
+                                style={{
+                                  background: selectedDocIds.size === 0 ? '#E2E8F0' : '#DC2626',
+                                  color: selectedDocIds.size === 0 ? '#94A3B8' : '#FFFFFF',
+                                  border: 'none',
+                                  padding: '5px 12px',
+                                  borderRadius: 8,
+                                  fontSize: 12.5,
+                                  fontWeight: 700,
+                                  cursor: selectedDocIds.size === 0 ? 'not-allowed' : 'pointer',
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: 5,
+                                  transition: 'all 0.15s ease',
                                 }}
                               >
-                                {doc.originalName}
-                              </b>
-                              <div style={{ fontSize: 12, color: '#64748B', marginTop: 2 }}>
-                                {doc.charCount?.toLocaleString()} ký tự · {Math.round(doc.fileSize / 1024)} KB
+                                <Icon n="trash" s={14} />
+                                <span>Xóa đã chọn ({selectedDocIds.size})</span>
+                              </button>
+                              <button
+                                type="button"
+                                className="btn ghost sm"
+                                onClick={cancelSelectMode}
+                                style={{
+                                  padding: '5px 10px',
+                                  fontSize: 12.5,
+                                  fontWeight: 600,
+                                  color: '#64748B',
+                                  borderColor: '#CBD5E1',
+                                }}
+                              >
+                                Hủy
+                              </button>
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            <div
+                              style={{
+                                fontSize: 13,
+                                color: '#64748B',
+                                fontWeight: 600,
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 6,
+                              }}
+                            >
+                              <span>
+                                Thư viện: <b style={{ color: '#1E293B' }}>{recentDocs.length}</b> tài liệu
+                              </span>
+                            </div>
+
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                              <button
+                                type="button"
+                                className="btn ghost sm"
+                                onClick={() => setIsSelectMode(true)}
+                                style={{
+                                  padding: '5px 12px',
+                                  fontSize: 12.5,
+                                  fontWeight: 700,
+                                  color: '#334155',
+                                  borderColor: '#CBD5E1',
+                                  background: '#FFFFFF',
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: 6,
+                                  borderRadius: 8,
+                                }}
+                                title="Chọn nhiều tài liệu để xóa chọn lọc"
+                              >
+                                <Icon n="checkc" s={14} />
+                                <span>Xóa chọn lọc</span>
+                              </button>
+
+                              <button
+                                type="button"
+                                className="btn ghost sm"
+                                onClick={handleRequestDeleteAll}
+                                style={{
+                                  padding: '5px 12px',
+                                  fontSize: 12.5,
+                                  fontWeight: 700,
+                                  color: '#DC2626',
+                                  borderColor: '#FECDD3',
+                                  background: '#FFF5F5',
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: 5,
+                                  borderRadius: 8,
+                                }}
+                                title="Xóa toàn bộ tài liệu trong danh sách"
+                              >
+                                <Icon n="trash" s={14} />
+                                <span>Xóa tất cả</span>
+                              </button>
+                            </div>
+                          </>
+                        )}
+                      </div>
+
+                      {/* Documents list */}
+                      <div
+                        style={{
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: 10,
+                          maxHeight: 310,
+                          overflowY: 'auto',
+                          paddingRight: 2,
+                        }}
+                      >
+                        {recentDocs.map((doc) => {
+                          const isSelected = selectedDocIds.has(doc.id);
+                          return (
+                            <div
+                              key={doc.id}
+                              onClick={() => {
+                                if (isSelectMode) {
+                                  toggleSelectDoc(doc.id);
+                                } else {
+                                  handleProceedToAnalyze(doc);
+                                }
+                              }}
+                              style={{
+                                padding: '12px 16px',
+                                borderRadius: 14,
+                                border: `1.5px solid ${
+                                  isSelectMode && isSelected
+                                    ? 'var(--primary)'
+                                    : '#E2E8F0'
+                                }`,
+                                background: isSelectMode && isSelected ? '#F5F3FF' : '#FFFFFF',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                                gap: 12,
+                                cursor: 'pointer',
+                                transition: 'all 0.15s ease',
+                                boxShadow: isSelectMode && isSelected ? '0 2px 8px rgba(99, 102, 241, 0.12)' : 'none',
+                              }}
+                              onMouseEnter={(e) => {
+                                if (!isSelectMode || !isSelected) {
+                                  e.currentTarget.style.borderColor = 'var(--primary)';
+                                  e.currentTarget.style.background = '#F8FAFC';
+                                }
+                              }}
+                              onMouseLeave={(e) => {
+                                if (!isSelectMode || !isSelected) {
+                                  e.currentTarget.style.borderColor = '#E2E8F0';
+                                  e.currentTarget.style.background = '#FFFFFF';
+                                }
+                              }}
+                            >
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0, flex: 1 }}>
+                                {isSelectMode && (
+                                  <input
+                                    type="checkbox"
+                                    checked={isSelected}
+                                    onChange={() => toggleSelectDoc(doc.id)}
+                                    onClick={(e) => e.stopPropagation()}
+                                    style={{
+                                      width: 18,
+                                      height: 18,
+                                      accentColor: 'var(--primary)',
+                                      cursor: 'pointer',
+                                      flexShrink: 0,
+                                    }}
+                                  />
+                                )}
+                                <div
+                                  style={{
+                                    width: 38,
+                                    height: 38,
+                                    borderRadius: 10,
+                                    background: '#EDE9FE',
+                                    color: '#7C3AED',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    fontWeight: 800,
+                                    fontSize: 11,
+                                    textTransform: 'uppercase',
+                                    flexShrink: 0,
+                                  }}
+                                >
+                                  {doc.fileType}
+                                </div>
+                                <div style={{ minWidth: 0, flex: 1 }}>
+                                  <b
+                                    style={{
+                                      fontSize: 14,
+                                      color: '#1E293B',
+                                      display: 'block',
+                                      overflow: 'hidden',
+                                      textOverflow: 'ellipsis',
+                                      whiteSpace: 'nowrap',
+                                    }}
+                                  >
+                                    {doc.originalName}
+                                  </b>
+                                  <div style={{ fontSize: 12, color: '#64748B', marginTop: 2 }}>
+                                    {doc.charCount?.toLocaleString()} ký tự · {Math.round(doc.fileSize / 1024)} KB
+                                  </div>
+                                </div>
+                              </div>
+
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+                                {!isSelectMode ? (
+                                  <>
+                                    <button
+                                      className="btn primary sm"
+                                      style={{ fontSize: 12, padding: '5px 14px', borderRadius: 8, fontWeight: 700 }}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleProceedToAnalyze(doc);
+                                      }}
+                                    >
+                                      Chọn
+                                    </button>
+                                    <button
+                                      className="btn ghost sm"
+                                      style={{
+                                        padding: '5px 9px',
+                                        color: '#EF4444',
+                                        borderColor: '#FCA5A5',
+                                        background: '#FEF2F2',
+                                        borderRadius: 8,
+                                      }}
+                                      onClick={(e) => handleRequestDeleteSingle(doc, e)}
+                                      title="Xóa tài liệu này"
+                                    >
+                                      <Icon n="trash" s={14} />
+                                    </button>
+                                  </>
+                                ) : (
+                                  <span
+                                    style={{
+                                      fontSize: 12,
+                                      fontWeight: 600,
+                                      color: isSelected ? 'var(--primary)' : '#94A3B8',
+                                      padding: '4px 10px',
+                                      borderRadius: 6,
+                                      background: isSelected ? '#EDE9FE' : '#F1F5F9',
+                                    }}
+                                  >
+                                    {isSelected ? 'Đã chọn' : 'Chưa chọn'}
+                                  </span>
+                                )}
                               </div>
                             </div>
-                          </div>
-
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                            <button
-                              className="btn primary sm"
-                              style={{ fontSize: 12, padding: '4px 12px' }}
-                              onClick={() => handleProceedToAnalyze(doc)}
-                            >
-                              Chọn
-                            </button>
-                            <button
-                              className="btn ghost sm"
-                              style={{ padding: '4px 8px', color: '#EF4444', borderColor: '#FCA5A5' }}
-                              onClick={(e) => handleDeleteDoc(doc.id, e)}
-                              title="Xóa tài liệu"
-                            >
-                              <Icon n="trash" s={14} />
-                            </button>
-                          </div>
-                        </div>
-                      ))}
+                          );
+                        })}
+                      </div>
                     </div>
                   )}
                 </div>
@@ -961,7 +1358,26 @@ export const CreateAiQuizModal: React.FC<CreateAiQuizModalProps> = ({
                     }
                   }}
                   disabled={chatSending}
-                  style={{ flex: 1, fontSize: 13.5 }}
+                  style={{
+                    flex: 1,
+                    height: 44,
+                    padding: '0 14px',
+                    borderRadius: 12,
+                    border: '1.5px solid #CBD5E1',
+                    background: '#FFFFFF',
+                    fontSize: 13.5,
+                    outline: 'none',
+                    transition: 'all 0.2s ease',
+                    boxShadow: '0 1px 2px rgba(0, 0, 0, 0.04)',
+                  }}
+                  onFocus={(e) => {
+                    e.currentTarget.style.borderColor = 'var(--primary)';
+                    e.currentTarget.style.boxShadow = '0 0 0 3px rgba(99, 102, 241, 0.12)';
+                  }}
+                  onBlur={(e) => {
+                    e.currentTarget.style.borderColor = '#CBD5E1';
+                    e.currentTarget.style.boxShadow = '0 1px 2px rgba(0, 0, 0, 0.04)';
+                  }}
                 />
                 <button
                   type="button"
@@ -1070,17 +1486,45 @@ export const CreateAiQuizModal: React.FC<CreateAiQuizModalProps> = ({
 
                   {/* Title */}
                   <div>
-                    <label style={{ display: 'block', fontSize: 13, fontWeight: 700, marginBottom: 6 }}>
-                      Tiêu đề bài trắc nghiệm <span style={{ color: 'var(--red)' }}>*</span>
-                    </label>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 7 }}>
+                      <label style={{ fontSize: 13.5, fontWeight: 700, color: '#1E293B', display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <Icon n="pen" s={14} />
+                        <span>Tiêu đề bài trắc nghiệm</span>
+                        <span style={{ color: '#EF4444' }}>*</span>
+                      </label>
+                      <span style={{ fontSize: 12, color: '#94A3B8', fontWeight: 600 }}>
+                        {quizTitle.length}/150
+                      </span>
+                    </div>
                     <input
                       type="text"
                       value={quizTitle}
                       onChange={(e) => setQuizTitle(e.target.value)}
                       placeholder="VD: Bài tập từ vựng công nghệ B1..."
-                      style={{ width: '100%', fontSize: 14 }}
                       maxLength={150}
                       required
+                      style={{
+                        width: '100%',
+                        height: 46,
+                        padding: '0 16px',
+                        borderRadius: 12,
+                        border: '1.5px solid #CBD5E1',
+                        background: '#FFFFFF',
+                        fontSize: 14,
+                        fontWeight: 600,
+                        color: '#0F172A',
+                        outline: 'none',
+                        transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
+                        boxShadow: '0 1px 2px rgba(0, 0, 0, 0.04)',
+                      }}
+                      onFocus={(e) => {
+                        e.currentTarget.style.borderColor = 'var(--primary)';
+                        e.currentTarget.style.boxShadow = '0 0 0 4px rgba(99, 102, 241, 0.15), 0 1px 2px rgba(0, 0, 0, 0.04)';
+                      }}
+                      onBlur={(e) => {
+                        e.currentTarget.style.borderColor = '#CBD5E1';
+                        e.currentTarget.style.boxShadow = '0 1px 2px rgba(0, 0, 0, 0.04)';
+                      }}
                     />
                   </div>
 
@@ -1146,17 +1590,94 @@ export const CreateAiQuizModal: React.FC<CreateAiQuizModalProps> = ({
 
                   {/* Extra Prompt / Notes */}
                   <div>
-                    <label style={{ display: 'block', fontSize: 13, fontWeight: 700, marginBottom: 6 }}>
-                      Ghi chú / Yêu cầu thêm cho AI (Tùy chọn)
-                    </label>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 7 }}>
+                      <label style={{ fontSize: 13.5, fontWeight: 700, color: '#1E293B', display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <Icon n="spark" s={14} style={{ color: '#8B5CF6' }} />
+                        <span>Ghi chú / Yêu cầu thêm cho AI</span>
+                        <span style={{ fontSize: 12, color: '#64748B', fontWeight: 500 }}>(Tùy chọn)</span>
+                      </label>
+                      <span style={{ fontSize: 12, color: '#94A3B8', fontWeight: 600 }}>
+                        {extraPrompt.length}/500
+                      </span>
+                    </div>
                     <textarea
                       value={extraPrompt}
                       onChange={(e) => setExtraPrompt(e.target.value)}
-                      placeholder="VD: Chú trọng các câu hỏi về collocations, từ đồng nghĩa/trái nghĩa..."
-                      rows={2}
-                      style={{ width: '100%', fontSize: 13.5, resize: 'vertical' }}
+                      placeholder="VD: Chú trọng các câu hỏi về collocations, từ đồng nghĩa/trái nghĩa, thì quá khứ..."
+                      rows={3}
                       maxLength={500}
+                      style={{
+                        width: '100%',
+                        padding: '12px 16px',
+                        borderRadius: 12,
+                        border: '1.5px solid #CBD5E1',
+                        background: '#FFFFFF',
+                        fontSize: 13.5,
+                        color: '#0F172A',
+                        lineHeight: 1.6,
+                        outline: 'none',
+                        resize: 'vertical',
+                        minHeight: 76,
+                        transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
+                        boxShadow: '0 1px 2px rgba(0, 0, 0, 0.04)',
+                        fontFamily: 'inherit',
+                      }}
+                      onFocus={(e) => {
+                        e.currentTarget.style.borderColor = '#8B5CF6';
+                        e.currentTarget.style.boxShadow = '0 0 0 4px rgba(139, 92, 246, 0.15), 0 1px 2px rgba(0, 0, 0, 0.04)';
+                      }}
+                      onBlur={(e) => {
+                        e.currentTarget.style.borderColor = '#CBD5E1';
+                        e.currentTarget.style.boxShadow = '0 1px 2px rgba(0, 0, 0, 0.04)';
+                      }}
                     />
+
+                    {/* Quick Suggestion Chips */}
+                    <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 6 }}>
+                      <span style={{ fontSize: 11.5, color: '#64748B', fontWeight: 600 }}>Gợi ý nhanh:</span>
+                      {[
+                        'Tập trung collocations & phrasal verbs',
+                        'Thêm câu hỏi bẫy từ vựng',
+                        'Từ đồng nghĩa & trái nghĩa',
+                        'Ngữ cảnh thực tế',
+                      ].map((tag) => (
+                        <button
+                          key={tag}
+                          type="button"
+                          onClick={() => {
+                            setExtraPrompt((prev) => {
+                              const trimmed = prev.trim();
+                              if (!trimmed) return tag;
+                              if (trimmed.includes(tag)) return prev;
+                              return `${trimmed}; ${tag}`;
+                            });
+                          }}
+                          style={{
+                            border: '1px solid #E2E8F0',
+                            background: '#F8FAFC',
+                            borderRadius: 20,
+                            padding: '3px 10px',
+                            fontSize: 11.5,
+                            fontWeight: 600,
+                            color: '#475569',
+                            cursor: 'pointer',
+                            transition: 'all 0.15s ease',
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.background = '#EEF2FF';
+                            e.currentTarget.style.borderColor = '#C7D2FE';
+                            e.currentTarget.style.color = '#4338CA';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.background = '#F8FAFC';
+                            e.currentTarget.style.borderColor = '#E2E8F0';
+                            e.currentTarget.style.color = '#475569';
+                          }}
+                        >
+                          + {tag}
+                        </button>
+                      ))}
+                    </div>
                   </div>
 
                   {/* Quota Notice Box */}
@@ -1278,7 +1799,7 @@ export const CreateAiQuizModal: React.FC<CreateAiQuizModalProps> = ({
               >
                 <div>🔒 <b>Trạng thái:</b> Riêng tư (chỉ mình bạn thấy)</div>
                 <div>✨ <b>Nguồn gốc:</b> Do AI tạo từ tài liệu</div>
-                <div>⏱️ <b>Thời gian làm bài:</b> {createdQuiz.timeLimit} phút</div>
+                <div>⏱️ <b>Thời gian làm bài:</b> {createdQuiz.timeLimit > 60 ? Math.round(createdQuiz.timeLimit / 60) : (createdQuiz.timeLimit || 10)} phút</div>
               </div>
 
               <div style={{ display: 'flex', justifyContent: 'center', gap: 12 }}>
@@ -1308,6 +1829,191 @@ export const CreateAiQuizModal: React.FC<CreateAiQuizModalProps> = ({
           )}
         </div>
       </motion.div>
+
+      {/* ================= MODAL XÁC NHẬN XÓA TÀI LIỆU ================= */}
+      {deleteModal.isOpen && (
+        <div
+          onClick={(e) => {
+            if (e.target === e.currentTarget && !deleting) closeDeleteModal();
+          }}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 100020,
+            background: 'rgba(15, 23, 42, 0.65)',
+            backdropFilter: 'blur(4px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: 16,
+          }}
+        >
+          <motion.div
+            initial={{ scale: 0.92, opacity: 0, y: 10 }}
+            animate={{ scale: 1, opacity: 1, y: 0 }}
+            exit={{ scale: 0.92, opacity: 0 }}
+            transition={{ type: 'spring', damping: 25, stiffness: 350 }}
+            style={{
+              background: '#FFFFFF',
+              borderRadius: 20,
+              width: '100%',
+              maxWidth: 440,
+              padding: '24px 24px 20px',
+              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+              border: '1px solid #F1F5F9',
+              textAlign: 'center',
+            }}
+          >
+            {/* Danger Icon Badge */}
+            <div
+              style={{
+                width: 56,
+                height: 56,
+                borderRadius: '50%',
+                background: '#FEE2E2',
+                color: '#DC2626',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                marginBottom: 16,
+              }}
+            >
+              <Icon n="trash" s={28} />
+            </div>
+
+            {/* Title */}
+            <h3
+              style={{
+                fontSize: 18,
+                fontWeight: 800,
+                color: '#0F172A',
+                margin: '0 0 8px',
+              }}
+            >
+              {deleteModal.type === 'single' && 'Xác nhận xóa tài liệu'}
+              {deleteModal.type === 'batch' && `Xóa ${selectedDocIds.size} tài liệu đã chọn`}
+              {deleteModal.type === 'all' && 'Xóa tất cả tài liệu'}
+            </h3>
+
+            {/* Description */}
+            <div style={{ fontSize: 13.5, color: '#475569', lineHeight: 1.5, margin: '0 0 16px' }}>
+              {deleteModal.type === 'single' && (
+                <p style={{ margin: 0 }}>
+                  Bạn có chắc chắn muốn xóa tài liệu{' '}
+                  <b style={{ color: '#0F172A', wordBreak: 'break-all' }}>
+                    "{deleteModal.targetDoc?.originalName}"
+                  </b>
+                  ?
+                </p>
+              )}
+              {deleteModal.type === 'batch' && (
+                <p style={{ margin: 0 }}>
+                  Bạn có chắc chắn muốn xóa vĩnh viễn{' '}
+                  <b style={{ color: '#DC2626' }}>{selectedDocIds.size} tài liệu</b> đã được chọn?
+                </p>
+              )}
+              {deleteModal.type === 'all' && (
+                <p style={{ margin: 0 }}>
+                  Bạn có chắc chắn muốn xóa toàn bộ{' '}
+                  <b style={{ color: '#DC2626' }}>{recentDocs.length} tài liệu</b> trong thư viện? Thao tác này sẽ làm trống danh sách tài liệu đã lưu của bạn.
+                </p>
+              )}
+            </div>
+
+            {/* Warning Callout */}
+            <div
+              style={{
+                background: '#FEF2F2',
+                border: '1px solid #FECDD3',
+                borderRadius: 12,
+                padding: '10px 14px',
+                fontSize: 12.5,
+                color: '#991B1B',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                textAlign: 'left',
+                marginBottom: 20,
+              }}
+            >
+              <div style={{ flexShrink: 0, color: '#DC2626' }}>
+                <Icon n="alert" s={18} />
+              </div>
+              <div>
+                Hành động này <b>không thể hoàn tác</b>. Tài liệu sau khi xóa sẽ không thể phục hồi.
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+              <button
+                type="button"
+                className="btn ghost"
+                onClick={closeDeleteModal}
+                disabled={deleting}
+                style={{
+                  flex: 1,
+                  padding: '10px 16px',
+                  borderRadius: 12,
+                  fontWeight: 700,
+                  fontSize: 13.5,
+                  color: '#475569',
+                  borderColor: '#CBD5E1',
+                }}
+              >
+                Hủy bỏ
+              </button>
+              <button
+                type="button"
+                className="btn"
+                onClick={handleConfirmDelete}
+                disabled={deleting}
+                style={{
+                  flex: 1,
+                  padding: '10px 16px',
+                  borderRadius: 12,
+                  fontWeight: 800,
+                  fontSize: 13.5,
+                  color: '#FFFFFF',
+                  background: '#DC2626',
+                  border: 'none',
+                  cursor: deleting ? 'wait' : 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 8,
+                  boxShadow: '0 4px 12px rgba(220, 38, 38, 0.25)',
+                }}
+              >
+                {deleting ? (
+                  <>
+                    <div
+                      className="spinner"
+                      style={{
+                        width: 14,
+                        height: 14,
+                        borderWidth: 2,
+                        borderColor: '#FFFFFF',
+                        borderTopColor: 'transparent',
+                      }}
+                    />
+                    <span>Đang xóa...</span>
+                  </>
+                ) : (
+                  <>
+                    <Icon n="trash" s={16} />
+                    <span>
+                      {deleteModal.type === 'single' && 'Xác nhận xóa'}
+                      {deleteModal.type === 'batch' && `Xóa ${selectedDocIds.size} file`}
+                      {deleteModal.type === 'all' && 'Xóa tất cả'}
+                    </span>
+                  </>
+                )}
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
     </div>,
     document.body
   );

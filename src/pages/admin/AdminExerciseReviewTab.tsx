@@ -28,6 +28,7 @@ export function AdminExerciseReviewTab() {
 
   const [isRejecting, setIsRejecting] = useState(false);
   const [rejectNote, setRejectNote] = useState('');
+  const [isApproveConfirmOpen, setIsApproveConfirmOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
@@ -66,6 +67,7 @@ export function AdminExerciseReviewTab() {
     setActiveQuizId(quizId);
     setDetailLoading(true);
     setIsRejecting(false);
+    setIsApproveConfirmOpen(false);
     setRejectNote('');
     setActionErr('');
     setActionSuccess('');
@@ -81,18 +83,19 @@ export function AdminExerciseReviewTab() {
 
   const handleApprove = async () => {
     if (!activeQuizId) return;
-    if (!window.confirm('Bạn có chắc chắn muốn phê duyệt và công khai bài tập này?')) return;
     setSubmitting(true);
     setActionErr('');
     try {
       await adminExerciseReviewApi.review(activeQuizId, { decision: 'APPROVED' });
       setActionSuccess('Bài tập đã được phê duyệt và công khai thành công!');
+      setIsApproveConfirmOpen(false);
       setTimeout(() => {
         setActiveQuizId(null);
         fetchPendingQuizzes(page);
       }, 1200);
     } catch (e: any) {
       setActionErr(errMsg(e, 'Lỗi khi duyệt bài tập.'));
+      setIsApproveConfirmOpen(false);
     } finally {
       setSubmitting(false);
     }
@@ -361,7 +364,7 @@ export function AdminExerciseReviewTab() {
 
                   <div>
                     <h4 style={{ margin: '0 0 12px 0', fontSize: 14, fontWeight: 800, color: '#334155' }}>
-                      Danh sách câu hỏi &amp; đáp án ({detailData.questions.length} câu)
+                      Danh sách câu hỏi & đáp án ({detailData.questions.length} câu)
                     </h4>
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
@@ -477,7 +480,11 @@ export function AdminExerciseReviewTab() {
               <button
                 type="button"
                 className="btn ghost sm"
-                onClick={() => setActiveQuizId(null)}
+                onClick={() => {
+                  setActiveQuizId(null);
+                  setIsApproveConfirmOpen(false);
+                  setIsRejecting(false);
+                }}
                 disabled={submitting}
               >
                 Đóng
@@ -497,14 +504,225 @@ export function AdminExerciseReviewTab() {
                   <button
                     type="button"
                     className="btn primary sm"
-                    onClick={handleApprove}
+                    onClick={() => setIsApproveConfirmOpen(true)}
                     disabled={submitting || detailLoading}
                     style={{ background: '#16A34A', borderColor: '#16A34A', fontWeight: 800 }}
                   >
-                    {submitting ? 'Đang xử lý...' : '✓ Phê duyệt &amp; Công khai'}
+                    ✓ Phê duyệt & Công khai
                   </button>
                 </div>
               )}
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Confirm Approve Modal */}
+      {isApproveConfirmOpen && createPortal(
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="approve-confirm-title"
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(15, 23, 42, 0.65)',
+            backdropFilter: 'blur(5px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 100010,
+            padding: '16px',
+            animation: 'fadeIn 0.15s ease-out',
+          }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget && !submitting) {
+              setIsApproveConfirmOpen(false);
+            }
+          }}
+        >
+          <div
+            style={{
+              backgroundColor: '#FFFFFF',
+              borderRadius: '20px',
+              padding: '28px 24px 24px',
+              maxWidth: '460px',
+              width: '100%',
+              boxShadow: '0 25px 60px -15px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(0, 0, 0, 0.05)',
+              textAlign: 'center',
+              position: 'relative',
+            }}
+          >
+            {/* Close button */}
+            <button
+              type="button"
+              onClick={() => setIsApproveConfirmOpen(false)}
+              disabled={submitting}
+              style={{
+                position: 'absolute',
+                top: '16px',
+                right: '16px',
+                background: '#F1F5F9',
+                border: 'none',
+                borderRadius: '50%',
+                width: '32px',
+                height: '32px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: submitting ? 'not-allowed' : 'pointer',
+                color: '#64748B',
+                fontSize: '15px',
+                fontWeight: 700,
+              }}
+              aria-label="Đóng"
+            >
+              ✕
+            </button>
+
+            {/* Icon */}
+            <div
+              style={{
+                width: '56px',
+                height: '56px',
+                borderRadius: '50%',
+                backgroundColor: '#DCFCE7',
+                color: '#16A34A',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                margin: '0 auto 16px',
+                boxShadow: '0 4px 12px rgba(22, 163, 74, 0.2)',
+              }}
+            >
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+            </div>
+
+            {/* Title */}
+            <h3
+              id="approve-confirm-title"
+              style={{
+                fontSize: '19px',
+                fontWeight: 800,
+                color: '#0F172A',
+                margin: '0 0 8px',
+                lineHeight: 1.3,
+              }}
+            >
+              Phê duyệt &amp; Công khai bài tập
+            </h3>
+
+            {/* Subtitle */}
+            <p
+              style={{
+                fontSize: '13.5px',
+                color: '#64748B',
+                lineHeight: 1.5,
+                margin: '0 0 18px',
+              }}
+            >
+              Bạn có chắc chắn muốn phê duyệt đề thi này? Sau khi được phê duyệt, bài tập sẽ được xuất bản công khai cho toàn bộ học viên cùng luyện tập.
+            </p>
+
+            {/* Quiz Info Summary Box */}
+            <div
+              style={{
+                background: '#F8FAFC',
+                border: '1px solid #E2E8F0',
+                borderRadius: '12px',
+                padding: '12px 14px',
+                textAlign: 'left',
+                marginBottom: '22px',
+              }}
+            >
+              <div
+                style={{
+                  fontWeight: 700,
+                  fontSize: '14px',
+                  color: '#1E293B',
+                  marginBottom: '6px',
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                }}
+              >
+                {detailData?.quiz?.title || 'Bài tập'}
+              </div>
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  flexWrap: 'wrap',
+                  gap: '8px',
+                  fontSize: '12px',
+                  color: '#64748B',
+                }}
+              >
+                <span
+                  style={{
+                    background: '#EEF2FF',
+                    color: '#4F46E5',
+                    padding: '2px 8px',
+                    borderRadius: '6px',
+                    fontWeight: 700,
+                  }}
+                >
+                  Cấp {detailData?.quiz?.level || 'A1'}
+                </span>
+                <span>•</span>
+                <span>{detailData?.questions?.length || 0} câu hỏi</span>
+                <span>•</span>
+                <span>
+                  Tác giả: <strong style={{ color: '#0F172A' }}>@{detailData?.quiz?.creatorUsername || 'học viên'}</strong>
+                </span>
+              </div>
+            </div>
+
+            {/* Buttons */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+              <button
+                type="button"
+                onClick={() => setIsApproveConfirmOpen(false)}
+                disabled={submitting}
+                style={{
+                  padding: '11px 16px',
+                  borderRadius: '10px',
+                  border: '1px solid #CBD5E1',
+                  background: '#FFFFFF',
+                  color: '#475569',
+                  fontWeight: 700,
+                  fontSize: '13.5px',
+                  cursor: submitting ? 'not-allowed' : 'pointer',
+                  transition: 'background-color 0.15s ease',
+                }}
+              >
+                Hủy bỏ
+              </button>
+              <button
+                type="button"
+                onClick={handleApprove}
+                disabled={submitting}
+                style={{
+                  padding: '11px 16px',
+                  borderRadius: '10px',
+                  border: 'none',
+                  background: '#16A34A',
+                  color: '#FFFFFF',
+                  fontWeight: 700,
+                  fontSize: '13.5px',
+                  cursor: submitting ? 'not-allowed' : 'pointer',
+                  boxShadow: '0 2px 8px rgba(22, 163, 74, 0.3)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '6px',
+                }}
+              >
+                {submitting ? 'Đang xử lý...' : '✓ Xác nhận duyệt'}
+              </button>
             </div>
           </div>
         </div>,

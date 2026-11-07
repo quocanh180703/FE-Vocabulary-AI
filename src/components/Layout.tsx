@@ -29,6 +29,14 @@ const STUDENT_TABS: TabItem[] = [
   { to: '/profile', label: 'Cá nhân', icon: 'user' },
 ];
 
+const INSTRUCTOR_TABS: TabItem[] = [
+  { to: '/admin/reports', label: 'Báo cáo & Thống kê', icon: 'chart', end: true },
+  { to: '/admin/words', label: 'Từ vựng & CEFR', icon: 'book' },
+  { to: '/admin/quizzes', label: 'Quản lý Trắc nghiệm', icon: 'zap' },
+  { to: '/admin/content-review', label: 'Duyệt nội dung', icon: 'spark' },
+  { to: '/admin/users', label: 'Quản lý Học viên', icon: 'user' },
+  { to: '/profile', label: 'Cá nhân', icon: 'user' },
+];
 
 export function Layout() {
   const { user, subscription, logout } = useAuth();
@@ -48,7 +56,7 @@ export function Layout() {
       const next = !prev;
       try {
         localStorage.setItem('vocab_sidebar_collapsed', String(next));
-      } catch {}
+      } catch { }
       return next;
     });
   };
@@ -96,7 +104,7 @@ export function Layout() {
             setFavCount(cachedItems.length);
           }
         }
-      } catch {}
+      } catch { }
 
       wordApi.favorites(0, 100)
         .then(({ data }) => {
@@ -105,7 +113,7 @@ export function Layout() {
             : (Array.isArray(data?.content) ? data.content.length : 0);
           setFavCount(count);
         })
-        .catch(() => {});
+        .catch(() => { });
     };
 
     const syncStats = () => {
@@ -119,7 +127,7 @@ export function Layout() {
             setStreak(data.currentStreak ?? 0);
           }
         })
-        .catch(() => {});
+        .catch(() => { });
     };
 
     syncFav();
@@ -142,267 +150,267 @@ export function Layout() {
         animate={isNavigatingHome ? { opacity: 0, y: -10, scale: 0.995 } : { opacity: 1, y: 0, scale: 1 }}
         transition={{ duration: isNavigatingHome ? 0.22 : 0.35, ease: [0.16, 1, 0.3, 1] }}
       >
-      {/* Sidebar 9 mục chuẩn Soft Modern */}
-      <aside className={'sidebar' + (isSidebarCollapsed ? ' collapsed' : '')}>
-        <div className="sidebar-header">
-          <div
-            className="brand"
-            onClick={() => nav('/dashboard')}
-            title="VocabularyAI - Về tổng quan"
-            style={{ cursor: 'pointer' }}
-          >
-            <Mascot s={isSidebarCollapsed ? 34 : 36} />
-            {!isSidebarCollapsed && <span className="brand-text">VocabularyAI</span>}
+        {/* Sidebar 9 mục chuẩn Soft Modern */}
+        <aside className={'sidebar' + (isSidebarCollapsed ? ' collapsed' : '')}>
+          <div className="sidebar-header">
+            <div
+              className="brand"
+              onClick={() => nav(user?.role === 'INSTRUCTOR' ? '/admin/reports' : '/dashboard')}
+              title="VocabularyAI - Về tổng quan"
+              style={{ cursor: 'pointer' }}
+            >
+              <Mascot s={isSidebarCollapsed ? 34 : 36} />
+              {!isSidebarCollapsed && <span className="brand-text">VocabularyAI</span>}
+            </div>
           </div>
-        </div>
 
-        {STUDENT_TABS.map((t) => (
-          <NavLink
-            key={t.to}
-            to={t.to}
-            end={t.end}
-            className={({ isActive }) => 'nav' + (isActive ? ' on' : '')}
-            title={t.label}
+          {(user?.role === 'INSTRUCTOR' ? INSTRUCTOR_TABS : STUDENT_TABS).map((t) => (
+            <NavLink
+              key={t.to}
+              to={t.to}
+              end={t.end}
+              className={({ isActive }) => 'nav' + (isActive ? ' on' : '')}
+              title={t.label}
+            >
+              <span className="nic">
+                <Icon n={t.icon} s={19} />
+              </span>
+              {!isSidebarCollapsed && <span className="nav-label">{t.label}</span>}
+            </NavLink>
+          ))}
+
+          {user?.role === 'INSTRUCTOR' && (
+            <NavLink
+              to="/admin/reports"
+              className="nav"
+              title="Trang Giảng viên"
+              style={{
+                marginTop: 6,
+                background: 'rgba(79, 70, 229, 0.08)',
+                color: '#4F46E5',
+                fontWeight: 800,
+              }}
+            >
+              <span
+                className="nic"
+                style={{
+                  background: '#4F46E5',
+                  color: '#fff',
+                }}
+              >
+                <Icon n="spark" s={18} />
+              </span>
+              {!isSidebarCollapsed && (
+                <span className="nav-label">
+                  Trang Giảng viên
+                </span>
+              )}
+            </NavLink>
+          )}
+
+          {user?.role === 'ADMIN' && (
+            <NavLink
+              to="/admin"
+              className="nav"
+              title="Quản trị Admin"
+              style={{
+                marginTop: 6,
+                background: 'rgba(21, 101, 192, 0.08)',
+                color: 'var(--primary-dark)',
+                fontWeight: 800,
+              }}
+            >
+              <span
+                className="nic"
+                style={{
+                  background: 'var(--primary)',
+                  color: '#fff',
+                }}
+              >
+                <Icon n="spark" s={18} />
+              </span>
+              {!isSidebarCollapsed && (
+                <span className="nav-label">
+                  Quản trị Admin
+                </span>
+              )}
+            </NavLink>
+          )}
+
+          {/* Khối Mascot Vi đồng hành */}
+          <div
+            className="side-coach"
+            style={{ marginTop: 'auto' }}
+            title="Vi nhắc: duy trì streak mỗi ngày nhé!"
+          >
+            <img src={vi3dImg} alt="Vi Mascot" />
+            {!isSidebarCollapsed && (
+              <div className="side-coach-info">
+                <span className="cdot"></span>
+                <b>Vi nhắc:</b> duy trì streak mỗi ngày nhé!
+              </div>
+            )}
+          </div>
+
+          {/* Đăng xuất */}
+          <button
+            type="button"
+            className="nav"
+            onClick={logout}
+            style={{ marginTop: 6 }}
+            title="Đăng xuất"
           >
             <span className="nic">
-              <Icon n={t.icon} s={19} />
+              <Icon n="logout" s={18} />
             </span>
-            {!isSidebarCollapsed && <span className="nav-label">{t.label}</span>}
-          </NavLink>
-        ))}
+            {!isSidebarCollapsed && <span className="nav-label">Đăng xuất</span>}
+          </button>
+        </aside>
 
-        {user?.role === 'INSTRUCTOR' && (
-          <NavLink
-            to="/admin/reports"
-            className="nav"
-            title="Trang Giảng viên"
-            style={{
-              marginTop: 6,
-              background: 'rgba(79, 70, 229, 0.08)',
-              color: '#4F46E5',
-              fontWeight: 800,
-            }}
-          >
-            <span
-              className="nic"
-              style={{
-                background: '#4F46E5',
-                color: '#fff',
-              }}
-            >
-              <Icon n="spark" s={18} />
-            </span>
-            {!isSidebarCollapsed && (
-              <span className="nav-label">
-                Trang Giảng viên
-              </span>
-            )}
-          </NavLink>
-        )}
+        {/* Main Workspace */}
+        <div className="main">
+          <div className="topbar">
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginRight: 'auto' }}>
+              <button
+                type="button"
+                className="topbar-toggle-btn"
+                onClick={toggleSidebar}
+                title={isSidebarCollapsed ? 'Mở thanh bên' : 'Đóng thanh bên'}
+                aria-label={isSidebarCollapsed ? 'Mở thanh bên' : 'Đóng thanh bên'}
+              >
+                <Icon n={isSidebarCollapsed ? 'panelLeftOpen' : 'panelLeft'} s={18} />
+              </button>
 
-        {user?.role === 'ADMIN' && (
-          <NavLink
-            to="/admin"
-            className="nav"
-            title="Quản trị Admin"
-            style={{
-              marginTop: 6,
-              background: 'rgba(21, 101, 192, 0.08)',
-              color: 'var(--primary-dark)',
-              fontWeight: 800,
-            }}
-          >
-            <span
-              className="nic"
-              style={{
-                background: 'var(--primary)',
-                color: '#fff',
-              }}
-            >
-              <Icon n="spark" s={18} />
-            </span>
-            {!isSidebarCollapsed && (
-              <span className="nav-label">
-                Quản trị Admin
-              </span>
-            )}
-          </NavLink>
-        )}
-
-        {/* Khối Mascot Vi đồng hành */}
-        <div
-          className="side-coach"
-          style={{ marginTop: 'auto' }}
-          title="Vi nhắc: duy trì streak mỗi ngày nhé!"
-        >
-          <img src={vi3dImg} alt="Vi Mascot" />
-          {!isSidebarCollapsed && (
-            <div className="side-coach-info">
-              <span className="cdot"></span>
-              <b>Vi nhắc:</b> duy trì streak mỗi ngày nhé!
+              <button
+                type="button"
+                className="topbar-home-btn"
+                onClick={handleGoHome}
+                title="Về trang giới thiệu (Landing Page)"
+              >
+                <Icon n="home" s={17} />
+                <span className="topbar-home-text">Trang chủ</span>
+              </button>
             </div>
-          )}
-        </div>
 
-        {/* Đăng xuất */}
-        <button
-          type="button"
-          className="nav"
-          onClick={logout}
-          style={{ marginTop: 6 }}
-          title="Đăng xuất"
-        >
-          <span className="nic">
-            <Icon n="logout" s={18} />
-          </span>
-          {!isSidebarCollapsed && <span className="nav-label">Đăng xuất</span>}
-        </button>
-      </aside>
-
-      {/* Main Workspace */}
-      <div className="main">
-        <div className="topbar">
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginRight: 'auto' }}>
-            <button
-              type="button"
-              className="topbar-toggle-btn"
-              onClick={toggleSidebar}
-              title={isSidebarCollapsed ? 'Mở thanh bên' : 'Đóng thanh bên'}
-              aria-label={isSidebarCollapsed ? 'Mở thanh bên' : 'Đóng thanh bên'}
-            >
-              <Icon n={isSidebarCollapsed ? 'panelLeftOpen' : 'panelLeft'} s={18} />
-            </button>
-
-            <button
-              type="button"
-              className="topbar-home-btn"
-              onClick={handleGoHome}
-              title="Về trang giới thiệu (Landing Page)"
-            >
-              <Icon n="home" s={17} />
-              <span className="topbar-home-text">Trang chủ</span>
-            </button>
-          </div>
-
-          <div
-            className="statpill"
-            title="Chuỗi ngày học liên tục (Streak)"
-            onClick={() => nav('/dashboard')}
-            style={{ cursor: 'pointer' }}
-          >
-            <span style={{ color: 'var(--yellow)', display: 'inline-flex' }}>
-              <Icon n="flame" s={18} />
-            </span>
-            <span style={{ color: 'var(--yellow-dark)' }}>{streak}</span>
-          </div>
-
-          <NotificationBell />
-
-          <div
-            className="statpill"
-            title="Từ vựng yêu thích"
-            onClick={() => nav('/favorites')}
-            style={{ cursor: 'pointer' }}
-          >
-            <span style={{ color: 'var(--red)', display: 'inline-flex' }}>
-              <Icon n="heart" s={18} />
-            </span>
-            <span style={{ color: 'var(--red-dark)' }}>{favCount}</span>
-          </div>
-
-          {/* User Membership Status Pill */}
-          {subscription?.status === 'ACTIVE' ? (
-            <button
-              type="button"
+            <div
               className="statpill"
-              onClick={() => nav('/profile')}
-              style={{
-                cursor: 'pointer',
-                border: 'none',
-                background: 'var(--tint)',
-                color: 'var(--primary-dark)',
-              }}
-              title={`Gói thành viên: ${subscription.packageName || 'Gói Theo Tháng'} (Còn ${subscription.remainingDays ?? 0} ngày). Bấm để xem chi tiết.`}
+              title="Chuỗi ngày học liên tục (Streak)"
+              onClick={() => nav('/dashboard')}
+              style={{ cursor: 'pointer' }}
             >
-              <Icon n="gem" s={15} />
-              <span style={{ fontSize: '13px', fontWeight: 900 }}>PRO</span>
-            </button>
-          ) : (
-            <button
-              type="button"
-              className="statpill"
-              onClick={() => nav('/profile')}
-              style={{
-                cursor: 'pointer',
-                border: 'none',
-                background: '#F1F5F9',
-                color: '#475569',
-              }}
-              title="Bạn đang dùng gói Miễn Phí. Bấm để xem ưu đãi nâng cấp PRO!"
-            >
-              <Icon n="spark" s={15} />
-              <span style={{ fontSize: '13px', fontWeight: 900 }}>PRO</span>
-            </button>
-          )}
+              <span style={{ color: 'var(--yellow)', display: 'inline-flex' }}>
+                <Icon n="flame" s={18} />
+              </span>
+              <span style={{ color: 'var(--yellow-dark)' }}>{streak}</span>
+            </div>
 
-          <div
-            className="uavatar"
-            onClick={() => nav('/profile')}
-            style={{
-              cursor: 'pointer',
-              overflow: 'hidden',
-              padding: 0,
-            }}
-            title="Hồ sơ cá nhân"
-          >
-            {user?.avatarUrl && !user.avatarUrl.startsWith('#') ? (
-              <img
-                src={user.avatarUrl}
-                alt={user.fullName || user.username}
-                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                onError={(e) => {
-                  (e.currentTarget as HTMLElement).style.display = 'none';
+            <NotificationBell />
+
+            <div
+              className="statpill"
+              title="Từ vựng yêu thích"
+              onClick={() => nav('/favorites')}
+              style={{ cursor: 'pointer' }}
+            >
+              <span style={{ color: 'var(--red)', display: 'inline-flex' }}>
+                <Icon n="heart" s={18} />
+              </span>
+              <span style={{ color: 'var(--red-dark)' }}>{favCount}</span>
+            </div>
+
+            {/* User Membership Status Pill */}
+            {subscription?.status === 'ACTIVE' ? (
+              <button
+                type="button"
+                className="statpill"
+                onClick={() => nav('/profile')}
+                style={{
+                  cursor: 'pointer',
+                  border: 'none',
+                  background: 'var(--tint)',
+                  color: 'var(--primary-dark)',
                 }}
-              />
+                title={`Gói thành viên: ${subscription.packageName || 'Gói Theo Tháng'} (Còn ${subscription.remainingDays ?? 0} ngày). Bấm để xem chi tiết.`}
+              >
+                <Icon n="gem" s={15} />
+                <span style={{ fontSize: '13px', fontWeight: 900 }}>PRO</span>
+              </button>
             ) : (
-              (user?.fullName || user?.username || 'U')[0].toUpperCase()
+              <button
+                type="button"
+                className="statpill"
+                onClick={() => nav('/profile')}
+                style={{
+                  cursor: 'pointer',
+                  border: 'none',
+                  background: '#F1F5F9',
+                  color: '#475569',
+                }}
+                title="Bạn đang dùng gói Miễn Phí. Bấm để xem ưu đãi nâng cấp PRO!"
+              >
+                <Icon n="spark" s={15} />
+                <span style={{ fontSize: '13px', fontWeight: 900 }}>PRO</span>
+              </button>
             )}
+
+            <div
+              className="uavatar"
+              onClick={() => nav('/profile')}
+              style={{
+                cursor: 'pointer',
+                overflow: 'hidden',
+                padding: 0,
+              }}
+              title="Hồ sơ cá nhân"
+            >
+              {user?.avatarUrl && !user.avatarUrl.startsWith('#') ? (
+                <img
+                  src={user.avatarUrl}
+                  alt={user.fullName || user.username}
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                  onError={(e) => {
+                    (e.currentTarget as HTMLElement).style.display = 'none';
+                  }}
+                />
+              ) : (
+                (user?.fullName || user?.username || 'U')[0].toUpperCase()
+              )}
+            </div>
+          </div>
+
+          <div className="content">
+            <ErrorBoundary>
+              <AnimatePresence mode="wait" initial={false}>
+                {currentOutlet && (
+                  <PageTransition key={location.pathname}>
+                    {currentOutlet}
+                  </PageTransition>
+                )}
+              </AnimatePresence>
+            </ErrorBoundary>
           </div>
         </div>
 
-        <div className="content">
-          <ErrorBoundary>
-            <AnimatePresence mode="wait" initial={false}>
-              {currentOutlet && (
-                <PageTransition key={location.pathname}>
-                  {currentOutlet}
-                </PageTransition>
-              )}
-            </AnimatePresence>
-          </ErrorBoundary>
-        </div>
-      </div>
-
-      {/* Mobile Tabbar */}
-      <nav className="tabbar">
-        <NavLink to="/dashboard" end className={({ isActive }) => (isActive ? 'on' : '')}>
-          <Icon n="home" s={20} />
-          Tổng quan
-        </NavLink>
-        <NavLink to="/words" className={({ isActive }) => (isActive ? 'on' : '')}>
-          <Icon n="book" s={20} />
-          Từ vựng
-        </NavLink>
-        <NavLink to="/speaking" className={({ isActive }) => (isActive ? 'on' : '')}>
-          <Icon n="mic" s={20} />
-          Luyện nói
-        </NavLink>
-        <NavLink to="/profile" className={({ isActive }) => (isActive ? 'on' : '')}>
-          <Icon n="user" s={20} />
-          Cá nhân
-        </NavLink>
-      </nav>
-    </motion.div>
-  </>
+        {/* Mobile Tabbar */}
+        <nav className="tabbar">
+          <NavLink to="/dashboard" end className={({ isActive }) => (isActive ? 'on' : '')}>
+            <Icon n="home" s={20} />
+            Tổng quan
+          </NavLink>
+          <NavLink to="/words" className={({ isActive }) => (isActive ? 'on' : '')}>
+            <Icon n="book" s={20} />
+            Từ vựng
+          </NavLink>
+          <NavLink to="/speaking" className={({ isActive }) => (isActive ? 'on' : '')}>
+            <Icon n="mic" s={20} />
+            Luyện nói
+          </NavLink>
+          <NavLink to="/profile" className={({ isActive }) => (isActive ? 'on' : '')}>
+            <Icon n="user" s={20} />
+            Cá nhân
+          </NavLink>
+        </nav>
+      </motion.div>
+    </>
   );
 }

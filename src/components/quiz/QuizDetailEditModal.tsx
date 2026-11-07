@@ -37,6 +37,13 @@ export const QuizDetailEditModal: React.FC<QuizDetailEditModalProps> = ({
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    type: 'delete' | 'publish' | 'withdraw' | 'hide';
+  }>({
+    isOpen: false,
+    type: 'publish',
+  });
 
   useEffect(() => {
     if (isOpen) {
@@ -193,73 +200,67 @@ export const QuizDetailEditModal: React.FC<QuizDetailEditModalProps> = ({
       .finally(() => setSaving(false));
   };
 
-  // Delete quiz
-  const handleDelete = () => {
-    if (!quizId || isReadOnly) return;
-    if (!window.confirm(`Bạn có chắc chắn muốn xóa bài tập "${quizDetail?.title}" không? Hành động này không thể hoàn tác.`)) {
-      return;
-    }
-
-    setDeleting(true);
-    setErr('');
-
-    quizApi
-      .deleteMyQuiz(quizId)
-      .then(() => {
-        onDeleted();
-        onClose();
-      })
-      .catch((e) => {
-        setErr(errMsg(e) || 'Không thể xóa bài tập');
-      })
-      .finally(() => setDeleting(false));
+  const handleOpenActionConfirm = (type: 'delete' | 'publish' | 'withdraw' | 'hide') => {
+    setConfirmModal({ isOpen: true, type });
   };
 
-  const handlePublishRequest = async () => {
+  const handleExecuteAction = async () => {
     if (!quizId) return;
-    if (!window.confirm('Gửi bài tập này cho Giảng viên duyệt để công khai cho cộng đồng?')) return;
-    try {
-      setActionLoading(true);
-      await quizApi.publishRequest(quizId);
-      setSuccessMsg('Đã gửi yêu cầu duyệt bài tập tới Giảng viên thành công!');
-      loadDetail(quizId);
-      onUpdated();
-    } catch (e: any) {
-      setErr(errMsg(e) || 'Không thể gửi yêu cầu duyệt');
-    } finally {
-      setActionLoading(false);
-    }
-  };
-
-  const handleWithdraw = async () => {
-    if (!quizId) return;
-    if (!window.confirm('Bạn có chắc muốn rút yêu cầu duyệt bài tập này về chế độ riêng tư?')) return;
-    try {
-      setActionLoading(true);
-      await quizApi.withdraw(quizId);
-      setSuccessMsg('Đã rút yêu cầu duyệt bài tập thành công!');
-      loadDetail(quizId);
-      onUpdated();
-    } catch (e: any) {
-      setErr(errMsg(e) || 'Không thể rút yêu cầu');
-    } finally {
-      setActionLoading(false);
-    }
-  };
-
-  const handleHide = async () => {
-    if (!quizId) return;
-    if (!window.confirm('Chuyển bài tập về chế độ riêng tư (chỉ bạn thấy)? Người khác sẽ không thấy bài này trong danh sách chung nữa.')) return;
-    try {
-      setActionLoading(true);
-      await quizApi.hide(quizId);
-      setSuccessMsg('Đã chuyển bài tập về chế độ riêng tư!');
-      loadDetail(quizId);
-      onUpdated();
-    } catch (e: any) {
-      setErr(errMsg(e) || 'Không thể chuyển chế độ riêng tư');
-    } finally {
-      setActionLoading(false);
+    if (confirmModal.type === 'delete') {
+      setDeleting(true);
+      setErr('');
+      quizApi
+        .deleteMyQuiz(quizId)
+        .then(() => {
+          onDeleted();
+          onClose();
+        })
+        .catch((e) => {
+          setErr(errMsg(e) || 'Không thể xóa bài tập');
+        })
+        .finally(() => {
+          setDeleting(false);
+          setConfirmModal((prev) => ({ ...prev, isOpen: false }));
+        });
+    } else if (confirmModal.type === 'publish') {
+      try {
+        setActionLoading(true);
+        await quizApi.publishRequest(quizId);
+        setSuccessMsg('Đã gửi yêu cầu duyệt bài tập tới Giảng viên thành công!');
+        loadDetail(quizId);
+        onUpdated();
+      } catch (e: any) {
+        setErr(errMsg(e) || 'Không thể gửi yêu cầu duyệt');
+      } finally {
+        setActionLoading(false);
+        setConfirmModal((prev) => ({ ...prev, isOpen: false }));
+      }
+    } else if (confirmModal.type === 'withdraw') {
+      try {
+        setActionLoading(true);
+        await quizApi.withdraw(quizId);
+        setSuccessMsg('Đã rút yêu cầu duyệt bài tập thành công!');
+        loadDetail(quizId);
+        onUpdated();
+      } catch (e: any) {
+        setErr(errMsg(e) || 'Không thể rút yêu cầu');
+      } finally {
+        setActionLoading(false);
+        setConfirmModal((prev) => ({ ...prev, isOpen: false }));
+      }
+    } else if (confirmModal.type === 'hide') {
+      try {
+        setActionLoading(true);
+        await quizApi.hide(quizId);
+        setSuccessMsg('Đã chuyển bài tập về chế độ riêng tư!');
+        loadDetail(quizId);
+        onUpdated();
+      } catch (e: any) {
+        setErr(errMsg(e) || 'Không thể chuyển chế độ riêng tư');
+      } finally {
+        setActionLoading(false);
+        setConfirmModal((prev) => ({ ...prev, isOpen: false }));
+      }
     }
   };
 
@@ -502,30 +503,83 @@ export const QuizDetailEditModal: React.FC<QuizDetailEditModalProps> = ({
                 }}
               >
                 <div>
-                  <label style={{ display: 'block', fontSize: 13, fontWeight: 700, marginBottom: 5 }}>
-                    Tiêu đề bài trắc nghiệm <span style={{ color: 'var(--red)' }}>*</span>
-                  </label>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                    <label style={{ fontSize: 13.5, fontWeight: 700, color: '#1E293B', display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <Icon n="pen" s={14} />
+                      <span>Tiêu đề bài trắc nghiệm</span>
+                      <span style={{ color: '#EF4444' }}>*</span>
+                    </label>
+                    <span style={{ fontSize: 12, color: '#94A3B8', fontWeight: 600 }}>{title.length}/150</span>
+                  </div>
                   <input
                     type="text"
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
                     disabled={isReadOnly || saving}
-                    style={{ width: '100%', fontSize: 14 }}
+                    placeholder="VD: Bài tập từ vựng Sport..."
                     maxLength={150}
                     required
+                    style={{
+                      width: '100%',
+                      height: 44,
+                      padding: '0 16px',
+                      borderRadius: 12,
+                      border: '1.5px solid #CBD5E1',
+                      background: isReadOnly ? '#F1F5F9' : '#FFFFFF',
+                      fontSize: 14,
+                      fontWeight: 600,
+                      color: '#0F172A',
+                      outline: 'none',
+                      transition: 'all 0.2s ease',
+                      boxShadow: '0 1px 2px rgba(0, 0, 0, 0.04)',
+                    }}
+                    onFocus={(e) => {
+                      if (!isReadOnly) {
+                        e.currentTarget.style.borderColor = 'var(--primary)';
+                        e.currentTarget.style.boxShadow = '0 0 0 3.5px rgba(99, 102, 241, 0.15)';
+                      }
+                    }}
+                    onBlur={(e) => {
+                      e.currentTarget.style.borderColor = '#CBD5E1';
+                      e.currentTarget.style.boxShadow = '0 1px 2px rgba(0, 0, 0, 0.04)';
+                    }}
                   />
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 14 }}>
                   <div>
-                    <label style={{ display: 'block', fontSize: 13, fontWeight: 700, marginBottom: 5 }}>
+                    <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: '#1E293B', marginBottom: 6 }}>
                       Cấp độ CEFR
                     </label>
                     <select
                       value={level}
                       onChange={(e) => setLevel(e.target.value)}
                       disabled={isReadOnly || saving}
-                      style={{ width: '100%', fontSize: 13.5 }}
+                      style={{
+                        width: '100%',
+                        height: 44,
+                        padding: '0 14px',
+                        borderRadius: 12,
+                        border: '1.5px solid #CBD5E1',
+                        background: isReadOnly ? '#F1F5F9' : '#FFFFFF',
+                        fontSize: 13.5,
+                        fontWeight: 600,
+                        color: '#0F172A',
+                        outline: 'none',
+                        cursor: isReadOnly ? 'default' : 'pointer',
+                        transition: 'all 0.2s ease',
+                        boxShadow: '0 1px 2px rgba(0, 0, 0, 0.04)',
+                      }}
+                      onFocus={(e) => {
+                        if (!isReadOnly) {
+                          e.currentTarget.style.borderColor = 'var(--primary)';
+                          e.currentTarget.style.boxShadow = '0 0 0 3.5px rgba(99, 102, 241, 0.15)';
+                        }
+                      }}
+                      onBlur={(e) => {
+                        e.currentTarget.style.borderColor = '#CBD5E1';
+                        e.currentTarget.style.boxShadow = '0 1px 2px rgba(0, 0, 0, 0.04)';
+                      }}
                     >
                       {['A1', 'A2', 'B1', 'B2', 'C1', 'C2'].map((lvl) => (
                         <option key={lvl} value={lvl}>
@@ -536,7 +590,7 @@ export const QuizDetailEditModal: React.FC<QuizDetailEditModalProps> = ({
                   </div>
 
                   <div>
-                    <label style={{ display: 'block', fontSize: 13, fontWeight: 700, marginBottom: 5 }}>
+                    <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: '#1E293B', marginBottom: 6 }}>
                       Thời gian làm bài (phút)
                     </label>
                     <input
@@ -546,22 +600,71 @@ export const QuizDetailEditModal: React.FC<QuizDetailEditModalProps> = ({
                       value={timeLimit}
                       onChange={(e) => setTimeLimit(Math.max(1, parseInt(e.target.value) || 1))}
                       disabled={isReadOnly || saving}
-                      style={{ width: '100%', fontSize: 13.5 }}
+                      style={{
+                        width: '100%',
+                        height: 44,
+                        padding: '0 16px',
+                        borderRadius: 12,
+                        border: '1.5px solid #CBD5E1',
+                        background: isReadOnly ? '#F1F5F9' : '#FFFFFF',
+                        fontSize: 13.5,
+                        fontWeight: 600,
+                        color: '#0F172A',
+                        outline: 'none',
+                        transition: 'all 0.2s ease',
+                        boxShadow: '0 1px 2px rgba(0, 0, 0, 0.04)',
+                      }}
+                      onFocus={(e) => {
+                        if (!isReadOnly) {
+                          e.currentTarget.style.borderColor = 'var(--primary)';
+                          e.currentTarget.style.boxShadow = '0 0 0 3.5px rgba(99, 102, 241, 0.15)';
+                        }
+                      }}
+                      onBlur={(e) => {
+                        e.currentTarget.style.borderColor = '#CBD5E1';
+                        e.currentTarget.style.boxShadow = '0 1px 2px rgba(0, 0, 0, 0.04)';
+                      }}
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', fontSize: 13, fontWeight: 700, marginBottom: 5 }}>
-                    Mô tả / Ghi chú (Tùy chọn)
-                  </label>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                    <label style={{ fontSize: 13, fontWeight: 700, color: '#1E293B' }}>
+                      Mô tả / Ghi chú <span style={{ color: '#64748B', fontWeight: 500 }}>(Tùy chọn)</span>
+                    </label>
+                    <span style={{ fontSize: 12, color: '#94A3B8', fontWeight: 600 }}>{description.length}/300</span>
+                  </div>
                   <input
                     type="text"
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
                     disabled={isReadOnly || saving}
                     placeholder="Mô tả ngắn gọn về nội dung ôn tập..."
-                    style={{ width: '100%', fontSize: 13.5 }}
+                    maxLength={300}
+                    style={{
+                      width: '100%',
+                      height: 44,
+                      padding: '0 16px',
+                      borderRadius: 12,
+                      border: '1.5px solid #CBD5E1',
+                      background: isReadOnly ? '#F1F5F9' : '#FFFFFF',
+                      fontSize: 13.5,
+                      color: '#0F172A',
+                      outline: 'none',
+                      transition: 'all 0.2s ease',
+                      boxShadow: '0 1px 2px rgba(0, 0, 0, 0.04)',
+                    }}
+                    onFocus={(e) => {
+                      if (!isReadOnly) {
+                        e.currentTarget.style.borderColor = 'var(--primary)';
+                        e.currentTarget.style.boxShadow = '0 0 0 3.5px rgba(99, 102, 241, 0.15)';
+                      }
+                    }}
+                    onBlur={(e) => {
+                      e.currentTarget.style.borderColor = '#CBD5E1';
+                      e.currentTarget.style.boxShadow = '0 1px 2px rgba(0, 0, 0, 0.04)';
+                    }}
                   />
                 </div>
               </div>
@@ -635,8 +738,33 @@ export const QuizDetailEditModal: React.FC<QuizDetailEditModalProps> = ({
                         disabled={isReadOnly || saving}
                         rows={2}
                         placeholder="Nội dung câu hỏi..."
-                        style={{ width: '100%', fontSize: 13.5, resize: 'vertical' }}
                         required
+                        style={{
+                          width: '100%',
+                          padding: '12px 14px',
+                          borderRadius: 12,
+                          border: '1.5px solid #CBD5E1',
+                          background: isReadOnly ? '#F8FAFC' : '#FFFFFF',
+                          fontSize: 13.5,
+                          color: '#0F172A',
+                          lineHeight: 1.5,
+                          outline: 'none',
+                          resize: 'vertical',
+                          minHeight: 64,
+                          transition: 'all 0.2s ease',
+                          boxShadow: '0 1px 2px rgba(0, 0, 0, 0.04)',
+                          fontFamily: 'inherit',
+                        }}
+                        onFocus={(e) => {
+                          if (!isReadOnly) {
+                            e.currentTarget.style.borderColor = 'var(--primary)';
+                            e.currentTarget.style.boxShadow = '0 0 0 3.5px rgba(99, 102, 241, 0.15)';
+                          }
+                        }}
+                        onBlur={(e) => {
+                          e.currentTarget.style.borderColor = '#CBD5E1';
+                          e.currentTarget.style.boxShadow = '0 1px 2px rgba(0, 0, 0, 0.04)';
+                        }}
                       />
                     </div>
 
@@ -656,9 +784,10 @@ export const QuizDetailEditModal: React.FC<QuizDetailEditModalProps> = ({
                               alignItems: 'center',
                               gap: 10,
                               background: isCorrect ? '#F0FDF4' : '#F8FAFC',
-                              border: `1px solid ${isCorrect ? '#86EFAC' : '#E2E8F0'}`,
-                              borderRadius: 10,
-                              padding: '6px 12px',
+                              border: `1.5px solid ${isCorrect ? '#86EFAC' : '#E2E8F0'}`,
+                              borderRadius: 12,
+                              padding: '8px 14px',
+                              transition: 'all 0.15s ease',
                             }}
                           >
                             <input
@@ -667,21 +796,22 @@ export const QuizDetailEditModal: React.FC<QuizDetailEditModalProps> = ({
                               checked={isCorrect}
                               disabled={isReadOnly || saving}
                               onChange={() => handleCorrectAnswerChange(qIndex, optIndex)}
-                              style={{ cursor: isReadOnly ? 'default' : 'pointer' }}
+                              style={{ cursor: isReadOnly ? 'default' : 'pointer', accentColor: '#16A34A', width: 16, height: 16 }}
                               title="Đánh dấu đáp án đúng"
                             />
                             <b
                               style={{
-                                width: 22,
-                                height: 22,
+                                width: 24,
+                                height: 24,
                                 borderRadius: '50%',
-                                background: isCorrect ? '#15803D' : '#CBD5E1',
+                                background: isCorrect ? '#16A34A' : '#CBD5E1',
                                 color: '#fff',
                                 display: 'inline-flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
-                                fontSize: 11,
+                                fontSize: 12,
                                 fontWeight: 800,
+                                flexShrink: 0,
                               }}
                             >
                               {charCode}
@@ -697,14 +827,16 @@ export const QuizDetailEditModal: React.FC<QuizDetailEditModalProps> = ({
                                 border: 'none',
                                 background: 'transparent',
                                 fontSize: 13.5,
+                                fontWeight: 500,
+                                color: '#1E293B',
                                 outline: 'none',
                                 padding: 0,
                               }}
                               required
                             />
                             {isCorrect && (
-                              <span style={{ fontSize: 12, fontWeight: 800, color: '#15803D' }}>
-                                ✓ Đúng
+                              <span style={{ fontSize: 12, fontWeight: 800, color: '#16A34A', display: 'flex', alignItems: 'center', gap: 3 }}>
+                                <Icon n="check" s={14} /> Đúng
                               </span>
                             )}
                           </div>
@@ -714,7 +846,7 @@ export const QuizDetailEditModal: React.FC<QuizDetailEditModalProps> = ({
 
                     {/* Explanation */}
                     <div>
-                      <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#64748B', marginBottom: 4 }}>
+                      <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#64748B', marginBottom: 5 }}>
                         Giải thích chi tiết (hiện sau khi nộp bài):
                       </label>
                       <input
@@ -723,7 +855,29 @@ export const QuizDetailEditModal: React.FC<QuizDetailEditModalProps> = ({
                         onChange={(e) => handleExplanationChange(qIndex, e.target.value)}
                         disabled={isReadOnly || saving}
                         placeholder="Giải thích vì sao đáp án này đúng..."
-                        style={{ width: '100%', fontSize: 13 }}
+                        style={{
+                          width: '100%',
+                          height: 42,
+                          padding: '0 14px',
+                          borderRadius: 10,
+                          border: '1.5px solid #CBD5E1',
+                          background: isReadOnly ? '#F8FAFC' : '#FFFFFF',
+                          fontSize: 13,
+                          color: '#0F172A',
+                          outline: 'none',
+                          transition: 'all 0.2s ease',
+                          boxShadow: '0 1px 2px rgba(0, 0, 0, 0.04)',
+                        }}
+                        onFocus={(e) => {
+                          if (!isReadOnly) {
+                            e.currentTarget.style.borderColor = 'var(--primary)';
+                            e.currentTarget.style.boxShadow = '0 0 0 3px rgba(99, 102, 241, 0.12)';
+                          }
+                        }}
+                        onBlur={(e) => {
+                          e.currentTarget.style.borderColor = '#CBD5E1';
+                          e.currentTarget.style.boxShadow = '0 1px 2px rgba(0, 0, 0, 0.04)';
+                        }}
                       />
                     </div>
                   </div>
@@ -748,7 +902,7 @@ export const QuizDetailEditModal: React.FC<QuizDetailEditModalProps> = ({
                     <button
                       type="button"
                       className="btn ghost sm"
-                      onClick={handleDelete}
+                      onClick={() => handleOpenActionConfirm('delete')}
                       disabled={deleting || saving || actionLoading}
                       style={{
                         borderColor: '#FCA5A5',
@@ -763,7 +917,7 @@ export const QuizDetailEditModal: React.FC<QuizDetailEditModalProps> = ({
                     <button
                       type="button"
                       className="btn ghost sm"
-                      onClick={handleWithdraw}
+                      onClick={() => handleOpenActionConfirm('withdraw')}
                       disabled={actionLoading}
                       style={{
                         borderColor: '#FCD34D',
@@ -779,7 +933,7 @@ export const QuizDetailEditModal: React.FC<QuizDetailEditModalProps> = ({
                     <button
                       type="button"
                       className="btn ghost sm"
-                      onClick={handleHide}
+                      onClick={() => handleOpenActionConfirm('hide')}
                       disabled={actionLoading}
                       style={{
                         borderColor: '#CBD5E1',
@@ -794,7 +948,7 @@ export const QuizDetailEditModal: React.FC<QuizDetailEditModalProps> = ({
                     <button
                       type="button"
                       className="btn ghost sm"
-                      onClick={handlePublishRequest}
+                      onClick={() => handleOpenActionConfirm('publish')}
                       disabled={actionLoading || saving}
                       style={{
                         borderColor: '#A5B4FC',
@@ -841,6 +995,261 @@ export const QuizDetailEditModal: React.FC<QuizDetailEditModalProps> = ({
           )}
         </div>
       </motion.div>
+
+      {/* Confirmation Modal for Actions (Gửi duyệt, Rút, Ẩn, Xóa) */}
+      {confirmModal.isOpen && (
+        <div
+          onClick={(e) => {
+            if (e.target === e.currentTarget && !actionLoading && !deleting) {
+              setConfirmModal((prev) => ({ ...prev, isOpen: false }));
+            }
+          }}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 100010,
+            backgroundColor: 'rgba(15, 23, 42, 0.65)',
+            backdropFilter: 'blur(5px)',
+            WebkitBackdropFilter: 'blur(5px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: 16,
+          }}
+        >
+          <motion.div
+            initial={{ opacity: 0, scale: 0.94, y: 12 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.94 }}
+            transition={{ duration: 0.2 }}
+            style={{
+              background: '#FFFFFF',
+              borderRadius: 20,
+              width: '100%',
+              maxWidth: 460,
+              padding: '24px 24px 20px',
+              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+              border: '1px solid #F1F5F9',
+              textAlign: 'center',
+            }}
+          >
+            {/* Header Icon */}
+            <div
+              style={{
+                width: 56,
+                height: 56,
+                borderRadius: '50%',
+                background:
+                  confirmModal.type === 'delete'
+                    ? '#FEE2E2'
+                    : confirmModal.type === 'publish'
+                    ? '#EEF2FF'
+                    : confirmModal.type === 'withdraw'
+                    ? '#FFFBEB'
+                    : '#F1F5F9',
+                color:
+                  confirmModal.type === 'delete'
+                    ? '#DC2626'
+                    : confirmModal.type === 'publish'
+                    ? '#4F46E5'
+                    : confirmModal.type === 'withdraw'
+                    ? '#D97706'
+                    : '#475569',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                marginBottom: 16,
+              }}
+            >
+              {confirmModal.type === 'delete' && <Icon n="trash" s={26} />}
+              {confirmModal.type === 'publish' && <Icon n="send" s={26} />}
+              {confirmModal.type === 'withdraw' && <Icon n="arrowLeft" s={24} />}
+              {confirmModal.type === 'hide' && <Icon n="lock" s={24} />}
+            </div>
+
+            {/* Title */}
+            <h3 style={{ fontSize: 18, fontWeight: 800, color: '#0F172A', margin: '0 0 8px' }}>
+              {confirmModal.type === 'delete' && 'Xác nhận xóa bài tập'}
+              {confirmModal.type === 'publish' && 'Gửi bài tập cho Giảng viên duyệt'}
+              {confirmModal.type === 'withdraw' && 'Rút yêu cầu duyệt bài tập'}
+              {confirmModal.type === 'hide' && 'Chuyển bài tập về riêng tư'}
+            </h3>
+
+            {/* Content text */}
+            <div style={{ fontSize: 14, color: '#475569', lineHeight: 1.55, margin: '0 0 16px' }}>
+              {confirmModal.type === 'delete' && (
+                <p style={{ margin: 0 }}>
+                  Bạn có chắc chắn muốn xóa bài tập <b style={{ color: '#0F172A' }}>"{quizDetail?.title}"</b> không?
+                </p>
+              )}
+              {confirmModal.type === 'publish' && (
+                <p style={{ margin: 0 }}>
+                  Gửi đề thi <b style={{ color: '#0F172A' }}>"{quizDetail?.title}"</b> cho Giảng viên duyệt để công khai cho cộng đồng học viên?
+                </p>
+              )}
+              {confirmModal.type === 'withdraw' && (
+                <p style={{ margin: 0 }}>
+                  Rút yêu cầu duyệt đề thi <b style={{ color: '#0F172A' }}>"{quizDetail?.title}"</b> về chế độ riêng tư?
+                </p>
+              )}
+              {confirmModal.type === 'hide' && (
+                <p style={{ margin: 0 }}>
+                  Chuyển đề thi <b style={{ color: '#0F172A' }}>"{quizDetail?.title}"</b> về chế độ riêng tư (chỉ bạn thấy)?
+                </p>
+              )}
+            </div>
+
+            {/* Helpful Notice Card */}
+            <div
+              style={{
+                borderRadius: 12,
+                padding: '12px 14px',
+                fontSize: 12.5,
+                lineHeight: 1.5,
+                textAlign: 'left',
+                marginBottom: 20,
+                display: 'flex',
+                gap: 10,
+                alignItems: 'flex-start',
+                background:
+                  confirmModal.type === 'delete'
+                    ? '#FEF2F2'
+                    : confirmModal.type === 'publish'
+                    ? '#F5F3FF'
+                    : confirmModal.type === 'withdraw'
+                    ? '#FFFBEB'
+                    : '#F8FAFC',
+                border: `1px solid ${
+                  confirmModal.type === 'delete'
+                    ? '#FCA5A5'
+                    : confirmModal.type === 'publish'
+                    ? '#DDD6FE'
+                    : confirmModal.type === 'withdraw'
+                    ? '#FDE68A'
+                    : '#E2E8F0'
+                }`,
+                color:
+                  confirmModal.type === 'delete'
+                    ? '#991B1B'
+                    : confirmModal.type === 'publish'
+                    ? '#6D28D9'
+                    : confirmModal.type === 'withdraw'
+                    ? '#B45309'
+                    : '#475569',
+              }}
+            >
+              <div style={{ flexShrink: 0, marginTop: 1 }}>
+                <Icon n={confirmModal.type === 'delete' ? 'alert' : confirmModal.type === 'publish' ? 'spark' : 'alert'} s={16} />
+              </div>
+              <div>
+                {confirmModal.type === 'delete' && (
+                  <span>
+                    Hành động này <b>không thể hoàn tác</b>. Toàn bộ câu hỏi và lịch sử làm bài liên quan sẽ bị xóa vĩnh viễn.
+                  </span>
+                )}
+                {confirmModal.type === 'publish' && (
+                  <span>
+                    Sau khi được duyệt, đề thi sẽ xuất hiện công khai trên hệ thống. Trong thời gian chờ duyệt, bạn tạm thời không thể sửa đề thi.
+                  </span>
+                )}
+                {confirmModal.type === 'withdraw' && (
+                  <span>
+                    Đề thi sẽ trở về trạng thái riêng tư để bạn có thể tiếp tục chỉnh sửa nội dung câu hỏi.
+                  </span>
+                )}
+                {confirmModal.type === 'hide' && (
+                  <span>
+                    Đề thi sẽ không còn hiển thị cho các học viên khác. Bạn vẫn có thể luyện tập bình thường.
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {/* Action buttons */}
+            <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+              <button
+                type="button"
+                className="btn ghost"
+                onClick={() => setConfirmModal((prev) => ({ ...prev, isOpen: false }))}
+                disabled={actionLoading || deleting}
+                style={{
+                  flex: 1,
+                  padding: '10px 16px',
+                  borderRadius: 12,
+                  fontWeight: 700,
+                  fontSize: 13.5,
+                  borderColor: '#CBD5E1',
+                  color: '#475569',
+                }}
+              >
+                Hủy bỏ
+              </button>
+
+              <button
+                type="button"
+                className="btn"
+                onClick={handleExecuteAction}
+                disabled={actionLoading || deleting}
+                style={{
+                  flex: 1.25,
+                  padding: '10px 16px',
+                  borderRadius: 12,
+                  fontWeight: 800,
+                  fontSize: 13.5,
+                  color: '#FFFFFF',
+                  background:
+                    confirmModal.type === 'delete'
+                      ? '#DC2626'
+                      : confirmModal.type === 'publish'
+                      ? 'linear-gradient(135deg, #4F46E5 0%, #6366F1 100%)'
+                      : confirmModal.type === 'withdraw'
+                      ? '#D97706'
+                      : '#475569',
+                  border: 'none',
+                  cursor: actionLoading || deleting ? 'wait' : 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 8,
+                  boxShadow:
+                    confirmModal.type === 'delete'
+                      ? '0 4px 14px rgba(220, 38, 38, 0.3)'
+                      : confirmModal.type === 'publish'
+                      ? '0 4px 14px rgba(79, 70, 229, 0.3)'
+                      : '0 4px 12px rgba(0, 0, 0, 0.12)',
+                }}
+              >
+                {actionLoading || deleting ? (
+                  <>
+                    <div
+                      className="spinner"
+                      style={{
+                        width: 14,
+                        height: 14,
+                        borderWidth: 2,
+                        borderColor: '#FFFFFF',
+                        borderTopColor: 'transparent',
+                      }}
+                    />
+                    <span>Đang xử lý...</span>
+                  </>
+                ) : (
+                  <>
+                    {confirmModal.type === 'delete' && <Icon n="trash" s={15} />}
+                    {confirmModal.type === 'publish' && <Icon n="send" s={15} />}
+                    <span>
+                      {confirmModal.type === 'delete' && 'Xác nhận xóa'}
+                      {confirmModal.type === 'publish' && 'Xác nhận gửi duyệt'}
+                      {confirmModal.type === 'withdraw' && 'Rút yêu cầu'}
+                      {confirmModal.type === 'hide' && 'Chuyển riêng tư'}
+                    </span>
+                  </>
+                )}
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
     </div>,
     document.body
   );
