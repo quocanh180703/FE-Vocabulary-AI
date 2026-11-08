@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { adminApi } from '../../api';
 import type {
@@ -913,256 +914,334 @@ export default function AdminOrders() {
       </AnimatePresence>
 
       {/* ===================== MODAL: ORDER DETAILS ===================== */}
-      <AnimatePresence>
-        {selectedPayment && (
-          <motion.div
-            className="modal-backdrop"
-            onClick={() => setSelectedPayment(null)}
-            variants={backdropVariants}
-            initial="hidden"
-            animate="visible"
-            exit="exit"
-          >
-            <motion.div
-              className="modal"
-              style={{ maxWidth: 640 }}
-              onClick={(e) => e.stopPropagation()}
-              variants={modalVariants}
-              initial="hidden"
-              animate="visible"
-              exit="exit"
+      {selectedPayment &&
+        createPortal(
+          <AnimatePresence>
+            <div
+              style={{
+                position: 'fixed',
+                inset: 0,
+                zIndex: 99999,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: 16,
+              }}
             >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--line-soft)', paddingBottom: 14 }}>
-                <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 900 }}>
-                  Chi tiết Giao dịch #{selectedPayment.paymentId}
-                </h3>
-                <button
-                  type="button"
-                  className="btn small ghost"
-                  onClick={() => setSelectedPayment(null)}
-                  style={{ padding: 6, borderRadius: '50%' }}
-                >
-                  <Icon n="x" s={18} />
-                </button>
-              </div>
+              {/* Dark Blur Backdrop */}
+              <motion.div
+                className="scrim"
+                style={{
+                  position: 'fixed',
+                  inset: 0,
+                  zIndex: 1,
+                  background: 'rgba(10, 37, 64, 0.55)',
+                  backdropFilter: 'blur(8px)',
+                  WebkitBackdropFilter: 'blur(8px)',
+                }}
+                variants={backdropVariants}
+                initial="hidden"
+                animate="visible"
+                exit="exit"
+                onClick={() => setSelectedPayment(null)}
+              />
 
-              <div style={{ marginTop: 18, display: 'flex', flexDirection: 'column', gap: 18 }}>
-                {/* Payment Overview Box */}
-                <div style={{ background: '#F8FAFC', padding: 16, borderRadius: 14, border: '1px solid var(--line-soft)' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: '13px', color: 'var(--muted)', fontWeight: 700 }}>Số tiền thanh toán:</span>
-                    <b style={{ fontSize: '22px', color: 'var(--green-dark)', fontWeight: 900 }}>
-                      {formatVnd(selectedPayment.amount)}
-                    </b>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 }}>
-                    <span style={{ fontSize: '13px', color: 'var(--muted)', fontWeight: 700 }}>Trạng thái:</span>
-                    <span className="pill greensoft" style={{ fontWeight: 800 }}>
-                      {selectedPayment.status}
-                    </span>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 }}>
-                    <span style={{ fontSize: '13px', color: 'var(--muted)', fontWeight: 700 }}>Mã đơn (Order Code):</span>
-                    <b style={{ fontFamily: 'monospace', fontSize: '13px' }}>{selectedPayment.orderCode || '—'}</b>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 }}>
-                    <span style={{ fontSize: '13px', color: 'var(--muted)', fontWeight: 700 }}>Mã GD Cổng PayOS:</span>
-                    <b style={{ fontFamily: 'monospace', fontSize: '13px' }}>{selectedPayment.transactionCode || '—'}</b>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 }}>
-                    <span style={{ fontSize: '13px', color: 'var(--muted)', fontWeight: 700 }}>Thời gian thanh toán:</span>
-                    <span style={{ fontSize: '13px', fontWeight: 700 }}>{formatDate(selectedPayment.paidAt)}</span>
-                  </div>
+              {/* Centered Modal Card */}
+              <motion.div
+                className="modal"
+                style={{
+                  position: 'relative',
+                  top: 'auto',
+                  left: 'auto',
+                  transform: 'none',
+                  maxWidth: 640,
+                  width: '100%',
+                  maxHeight: '90vh',
+                  overflowY: 'auto',
+                  zIndex: 2,
+                  margin: 0,
+                  borderRadius: 24,
+                  boxShadow: '0 25px 70px rgba(10, 37, 64, 0.35)',
+                  background: '#ffffff',
+                  padding: '28px 30px',
+                }}
+                onClick={(e) => e.stopPropagation()}
+                variants={modalVariants}
+                initial="hidden"
+                animate="visible"
+                exit="exit"
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--line-soft)', paddingBottom: 14 }}>
+                  <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 900 }}>
+                    Chi tiết Giao dịch #{selectedPayment.paymentId}
+                  </h3>
+                  <button
+                    type="button"
+                    className="btn small ghost"
+                    onClick={() => setSelectedPayment(null)}
+                    style={{ padding: 6, borderRadius: '50%' }}
+                  >
+                    <Icon n="x" s={18} />
+                  </button>
                 </div>
 
-                {/* Customer Details */}
-                <div>
-                  <h4 style={{ margin: '0 0 8px', fontSize: '14.5px', fontWeight: 900, color: 'var(--ink)' }}>
-                    Thông tin Khách hàng
-                  </h4>
-                  <div style={{ background: '#fff', border: '1px solid var(--line-soft)', padding: 14, borderRadius: 12 }}>
-                    <div><b>Họ tên:</b> {selectedPayment.userFullName || '—'}</div>
-                    <div style={{ marginTop: 4 }}><b>Email tài khoản:</b> {selectedPayment.userEmail}</div>
-                    <div style={{ marginTop: 4 }}><b>Mã ID người dùng:</b> #{selectedPayment.userId}</div>
-                  </div>
-                </div>
-
-                {/* Subscription Granted */}
-                {selectedPayment.subscription && (
-                  <div>
-                    <h4 style={{ margin: '0 0 8px', fontSize: '14.5px', fontWeight: 900, color: 'var(--ink)' }}>
-                      Gói dịch vụ đã cấp (Subscription)
-                    </h4>
-                    <div style={{ background: '#F0FDF4', border: '1px solid #BBF7D0', padding: 14, borderRadius: 12 }}>
-                      <div><b>Tên gói:</b> {selectedPayment.subscription.packageName}</div>
-                      <div style={{ marginTop: 4 }}><b>Trạng thái gói:</b> <span className="pill greensoft">{selectedPayment.subscription.status}</span></div>
-                      <div style={{ marginTop: 4 }}><b>Ngày kích hoạt:</b> {formatDate(selectedPayment.subscription.startAt)}</div>
-                      <div style={{ marginTop: 4 }}><b>Ngày hết hạn:</b> {formatDate(selectedPayment.subscription.endAt)}</div>
+                <div style={{ marginTop: 18, display: 'flex', flexDirection: 'column', gap: 18 }}>
+                  {/* Payment Overview Box */}
+                  <div style={{ background: '#F8FAFC', padding: 16, borderRadius: 14, border: '1px solid var(--line-soft)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontSize: '13px', color: 'var(--muted)', fontWeight: 700 }}>Số tiền thanh toán:</span>
+                      <b style={{ fontSize: '22px', color: 'var(--green-dark)', fontWeight: 900 }}>
+                        {formatVnd(selectedPayment.amount)}
+                      </b>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 }}>
+                      <span style={{ fontSize: '13px', color: 'var(--muted)', fontWeight: 700 }}>Trạng thái:</span>
+                      <span className="pill greensoft" style={{ fontWeight: 800 }}>
+                        {selectedPayment.status}
+                      </span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 }}>
+                      <span style={{ fontSize: '13px', color: 'var(--muted)', fontWeight: 700 }}>Mã đơn (Order Code):</span>
+                      <b style={{ fontFamily: 'monospace', fontSize: '13px' }}>{selectedPayment.orderCode || '—'}</b>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 }}>
+                      <span style={{ fontSize: '13px', color: 'var(--muted)', fontWeight: 700 }}>Mã GD Cổng PayOS:</span>
+                      <b style={{ fontFamily: 'monospace', fontSize: '13px' }}>{selectedPayment.transactionCode || '—'}</b>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 }}>
+                      <span style={{ fontSize: '13px', color: 'var(--muted)', fontWeight: 700 }}>Thời gian thanh toán:</span>
+                      <span style={{ fontSize: '13px', fontWeight: 700 }}>{formatDate(selectedPayment.paidAt)}</span>
                     </div>
                   </div>
-                )}
-              </div>
 
-              <div style={{ marginTop: 22, display: 'flex', justifyContent: 'flex-end' }}>
-                <button
-                  type="button"
-                  className="btn small"
-                  onClick={() => setSelectedPayment(null)}
-                >
-                  Đóng
-                </button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+                  {/* Customer Details */}
+                  <div>
+                    <h4 style={{ margin: '0 0 8px', fontSize: '14.5px', fontWeight: 900, color: 'var(--ink)' }}>
+                      Thông tin Khách hàng
+                    </h4>
+                    <div style={{ background: '#fff', border: '1px solid var(--line-soft)', padding: 14, borderRadius: 12 }}>
+                      <div><b>Họ tên:</b> {selectedPayment.userFullName || '—'}</div>
+                      <div style={{ marginTop: 4 }}><b>Email tài khoản:</b> {selectedPayment.userEmail}</div>
+                      <div style={{ marginTop: 4 }}><b>Mã ID người dùng:</b> #{selectedPayment.userId}</div>
+                    </div>
+                  </div>
 
-      {/* ===================== MODAL: CREATE / EDIT PACKAGE ===================== */}
-      <AnimatePresence>
-        {isPackageModalOpen && (
-          <motion.div
-            className="modal-backdrop"
-            onClick={() => setIsPackageModalOpen(false)}
-            variants={backdropVariants}
-            initial="hidden"
-            animate="visible"
-            exit="exit"
-          >
-            <motion.div
-              className="modal"
-              style={{ maxWidth: 540 }}
-              onClick={(e) => e.stopPropagation()}
-              variants={modalVariants}
-              initial="hidden"
-              animate="visible"
-              exit="exit"
-            >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--line-soft)', paddingBottom: 14 }}>
-                <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 900 }}>
-                  {editingPackage ? `Sửa Gói Cước #${editingPackage.id}` : 'Tạo Gói Cước Mới'}
-                </h3>
-                <button
-                  type="button"
-                  className="btn small ghost"
-                  onClick={() => setIsPackageModalOpen(false)}
-                  style={{ padding: 6, borderRadius: '50%' }}
-                >
-                  <Icon n="x" s={18} />
-                </button>
-              </div>
-
-              <form onSubmit={handleSavePackage} style={{ marginTop: 18, display: 'flex', flexDirection: 'column', gap: 14 }}>
-                <div className="field">
-                  <label>Mã code gói (* Viết hoa, không dấu)</label>
-                  <input
-                    type="text"
-                    className="input"
-                    value={pkgFormCode}
-                    onChange={(e) => setPkgFormCode(e.target.value.toUpperCase())}
-                    placeholder="VD: PREMIUM_MONTHLY"
-                    disabled={!!editingPackage}
-                    required
-                    style={{ textTransform: 'uppercase', fontFamily: 'monospace', minHeight: 46 }}
-                  />
-                  {editingPackage && (
-                    <small style={{ color: 'var(--muted)', marginTop: 4, display: 'block' }}>
-                      Mã code không thể thay đổi sau khi tạo để đảm bảo liên kết dữ liệu đơn hàng.
-                    </small>
+                  {/* Subscription Granted */}
+                  {selectedPayment.subscription && (
+                    <div>
+                      <h4 style={{ margin: '0 0 8px', fontSize: '14.5px', fontWeight: 900, color: 'var(--ink)' }}>
+                        Gói dịch vụ đã cấp (Subscription)
+                      </h4>
+                      <div style={{ background: '#F0FDF4', border: '1px solid #BBF7D0', padding: 14, borderRadius: 12 }}>
+                        <div><b>Tên gói:</b> {selectedPayment.subscription.packageName}</div>
+                        <div style={{ marginTop: 4 }}><b>Trạng thái gói:</b> <span className="pill greensoft">{selectedPayment.subscription.status}</span></div>
+                        <div style={{ marginTop: 4 }}><b>Ngày kích hoạt:</b> {formatDate(selectedPayment.subscription.startAt)}</div>
+                        <div style={{ marginTop: 4 }}><b>Ngày hết hạn:</b> {formatDate(selectedPayment.subscription.endAt)}</div>
+                      </div>
+                    </div>
                   )}
                 </div>
 
-                <div className="field">
-                  <label>Tên gói hiển thị (*)</label>
-                  <input
-                    type="text"
-                    className="input"
-                    value={pkgFormName}
-                    onChange={(e) => setPkgFormName(e.target.value)}
-                    placeholder="VD: Gói Premium 30 ngày"
-                    required
-                    style={{ minHeight: 46 }}
-                  />
-                </div>
-
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                  <div className="field">
-                    <label>Giá bán (VND) (*)</label>
-                    <input
-                      type="number"
-                      className="input"
-                      value={pkgFormPrice}
-                      onChange={(e) => setPkgFormPrice(Number(e.target.value))}
-                      placeholder="99000"
-                      min={1000}
-                      step={1000}
-                      required
-                      style={{ minHeight: 46 }}
-                    />
-                  </div>
-
-                  <div className="field">
-                    <label>Thời hạn sử dụng (Số ngày) (*)</label>
-                    <input
-                      type="number"
-                      className="input"
-                      value={pkgFormDays}
-                      onChange={(e) => setPkgFormDays(Number(e.target.value))}
-                      placeholder="30"
-                      min={1}
-                      required
-                      style={{ minHeight: 46 }}
-                    />
-                  </div>
-                </div>
-
-                <div className="field">
-                  <label>Trạng thái mở bán</label>
-                  <select
-                    className="input"
-                    value={pkgFormStatus}
-                    onChange={(e) => setPkgFormStatus(e.target.value as any)}
-                    style={{ minHeight: 46 }}
+                <div style={{ marginTop: 22, display: 'flex', justifyContent: 'flex-end' }}>
+                  <button
+                    type="button"
+                    className="btn small"
+                    onClick={() => setSelectedPayment(null)}
                   >
-                    <option value="ACTIVE">ACTIVE — Đang mở bán</option>
-                    <option value="INACTIVE">INACTIVE — Tạm ngưng bán</option>
-                    {editingPackage && <option value="ARCHIVED">ARCHIVED — Lưu trữ</option>}
-                  </select>
+                    Đóng
+                  </button>
                 </div>
+              </motion.div>
+            </div>
+          </AnimatePresence>,
+          document.body
+        )}
 
-                <div className="field">
-                  <label>Mô tả gói cước (Tính năng nổi bật)</label>
-                  <textarea
-                    className="input"
-                    rows={3}
-                    value={pkgFormDesc}
-                    onChange={(e) => setPkgFormDesc(e.target.value)}
-                    placeholder="Mở khóa toàn bộ từ vựng Oxford C1, Chat AI Vi không giới hạn..."
-                    style={{ minHeight: 76, padding: '10px 14px' }}
-                  />
-                </div>
+      {/* ===================== MODAL: CREATE / EDIT PACKAGE ===================== */}
+      {isPackageModalOpen &&
+        createPortal(
+          <AnimatePresence>
+            <div
+              style={{
+                position: 'fixed',
+                inset: 0,
+                zIndex: 99999,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: 16,
+              }}
+            >
+              {/* Dark Blur Backdrop */}
+              <motion.div
+                className="scrim"
+                style={{
+                  position: 'fixed',
+                  inset: 0,
+                  zIndex: 1,
+                  background: 'rgba(10, 37, 64, 0.55)',
+                  backdropFilter: 'blur(8px)',
+                  WebkitBackdropFilter: 'blur(8px)',
+                }}
+                variants={backdropVariants}
+                initial="hidden"
+                animate="visible"
+                exit="exit"
+                onClick={() => setIsPackageModalOpen(false)}
+              />
 
-                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 12, paddingTop: 14, borderTop: '1px solid var(--line-soft)' }}>
+              {/* Centered Modal Card */}
+              <motion.div
+                className="modal"
+                style={{
+                  position: 'relative',
+                  top: 'auto',
+                  left: 'auto',
+                  transform: 'none',
+                  maxWidth: 540,
+                  width: '100%',
+                  maxHeight: '90vh',
+                  overflowY: 'auto',
+                  zIndex: 2,
+                  margin: 0,
+                  borderRadius: 24,
+                  boxShadow: '0 25px 70px rgba(10, 37, 64, 0.35)',
+                  background: '#ffffff',
+                  padding: '28px 30px',
+                }}
+                onClick={(e) => e.stopPropagation()}
+                variants={modalVariants}
+                initial="hidden"
+                animate="visible"
+                exit="exit"
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--line-soft)', paddingBottom: 14 }}>
+                  <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 900 }}>
+                    {editingPackage ? `Sửa Gói Cước #${editingPackage.id}` : 'Tạo Gói Cước Mới'}
+                  </h3>
                   <button
                     type="button"
                     className="btn small ghost"
                     onClick={() => setIsPackageModalOpen(false)}
-                    disabled={pkgSubmitting}
+                    style={{ padding: 6, borderRadius: '50%' }}
                   >
-                    Hủy bỏ
-                  </button>
-                  <button
-                    type="submit"
-                    className="btn small green"
-                    disabled={pkgSubmitting}
-                  >
-                    {pkgSubmitting ? 'Đang lưu...' : editingPackage ? 'Lưu thay đổi' : 'Tạo gói cước'}
+                    <Icon n="x" s={18} />
                   </button>
                 </div>
-              </form>
-            </motion.div>
-          </motion.div>
+
+                <form onSubmit={handleSavePackage} style={{ marginTop: 18, display: 'flex', flexDirection: 'column', gap: 14 }}>
+                  <div className="field">
+                    <label>Mã code gói (* Viết hoa, không dấu)</label>
+                    <input
+                      type="text"
+                      className="input"
+                      value={pkgFormCode}
+                      onChange={(e) => setPkgFormCode(e.target.value.toUpperCase())}
+                      placeholder="VD: PREMIUM_MONTHLY"
+                      disabled={!!editingPackage}
+                      required
+                      style={{ textTransform: 'uppercase', fontFamily: 'monospace', minHeight: 46 }}
+                    />
+                    {editingPackage && (
+                      <small style={{ color: 'var(--muted)', marginTop: 4, display: 'block' }}>
+                        Mã code không thể thay đổi sau khi tạo để đảm bảo liên kết dữ liệu đơn hàng.
+                      </small>
+                    )}
+                  </div>
+
+                  <div className="field">
+                    <label>Tên gói hiển thị (*)</label>
+                    <input
+                      type="text"
+                      className="input"
+                      value={pkgFormName}
+                      onChange={(e) => setPkgFormName(e.target.value)}
+                      placeholder="VD: Gói Premium 30 ngày"
+                      required
+                      style={{ minHeight: 46 }}
+                    />
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                    <div className="field">
+                      <label>Giá bán (VND) (*)</label>
+                      <input
+                        type="number"
+                        className="input"
+                        value={pkgFormPrice}
+                        onChange={(e) => setPkgFormPrice(Number(e.target.value))}
+                        placeholder="99000"
+                        min={1000}
+                        step={1000}
+                        required
+                        style={{ minHeight: 46 }}
+                      />
+                    </div>
+
+                    <div className="field">
+                      <label>Thời hạn sử dụng (Số ngày) (*)</label>
+                      <input
+                        type="number"
+                        className="input"
+                        value={pkgFormDays}
+                        onChange={(e) => setPkgFormDays(Number(e.target.value))}
+                        placeholder="30"
+                        min={1}
+                        required
+                        style={{ minHeight: 46 }}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="field">
+                    <label>Trạng thái mở bán</label>
+                    <select
+                      className="input"
+                      value={pkgFormStatus}
+                      onChange={(e) => setPkgFormStatus(e.target.value as any)}
+                      style={{ minHeight: 46 }}
+                    >
+                      <option value="ACTIVE">ACTIVE — Đang mở bán</option>
+                      <option value="INACTIVE">INACTIVE — Tạm ngưng bán</option>
+                      {editingPackage && <option value="ARCHIVED">ARCHIVED — Lưu trữ</option>}
+                    </select>
+                  </div>
+
+                  <div className="field">
+                    <label>Mô tả gói cước (Tính năng nổi bật)</label>
+                    <textarea
+                      className="input"
+                      rows={3}
+                      value={pkgFormDesc}
+                      onChange={(e) => setPkgFormDesc(e.target.value)}
+                      placeholder="Mở khóa toàn bộ từ vựng Oxford C1, Chat AI Vi không giới hạn..."
+                      style={{ minHeight: 76, padding: '10px 14px' }}
+                    />
+                  </div>
+
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 12, paddingTop: 14, borderTop: '1px solid var(--line-soft)' }}>
+                    <button
+                      type="button"
+                      className="btn small ghost"
+                      onClick={() => setIsPackageModalOpen(false)}
+                      disabled={pkgSubmitting}
+                    >
+                      Hủy bỏ
+                    </button>
+                    <button
+                      type="submit"
+                      className="btn small green"
+                      disabled={pkgSubmitting}
+                    >
+                      {pkgSubmitting ? 'Đang lưu...' : editingPackage ? 'Lưu thay đổi' : 'Tạo gói cước'}
+                    </button>
+                  </div>
+                </form>
+              </motion.div>
+            </div>
+          </AnimatePresence>,
+          document.body
         )}
-      </AnimatePresence>
     </div>
   );
 }
