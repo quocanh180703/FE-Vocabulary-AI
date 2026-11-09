@@ -25,7 +25,7 @@ export default function Dashboard() {
   const [err, setErr] = useState('');
   const nav = useNavigate();
 
-  useEffect(() => {
+  const loadQueue = () => {
     learnApi.queue(10)
       .then(({ data }) => {
         setQueue(data?.content || []);
@@ -39,6 +39,12 @@ export default function Dashboard() {
         setQueue([]);
         setTotal(0);
       });
+  };
+
+  useEffect(() => {
+    loadQueue();
+    const onReviewDone = () => loadQueue();
+    window.addEventListener('vocab_review_completed', onReviewDone);
 
   learnApi.stats()
     .then(({ data }) => {
@@ -91,6 +97,7 @@ export default function Dashboard() {
     window.addEventListener('vocab_placement_updated', onPlacementUpdated);
 
     return () => {
+      window.removeEventListener('vocab_review_completed', onReviewDone);
       window.removeEventListener('vocab_favorites_changed', loadFavs);
       window.removeEventListener('vocab_placement_updated', onPlacementUpdated);
     };
@@ -321,7 +328,8 @@ export default function Dashboard() {
                           className="pill"
                           onClick={(e) => {
                             e.stopPropagation();
-                            nav('/review');
+                            const targetId = q.word?.id || q.id;
+                            nav(`/review?mode=SRS&wordId=${targetId}`);
                           }}
                         >
                           ôn ngay
@@ -335,7 +343,7 @@ export default function Dashboard() {
 
             <button
               className="btn block mt16"
-              onClick={() => nav('/review')}
+              onClick={() => nav('/review?mode=SRS')}
               disabled={queue.length === 0}
             >
               Bắt đầu ôn tập ({total} từ)

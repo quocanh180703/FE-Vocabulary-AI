@@ -67,6 +67,13 @@ export default function Review() {
   const initialMode = searchParams.get('mode') || 'RECOMMENDED';
   const [selectedMode, setSelectedMode] = useState<string>(initialMode);
 
+  useEffect(() => {
+    const m = searchParams.get('mode');
+    if (m && m !== selectedMode) {
+      setSelectedMode(m);
+    }
+  }, [searchParams]);
+
   // Storage key for roadmap data
   const storageKey = `vocab_ai_roadmap_${user?.id || user?.username || 'default'}`;
   const getInitialLevel = () => {
@@ -276,7 +283,55 @@ export default function Review() {
             overdue: daysOverdue(it),
           };
         });
-        setCards(shuffleArray(formatted));
+        // Ưu tiên hiển thị đúng từ được chọn từ Dashboard (nếu có param wordId hoặc word)
+        const targetWordId = searchParams.get('wordId');
+        const targetWord = searchParams.get('word')?.toLowerCase();
+        let targetIdx = -1;
+        if (targetWordId) {
+          targetIdx = formatted.findIndex(
+            (c) => String(c.id) === String(targetWordId) || String(c.progressId) === String(targetWordId)
+          );
+        }
+        if (targetIdx === -1 && targetWord) {
+          targetIdx = formatted.findIndex((c) => c.word.toLowerCase() === targetWord);
+        }
+
+        if (targetIdx !== -1) {
+          const targetCard = formatted[targetIdx];
+          const remaining = formatted.filter((_, idx) => idx !== targetIdx);
+          setCards([targetCard, ...shuffleArray(remaining)]);
+        } else if (targetWordId) {
+          try {
+            const wRes = await wordApi.get(targetWordId);
+            const w = wRes?.data;
+            if (w) {
+              const wText = w.word || w.lemma || '';
+              const rawVi = w.vietnameseMeaning || w.meaning;
+              const vi = isMeaningfulVietnamese(rawVi) ? rawVi : '';
+              const targetCard: FlashcardWord = {
+                id: w.id,
+                word: wText,
+                pronunciation: w.pronunciation,
+                meaning: vi,
+                vietnameseMeaning: vi,
+                definition: cleanDefinitionText(w.definition),
+                example: w.example,
+                level: w.level || w.cefrLevel || 'A1',
+                partOfSpeech: w.partOfSpeech,
+                audioUrl: w.audioUrl,
+                isSrs: true,
+                overdue: 0,
+              };
+              setCards([targetCard, ...shuffleArray(formatted)]);
+            } else {
+              setCards(shuffleArray(formatted));
+            }
+          } catch {
+            setCards(shuffleArray(formatted));
+          }
+        } else {
+          setCards(shuffleArray(formatted));
+        }
       } else {
         const targetLevel = mode === 'RECOMMENDED' ? recLevel : mode === 'ALL' ? undefined : mode;
         let rawWords: Word[] = [];
@@ -433,7 +488,14 @@ export default function Review() {
       // 1. Người dùng nhớ từ này -> Chuyển sang từ tiếp theo
       setRemembered((r) => r + 1);
       if (cur.isSrs) {
-        try { await learnApi.review(cur.id, true); } catch { /* ignore */ }
+        try {
+          const res = await learnApi.review(cur.id, true);
+          const updatedCount = res?.data?.data?.reviewCount ?? res?.data?.reviewCount;
+          if (updatedCount != null) {
+            setCards((prev) => prev.map((c, idx) => (idx === i ? { ...c, reviewCount: updatedCount } : c)));
+          }
+          window.dispatchEvent(new CustomEvent('vocab_review_completed', { detail: { wordId: cur.id, correct: true } }));
+        } catch { /* ignore */ }
       } else {
         // Tự động thêm vào danh sách học để đưa vào SRS
         try { await learnApi.start(cur.id); } catch { /* ignore */ }
@@ -452,7 +514,16 @@ export default function Review() {
       // Yêu cầu: "khi tôi bấm vào chữ chưa nhớ phải quay lại từ trước đó"
       setForgotten((f) => f + 1);
       if (cur.isSrs) {
-        try { await learnApi.review(cur.id, false); } catch { /* ignore */ }
+        try {
+          const res = await learnApi.review(cur.id, false);
+          const updatedCount = res?.data?.data?.reviewCount ?? res?.data?.reviewCount;
+          if (updatedCount != null) {
+            setCards((prev) => prev.map((c, idx) => (idx === i ? { ...c, reviewCount: updatedCount } : c)));
+          }
+          window.dispatchEvent(new CustomEvent('vocab_review_completed', { detail: { wordId: cur.id, correct: false } }));
+        } catch { /* ignore */ }
+      } else {
+        try { await learnApi.start(cur.id); } catch { /* ignore */ }
       }
 
       setFlip(false);

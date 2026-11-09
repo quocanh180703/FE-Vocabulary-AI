@@ -142,20 +142,6 @@ export function AdminLayout() {
 
         <div style={{ flex: 1 }} />
 
-        {/* Lối về trang học viên (ẩn đối với Giảng viên / Instructor) */}
-        {!isInstructor && (
-          <NavLink
-            to="/dashboard"
-            className="nav"
-            title="Quay lại giao diện học viên"
-          >
-            <span className="nic">
-              <Icon n="home" s={18} />
-            </span>
-            {!isSidebarCollapsed && <span>Về trang học viên</span>}
-          </NavLink>
-        )}
-
         {/* Đăng xuất */}
         <button
           type="button"

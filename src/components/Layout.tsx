@@ -179,35 +179,6 @@ export function Layout() {
             </NavLink>
           ))}
 
-          {user?.role === 'INSTRUCTOR' && (
-            <NavLink
-              to="/admin/reports"
-              className="nav"
-              title="Trang Giảng viên"
-              style={{
-                marginTop: 6,
-                background: 'rgba(79, 70, 229, 0.08)',
-                color: '#4F46E5',
-                fontWeight: 800,
-              }}
-            >
-              <span
-                className="nic"
-                style={{
-                  background: '#4F46E5',
-                  color: '#fff',
-                }}
-              >
-                <Icon n="spark" s={18} />
-              </span>
-              {!isSidebarCollapsed && (
-                <span className="nav-label">
-                  Trang Giảng viên
-                </span>
-              )}
-            </NavLink>
-          )}
-
           {user?.role === 'ADMIN' && (
             <NavLink
               to="/admin"
