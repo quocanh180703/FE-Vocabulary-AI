@@ -59,26 +59,22 @@ export const QuotaBadge: React.FC<QuotaBadgeProps> = ({
   const isExhausted = remaining <= 0;
   const isWarning = remaining === 1;
 
-  const bg = isExhausted
-    ? 'var(--red-bg, #FDE8E9)'
-    : isWarning
-    ? 'var(--yellow-bg, #F8F0DC)'
-    : 'var(--green-bg, #E6F4EB)';
+  const bg = 'rgba(250, 248, 241, 0.92)';
   const text = isExhausted
-    ? 'var(--red-dark, #B73338)'
+    ? '#8f2d27'
     : isWarning
-    ? 'var(--yellow-dark, #8A6115)'
-    : 'var(--green-dark, #145C32)';
+    ? '#8f5c1a'
+    : '#1e4d2b';
   const border = isExhausted
-    ? 'rgba(229, 72, 77, 0.35)'
+    ? 'rgba(154, 75, 67, 0.4)'
     : isWarning
-    ? 'rgba(181, 127, 31, 0.35)'
-    : 'rgba(30, 126, 70, 0.25)';
+    ? 'rgba(201, 134, 47, 0.42)'
+    : 'rgba(71, 96, 63, 0.34)';
   const dotColor = isExhausted
-    ? 'var(--red, #E5484D)'
+    ? 'var(--danger)'
     : isWarning
-    ? 'var(--yellow, #B57F1F)'
-    : 'var(--green, #1E7E46)';
+    ? 'var(--amber)'
+    : 'var(--success)';
 
   return (
     <div
@@ -98,13 +94,15 @@ export const QuotaBadge: React.FC<QuotaBadgeProps> = ({
         fontWeight: 700,
         lineHeight: 1.2,
         background: bg,
+        backdropFilter: 'blur(12px)',
+        WebkitBackdropFilter: 'blur(12px)',
         color: text,
         border: `1px solid ${border}`,
         cursor: isExhausted ? 'pointer' : 'default',
         whiteSpace: 'nowrap',
         boxShadow: '0 1px 3px rgba(10, 37, 64, 0.05)',
         verticalAlign: 'middle',
-        transition: 'all 0.15s ease',
+        transition: 'transform var(--dur-micro) var(--ease), opacity var(--dur-micro) var(--ease)',
         ...style,
       }}
       title={isExhausted ? 'Đã hết lượt - Nhấn để nâng cấp Premium' : `Còn ${remaining}/${limit} ${labelSuffix}`}

@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { adminExerciseReviewApi, errMsg } from '../../api';
 import type { PendingQuizItem } from '../../api';
 import { Icon } from '../../components/icons';
+import { UiIcon } from '../../components/UiIcon';
 
 export function AdminExerciseReviewTab() {
   const [quizzes, setQuizzes] = useState<PendingQuizItem[]>([]);
@@ -201,7 +202,7 @@ export function AdminExerciseReviewTab() {
                               padding: '2px 6px',
                             }}
                           >
-                            ✨ AI tạo
+                            <UiIcon name="sparkles" size={12} /> AI tạo
                           </span>
                         )}
                         <span style={{ fontSize: 12, color: 'var(--muted)' }}>
@@ -341,7 +342,7 @@ export function AdminExerciseReviewTab() {
               )}
               {actionErr && (
                 <div style={{ padding: '12px 16px', background: '#FEE2E2', color: '#B91C1C', borderRadius: 8, fontWeight: 700, marginBottom: 16 }}>
-                  ⚠️ {actionErr}
+                  <UiIcon name="warning" size={13} /> {actionErr}
                 </div>
               )}
 

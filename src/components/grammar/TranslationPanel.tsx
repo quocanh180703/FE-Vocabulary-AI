@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { wordApi, aiApi, getPartOfSpeechBadgeStyle, type Word, type GrammarResp } from '../../api';
 import { MotionCard } from '../../motion';
 import ResultPanel from './ResultPanel';
+import { UiIcon } from '../UiIcon';
 
 function checkWordUsed(text: string, word: string): boolean {
   if (!text || !word) return false;
@@ -44,11 +45,11 @@ interface TranslationResult extends GrammarResp {
 }
 
 const LEVEL_CONFIG: Record<string, { label: string; color: string; bg: string; border: string }> = {
-  A1: { label: 'A1', color: '#047857', bg: '#ECFDF5', border: '#A7F3D0' },
-  A2: { label: 'A2', color: '#1D4ED8', bg: '#EFF6FF', border: '#BFDBFE' },
-  B1: { label: 'B1', color: '#6D28D9', bg: '#F5F3FF', border: '#DDD6FE' },
-  B2: { label: 'B2', color: '#B45309', bg: '#FFFBEB', border: '#FDE68A' },
-  C1: { label: 'C1', color: '#BE123C', bg: '#FFF1F2', border: '#FECDD3' },
+  A1: { label: 'A1', color: '#34482e', bg: 'rgba(71, 96, 63, 0.12)', border: 'rgba(71, 96, 63, 0.28)' },
+  A2: { label: 'A2', color: '#42774d', bg: 'rgba(66, 119, 77, 0.12)', border: 'rgba(66, 119, 77, 0.28)' },
+  B1: { label: 'B1', color: '#47603f', bg: 'rgba(71, 96, 63, 0.18)', border: 'rgba(71, 96, 63, 0.34)' },
+  B2: { label: 'B2', color: '#8f5a14', bg: 'rgba(201, 134, 47, 0.14)', border: 'rgba(201, 134, 47, 0.35)' },
+  C1: { label: 'C1', color: '#9a4b43', bg: 'rgba(154, 75, 67, 0.12)', border: 'rgba(154, 75, 67, 0.30)' },
 };
 
 export default function TranslationPanel() {
@@ -308,7 +309,7 @@ export default function TranslationPanel() {
   if (favorites.length === 0) {
     return (
       <MotionCard className="card" style={{ textAlign: 'center', padding: '56px 24px', background: '#FFFFFF' }}>
-        <div style={{ fontSize: 52, marginBottom: 16 }}>❤️</div>
+        <div style={{ marginBottom: 16, color: 'var(--sage)' }}><UiIcon name="heart" size={44} /></div>
         <h2 style={{ fontSize: 22, color: 'var(--ink)', marginBottom: 8, fontWeight: 800 }}>
           Chưa có từ vựng yêu thích
         </h2>
@@ -322,7 +323,7 @@ export default function TranslationPanel() {
             onClick={() => navigate('/words')}
             style={{ fontWeight: 800, padding: '10px 22px', borderRadius: 10 }}
           >
-            📖 Khám phá kho từ vựng
+            <UiIcon name="book" size={14} /> Khám phá kho từ vựng
           </button>
           <button
             type="button"
@@ -330,7 +331,7 @@ export default function TranslationPanel() {
             onClick={() => navigate('/review')}
             style={{ fontWeight: 700, padding: '10px 20px', borderRadius: 10 }}
           >
-            🔄 Ôn tập Flashcard
+            <UiIcon name="refresh" size={14} /> Ôn tập Flashcard
           </button>
         </div>
       </MotionCard>
@@ -360,7 +361,7 @@ export default function TranslationPanel() {
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                   <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--ink)', textTransform: 'uppercase', letterSpacing: 0.6 }}>
-                    ❤️ 1. Chọn từ vựng yêu thích:
+                    <UiIcon name="heart" size={14} /> 1. Chọn từ vựng yêu thích:
                   </span>
                   <span className="sub" style={{ fontSize: 12, fontWeight: 700 }}>
                     ({favorites.length} từ đã lưu)
@@ -374,7 +375,7 @@ export default function TranslationPanel() {
                     title="Bốc ngẫu nhiên 1 từ yêu thích khác"
                     style={{ padding: '3px 10px', fontSize: 12, fontWeight: 700, borderRadius: 8 }}
                   >
-                    🎲 Từ ngẫu nhiên
+                    <UiIcon name="dice" size={14} /> Từ ngẫu nhiên
                   </button>
                 )}
               </div>
@@ -455,14 +456,14 @@ export default function TranslationPanel() {
                     fontWeight: 800,
                     fontSize: 13.5,
                     cursor: 'pointer',
-                    transition: 'all 0.2s ease',
+                    transition: 'transform var(--dur-micro) var(--ease), background-color var(--dur-micro) var(--ease), color var(--dur-micro) var(--ease)',
                     border: 'none',
                     background: mode === 'SENTENCE' ? '#FFFFFF' : 'transparent',
-                    color: mode === 'SENTENCE' ? 'var(--primary)' : '#64748B',
-                    boxShadow: mode === 'SENTENCE' ? '0 2px 6px rgba(0,0,0,0.08)' : 'none',
+                    color: mode === 'SENTENCE' ? 'var(--sage-dark)' : 'var(--muted)',
+                    boxShadow: mode === 'SENTENCE' ? 'var(--shadow-sm)' : 'none',
                   }}
                 >
-                  📝 Luyện câu (1 câu)
+                  <UiIcon name="file" size={14} /> Luyện câu (1 câu)
                 </button>
                 <button
                   type="button"
@@ -477,14 +478,14 @@ export default function TranslationPanel() {
                     fontWeight: 800,
                     fontSize: 13.5,
                     cursor: 'pointer',
-                    transition: 'all 0.2s ease',
+                    transition: 'transform var(--dur-micro) var(--ease), background-color var(--dur-micro) var(--ease), color var(--dur-micro) var(--ease)',
                     border: 'none',
                     background: mode === 'PARAGRAPH' ? '#FFFFFF' : 'transparent',
-                    color: mode === 'PARAGRAPH' ? 'var(--primary)' : '#64748B',
-                    boxShadow: mode === 'PARAGRAPH' ? '0 2px 6px rgba(0,0,0,0.08)' : 'none',
+                    color: mode === 'PARAGRAPH' ? 'var(--sage-dark)' : 'var(--muted)',
+                    boxShadow: mode === 'PARAGRAPH' ? 'var(--shadow-sm)' : 'none',
                   }}
                 >
-                  📄 Luyện đoạn văn (2-3 câu)
+                  <UiIcon name="file" size={14} /> Luyện đoạn văn (2-3 câu)
                 </button>
               </div>
             </div>
@@ -508,10 +509,10 @@ export default function TranslationPanel() {
             <MotionCard
               className="card"
               style={{
-                background: '#FFFFFF',
-                border: isWordUsedInText ? '2px solid #86EFAC' : '1.5px solid #E2E8F0',
-                boxShadow: isWordUsedInText ? '0 4px 14px rgba(22, 163, 74, 0.12)' : 'var(--shadow-sm)',
-                transition: 'all 0.3s ease',
+                background: 'var(--glass-strong)',
+                border: isWordUsedInText ? '2px solid rgba(66, 119, 77, 0.48)' : '1px solid var(--rim)',
+                boxShadow: isWordUsedInText ? 'var(--shadow-md)' : 'var(--shadow-sm)',
+                transition: 'border-color 0.3s var(--ease)',
                 position: 'relative',
                 overflow: 'hidden',
               }}
@@ -523,7 +524,7 @@ export default function TranslationPanel() {
                     position: 'absolute',
                     top: 0,
                     right: 0,
-                    background: '#16A34A',
+                    background: 'var(--success)',
                     color: '#FFFFFF',
                     fontSize: 11,
                     fontWeight: 800,
@@ -539,11 +540,11 @@ export default function TranslationPanel() {
               <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-                    <span style={{ fontSize: 22, fontWeight: 900, color: 'var(--primary)', letterSpacing: -0.3 }}>
+                    <span style={{ fontSize: 22, fontWeight: 900, color: 'var(--sage-dark)', letterSpacing: -0.3 }}>
                       {selectedWord.word}
                     </span>
                     {selectedWord.pronunciation && (
-                      <span style={{ color: '#64748B', fontSize: 14, fontWeight: 700, fontFamily: 'monospace' }}>
+                      <span style={{ color: 'var(--muted)', fontSize: 14, fontWeight: 700, fontFamily: 'monospace' }}>
                         [{selectedWord.pronunciation}]
                       </span>
                     )}
@@ -559,11 +560,11 @@ export default function TranslationPanel() {
                         alignItems: 'center',
                         gap: 4,
                         fontSize: 12,
-                        color: isPlayingAudio ? 'var(--primary)' : '#475569',
-                        background: isPlayingAudio ? '#EFF6FF' : '#F1F5F9',
+                        color: isPlayingAudio ? 'var(--sage-dark)' : 'var(--muted)',
+                        background: isPlayingAudio ? 'rgba(71, 96, 63, 0.14)' : 'rgba(250, 248, 241, 0.72)',
                       }}
                     >
-                      🔊 {isPlayingAudio ? 'Đang phát...' : 'Phát âm'}
+                      <UiIcon name="volume" size={14} /> {isPlayingAudio ? 'Đang phát...' : 'Phát âm'}
                     </button>
                   </div>
 
@@ -671,7 +672,7 @@ export default function TranslationPanel() {
           >
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10, marginBottom: 12 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span style={{ fontSize: 18 }}>🎯</span>
+                <UiIcon name="target" size={17} />
                 <b style={{ fontSize: 15, color: 'var(--ink)' }}>
                   Đề bài tiếng Việt ({mode === 'SENTENCE' ? 'Câu đơn' : 'Đoạn văn'})
                 </b>
@@ -685,7 +686,7 @@ export default function TranslationPanel() {
                   style={{ padding: '4px 10px', fontSize: 12, fontWeight: 700, borderRadius: 8 }}
                   title="Đổi sang đề bài khác cho từ này"
                 >
-                  {loadingPrompt ? '⏳ Đang đổi...' : '🔄 Đổi đề khác'}
+                  {loadingPrompt ? 'Đang đổi...' : <><UiIcon name="refresh" size={13} /> Đổi đề khác</>}
                 </button>
               )}
             </div>
@@ -707,7 +708,7 @@ export default function TranslationPanel() {
                   }}
                 >
                   <div style={{ fontSize: 13, color: '#64748B', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 6 }}>
-                    💬 Đề bài cần dịch:
+                    <UiIcon name="message" size={14} /> Đề bài cần dịch:
                   </div>
                   <div style={{ fontSize: 16, lineHeight: 1.65, color: '#0F172A', fontWeight: 600 }}>
                     "{prompt.viText}"
@@ -719,9 +720,9 @@ export default function TranslationPanel() {
                       <span
                         className="pill"
                         style={{
-                          background: isWordUsedInText ? '#DCFCE7' : '#EFF6FF',
-                          color: isWordUsedInText ? '#15803D' : '#1D4ED8',
-                          border: '1px solid ' + (isWordUsedInText ? '#86EFAC' : '#BFDBFE'),
+                          background: isWordUsedInText ? 'var(--success-bg)' : 'rgba(71, 96, 63, 0.12)',
+                          color: isWordUsedInText ? 'var(--green-dark)' : 'var(--sage-dark)',
+                          border: '1px solid ' + (isWordUsedInText ? 'rgba(66, 119, 77, 0.35)' : 'rgba(71, 96, 63, 0.25)'),
                           fontWeight: 800,
                           fontSize: 12,
                         }}
@@ -751,7 +752,7 @@ export default function TranslationPanel() {
                     gap: 12,
                   }}
                 >
-                  <div style={{ fontSize: 34 }}>✨</div>
+                  <div style={{ color: 'var(--sage)' }}><UiIcon name="sparkles" size={32} /></div>
                   <div>
                     <div style={{ fontSize: 16, fontWeight: 800, color: 'var(--ink)' }}>
                       Chưa có đề bài cho từ "{selectedWord?.word}"
@@ -777,7 +778,7 @@ export default function TranslationPanel() {
                       boxShadow: '0 4px 14px rgba(21, 101, 192, 0.25)',
                     }}
                   >
-                    ✨ Tạo đề bài {mode === 'SENTENCE' ? 'Luyện câu' : 'Luyện đoạn văn'} với Vi AI
+                    <UiIcon name="sparkles" size={14} /> Tạo đề bài {mode === 'SENTENCE' ? 'Luyện câu' : 'Luyện đoạn văn'} với Vi AI
                   </button>
                 </div>
               )}
@@ -798,7 +799,7 @@ export default function TranslationPanel() {
                 color: '#166534',
               }}
             >
-              <span>💡</span>
+              <span><UiIcon name="lightbulb" size={14} /></span>
               <span>
                 <strong>Mẹo luyện dịch:</strong> Hãy diễn đạt ý nghĩa tự nhiên bằng tiếng Anh thay vì dịch từng từ (word-by-word) và chú ý cách chia thì phù hợp.
               </span>
@@ -927,7 +928,7 @@ export default function TranslationPanel() {
                 gap: 8,
               }}
             >
-              <span>⚠️</span>
+              <span><UiIcon name="warning" size={14} /></span>
               <span>{errorMsg}</span>
             </div>
           )}
@@ -946,7 +947,7 @@ export default function TranslationPanel() {
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: '#64748B' }}>
-              <span>⚡</span>
+              <span><UiIcon name="zap" size={14} /></span>
               <span>Tốn 1 lượt kiểm tra ngữ pháp (Free 5/ngày) • Vi AI phân tích độ sát nghĩa & cấu trúc</span>
             </div>
 
@@ -961,7 +962,7 @@ export default function TranslationPanel() {
                 fontWeight: 800,
                 fontSize: 14.5,
                 borderRadius: 10,
-                boxShadow: '0 4px 12px rgba(21, 101, 192, 0.25)',
+                boxShadow: 'var(--shadow-sm)',
               }}
             >
               {busy ? (
@@ -969,7 +970,7 @@ export default function TranslationPanel() {
                   <span className="spinner sm" /> Đang chấm bài dịch...
                 </span>
               ) : (
-                '🔍 Chấm bài dịch với Vi AI'
+                <><UiIcon name="search" size={14} /> Chấm bài dịch với Vi AI</>
               )}
             </button>
           </div>
@@ -1013,7 +1014,7 @@ export default function TranslationPanel() {
                     }}
                     style={{ fontWeight: 700, borderRadius: 8 }}
                   >
-                    🔄 Luyện đề khác cho từ này
+                    <UiIcon name="refresh" size={14} /> Luyện đề khác cho từ này
                   </button>
                   <button
                     type="button"
@@ -1023,7 +1024,7 @@ export default function TranslationPanel() {
                     }}
                     style={{ fontWeight: 800, borderRadius: 8 }}
                   >
-                    🎲 Đổi sang từ vựng khác
+                    <UiIcon name="dice" size={14} /> Đổi sang từ vựng khác
                   </button>
                 </div>
               }

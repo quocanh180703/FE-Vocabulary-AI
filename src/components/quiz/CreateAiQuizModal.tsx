@@ -3,7 +3,9 @@ import { createPortal } from 'react-dom';
 import { motion } from 'motion/react';
 import { documentApi, errMsg } from '../../api';
 import type { DocumentItem, DocumentAnalysis, DocumentChatMessage, Quiz, DraftQuestion } from '../../api';
-import { Icon, Mascot } from '../icons';
+import { Icon } from '../icons';
+import { ViMascotImage } from '../ViMascotImage';
+import { UiIcon } from '../UiIcon';
 import { useUsage } from '../../context/UsageContext';
 import { QuotaBadge } from '../QuotaBadge';
 
@@ -443,7 +445,7 @@ export const CreateAiQuizModal: React.FC<CreateAiQuizModalProps> = ({
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            background: 'linear-gradient(135deg, #FAF5FF 0%, #F5F3FF 100%)',
+            background: 'rgba(71, 96, 63, 0.08)',
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -452,8 +454,8 @@ export const CreateAiQuizModal: React.FC<CreateAiQuizModalProps> = ({
                 width: 40,
                 height: 40,
                 borderRadius: 12,
-                background: 'linear-gradient(135deg, #8B5CF6 0%, #6366F1 100%)',
-                color: '#fff',
+                background: 'var(--sage)',
+                color: 'var(--cream)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -462,7 +464,7 @@ export const CreateAiQuizModal: React.FC<CreateAiQuizModalProps> = ({
               <Icon n="spark" s={20} />
             </div>
             <div>
-              <h2 style={{ fontSize: 18, fontWeight: 800, margin: 0, color: '#1E1B4B' }}>
+              <h2 style={{ fontSize: 18, fontWeight: 800, margin: 0, color: 'var(--ink)' }}>
                 Tạo bài tập AI từ tài liệu
               </h2>
               <div style={{ fontSize: 13, color: '#6B7280', marginTop: 2 }}>
@@ -520,7 +522,7 @@ export const CreateAiQuizModal: React.FC<CreateAiQuizModalProps> = ({
                     borderRadius: 10,
                     fontSize: 12.5,
                     fontWeight: isActive ? 800 : 600,
-                    color: isActive ? '#4F46E5' : isPassed ? '#059669' : '#64748B',
+                    color: isActive ? 'var(--sage-dark)' : isPassed ? '#059669' : '#64748B',
                     background: isActive ? '#EEF2FF' : isPassed ? '#ECFDF5' : '#F1F5F9',
                     border: isActive
                       ? '1.5px solid #C7D2FE'
@@ -531,7 +533,7 @@ export const CreateAiQuizModal: React.FC<CreateAiQuizModalProps> = ({
                     alignItems: 'center',
                     justifyContent: 'center',
                     gap: 6,
-                    transition: 'all 0.2s ease',
+                    transition: 'transform var(--dur-micro) var(--ease), background-color var(--dur-micro) var(--ease), border-color var(--dur-micro) var(--ease)',
                   }}
                 >
                   <span
@@ -539,7 +541,7 @@ export const CreateAiQuizModal: React.FC<CreateAiQuizModalProps> = ({
                       width: 18,
                       height: 18,
                       borderRadius: '50%',
-                      background: isActive ? '#4F46E5' : isPassed ? '#10B981' : '#CBD5E1',
+                      background: isActive ? 'var(--sage-dark)' : isPassed ? '#10B981' : '#CBD5E1',
                       color: '#FFFFFF',
                       display: 'inline-flex',
                       alignItems: 'center',
@@ -616,12 +618,12 @@ export const CreateAiQuizModal: React.FC<CreateAiQuizModalProps> = ({
                     onClick={() => !uploading && fileInputRef.current?.click()}
                     style={{
                       border: `2px dashed ${isDragOver ? 'var(--primary)' : '#CBD5E1'}`,
-                      background: isDragOver ? '#EFF6FF' : '#F8FAFC',
+                      background: isDragOver ? 'var(--sage-soft)' : '#F8FAFC',
                       borderRadius: 16,
                       padding: '36px 20px',
                       textAlign: 'center',
                       cursor: uploading ? 'wait' : 'pointer',
-                      transition: 'all 0.2s ease',
+                      transition: 'transform var(--dur-micro) var(--ease), background-color var(--dur-micro) var(--ease), border-color var(--dur-micro) var(--ease)',
                     }}
                   >
                     <input
@@ -777,7 +779,7 @@ export const CreateAiQuizModal: React.FC<CreateAiQuizModalProps> = ({
                                   display: 'inline-flex',
                                   alignItems: 'center',
                                   gap: 5,
-                                  transition: 'all 0.15s ease',
+                                  transition: 'transform var(--dur-micro) var(--ease), background-color var(--dur-micro) var(--ease), color var(--dur-micro) var(--ease), border-color var(--dur-micro) var(--ease)',
                                 }}
                               >
                                 <Icon n="trash" s={14} />
@@ -896,14 +898,14 @@ export const CreateAiQuizModal: React.FC<CreateAiQuizModalProps> = ({
                                     ? 'var(--primary)'
                                     : '#E2E8F0'
                                 }`,
-                                background: isSelectMode && isSelected ? '#F5F3FF' : '#FFFFFF',
+                                background: isSelectMode && isSelected ? 'rgba(71, 96, 63, 0.14)' : '#FFFFFF',
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'space-between',
                                 gap: 12,
                                 cursor: 'pointer',
-                                transition: 'all 0.15s ease',
-                                boxShadow: isSelectMode && isSelected ? '0 2px 8px rgba(99, 102, 241, 0.12)' : 'none',
+                                transition: 'border-color var(--dur-micro) var(--ease), background-color var(--dur-micro) var(--ease)',
+                                boxShadow: isSelectMode && isSelected ? 'var(--shadow-sm)' : 'none',
                               }}
                               onMouseEnter={(e) => {
                                 if (!isSelectMode || !isSelected) {
@@ -939,8 +941,8 @@ export const CreateAiQuizModal: React.FC<CreateAiQuizModalProps> = ({
                                     width: 38,
                                     height: 38,
                                     borderRadius: 10,
-                                    background: '#EDE9FE',
-                                    color: '#7C3AED',
+                                    background: 'rgba(71, 96, 63, 0.14)',
+                                    color: 'var(--sage-dark)',
                                     display: 'flex',
                                     alignItems: 'center',
                                     justifyContent: 'center',
@@ -1031,9 +1033,9 @@ export const CreateAiQuizModal: React.FC<CreateAiQuizModalProps> = ({
               {analysisLoading ? (
                 <div style={{ textAlign: 'center', padding: '40px 16px' }}>
                   <div style={{ marginBottom: 16 }}>
-                    <Mascot s={60} />
+                    <div style={{ display: 'inline-flex', padding: 4, borderRadius: 20, background: 'var(--cream)', border: '1px solid var(--rim)' }}><ViMascotImage pose="thinking" size={64} /></div>
                   </div>
-                  <h3 style={{ fontSize: 17, fontWeight: 800, color: '#1E1B4B', margin: '0 0 6px' }}>
+                  <h3 style={{ fontSize: 17, fontWeight: 800, color: 'var(--ink)', margin: '0 0 6px' }}>
                     AI đang đọc và phân tích tài liệu...
                   </h3>
                   <p style={{ color: '#64748B', fontSize: 13.5, maxWidth: 420, margin: '0 auto' }}>
@@ -1064,15 +1066,15 @@ export const CreateAiQuizModal: React.FC<CreateAiQuizModalProps> = ({
                       {/* Summary Box */}
                       <div
                         style={{
-                          background: 'linear-gradient(135deg, #FAF5FF 0%, #EEF2FF 100%)',
-                          border: '1px solid #DDD6FE',
+                          background: 'rgba(71, 96, 63, 0.09)',
+                          border: '1px solid rgba(71, 96, 63, 0.24)',
                           borderRadius: 14,
                           padding: '16px 18px',
                         }}
                       >
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
                           <Icon n="spark" s={18} />
-                          <b style={{ color: '#6D28D9', fontSize: 14 }}>Tóm tắt nội dung tài liệu</b>
+                          <b style={{ color: 'var(--sage-dark)', fontSize: 14 }}>Tóm tắt nội dung tài liệu</b>
                         </div>
                         <p style={{ margin: 0, fontSize: 13.5, lineHeight: 1.6, color: '#334155' }}>
                           {analysisData.summary}
@@ -1151,8 +1153,8 @@ export const CreateAiQuizModal: React.FC<CreateAiQuizModalProps> = ({
                               <span
                                 key={idx}
                                 style={{
-                                  background: '#EFF6FF',
-                                  color: '#1D4ED8',
+                                  background: 'var(--sage-soft)',
+                                  color: 'var(--sage-dark)',
                                   border: '1px solid #BFDBFE',
                                   borderRadius: 99,
                                   padding: '4px 10px',
@@ -1226,10 +1228,10 @@ export const CreateAiQuizModal: React.FC<CreateAiQuizModalProps> = ({
                           fontSize: 13,
                           fontWeight: 700,
                           borderColor: '#C7D2FE',
-                          color: '#4338CA',
+                          color: 'var(--sage-dark)',
                         }}
                       >
-                        💬 Chat tinh chỉnh (Tùy chọn)
+                        <UiIcon name="message" size={14} /> Chat tinh chỉnh (Tùy chọn)
                       </button>
                       <button
                         type="button"
@@ -1262,7 +1264,7 @@ export const CreateAiQuizModal: React.FC<CreateAiQuizModalProps> = ({
                 }}
               >
                 <div style={{ fontSize: 13, color: '#475569' }}>
-                  💬 <b>Bước tùy chọn:</b> Bạn có thể trò chuyện với AI để nhấn mạnh dạng bài tập muốn tạo, hoặc bỏ qua để sang bước cấu hình.
+                  <UiIcon name="message" size={14} /> <b>Bước tùy chọn:</b> Bạn có thể trò chuyện với AI để nhấn mạnh dạng bài tập muốn tạo, hoặc bỏ qua để sang bước cấu hình.
                 </div>
                 <button
                   type="button"
@@ -1367,7 +1369,7 @@ export const CreateAiQuizModal: React.FC<CreateAiQuizModalProps> = ({
                     background: '#FFFFFF',
                     fontSize: 13.5,
                     outline: 'none',
-                    transition: 'all 0.2s ease',
+                    transition: 'transform var(--dur-micro) var(--ease), background-color var(--dur-micro) var(--ease), border-color var(--dur-micro) var(--ease)',
                     boxShadow: '0 1px 2px rgba(0, 0, 0, 0.04)',
                   }}
                   onFocus={(e) => {
@@ -1394,14 +1396,14 @@ export const CreateAiQuizModal: React.FC<CreateAiQuizModalProps> = ({
               {draftQuestions.length > 0 && (
                 <div style={{ marginTop: 14, padding: 14, background: '#F8FAFC', borderRadius: 12, border: '1px solid #E2E8F0' }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10, flexWrap: 'wrap', gap: 8 }}>
-                    <b style={{ fontSize: 13.5, color: '#1E293B' }}>📝 Bản nháp câu hỏi gợi ý từ AI ({draftQuestions.length} câu):</b>
+                    <b style={{ fontSize: 13.5, color: 'var(--ink)', display: 'inline-flex', alignItems: 'center', gap: 6 }}><UiIcon name="file" size={14} /> Bản nháp câu hỏi gợi ý từ AI ({draftQuestions.length} câu):</b>
                     <button
                       type="button"
                       className="btn primary sm"
                       onClick={handleUseDraft}
                       style={{ fontSize: 12.5, fontWeight: 700 }}
                     >
-                      ✨ Dùng bản nháp này ({draftQuestions.length} câu)
+                      <UiIcon name="sparkles" size={14} /> Dùng bản nháp này ({draftQuestions.length} câu)
                     </button>
                   </div>
                   <div style={{ maxHeight: 180, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -1454,7 +1456,7 @@ export const CreateAiQuizModal: React.FC<CreateAiQuizModalProps> = ({
               {generating ? (
                 <div style={{ textAlign: 'center', padding: '48px 16px' }}>
                   <div style={{ marginBottom: 16 }}>
-                    <Mascot s={68} />
+                    <div style={{ display: 'inline-flex', padding: 4, borderRadius: 22, background: 'var(--cream)', border: '1px solid var(--rim)' }}><ViMascotImage pose="thinking" size={72} /></div>
                   </div>
                   <h3 style={{ fontSize: 18, fontWeight: 800, color: 'var(--primary)', margin: '0 0 8px' }}>
                     Vi AI đang biên soạn và thẩm định câu hỏi...
@@ -1514,7 +1516,7 @@ export const CreateAiQuizModal: React.FC<CreateAiQuizModalProps> = ({
                         fontWeight: 600,
                         color: '#0F172A',
                         outline: 'none',
-                        transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
+                        transition: 'transform var(--dur-micro) var(--ease), background-color var(--dur-micro) var(--ease), border-color var(--dur-micro) var(--ease), box-shadow var(--dur-micro) var(--ease)',
                         boxShadow: '0 1px 2px rgba(0, 0, 0, 0.04)',
                       }}
                       onFocus={(e) => {
@@ -1618,7 +1620,7 @@ export const CreateAiQuizModal: React.FC<CreateAiQuizModalProps> = ({
                         outline: 'none',
                         resize: 'vertical',
                         minHeight: 76,
-                        transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
+                        transition: 'transform var(--dur-micro) var(--ease), background-color var(--dur-micro) var(--ease), border-color var(--dur-micro) var(--ease), box-shadow var(--dur-micro) var(--ease)',
                         boxShadow: '0 1px 2px rgba(0, 0, 0, 0.04)',
                         fontFamily: 'inherit',
                       }}
@@ -1661,12 +1663,12 @@ export const CreateAiQuizModal: React.FC<CreateAiQuizModalProps> = ({
                             fontWeight: 600,
                             color: '#475569',
                             cursor: 'pointer',
-                            transition: 'all 0.15s ease',
+                            transition: 'transform var(--dur-micro) var(--ease), background-color var(--dur-micro) var(--ease), color var(--dur-micro) var(--ease), border-color var(--dur-micro) var(--ease)',
                           }}
                           onMouseEnter={(e) => {
                             e.currentTarget.style.background = '#EEF2FF';
                             e.currentTarget.style.borderColor = '#C7D2FE';
-                            e.currentTarget.style.color = '#4338CA';
+                            e.currentTarget.style.color = 'var(--sage-dark)';
                           }}
                           onMouseLeave={(e) => {
                             e.currentTarget.style.background = '#F8FAFC';
@@ -1695,12 +1697,12 @@ export const CreateAiQuizModal: React.FC<CreateAiQuizModalProps> = ({
                   >
                     <div style={{ fontSize: 13, color: isOutOfQuota ? '#B91C1C' : '#166534' }}>
                       {isVip ? (
-                        <span>✨ <b>Tài khoản PRO:</b> Bạn có thể tạo bài tập AI không giới hạn lượt.</span>
+                        <span><UiIcon name="sparkles" size={13} /> <b>Tài khoản PRO:</b> Bạn có thể tạo bài tập AI không giới hạn lượt.</span>
                       ) : isOutOfQuota ? (
-                        <span>⚠️ Bạn đã hết 3 lượt tạo bài tập AI miễn phí hôm nay.</span>
+                        <span><UiIcon name="warning" size={13} /> Bạn đã hết 3 lượt tạo bài tập AI miễn phí hôm nay.</span>
                       ) : (
                         <span>
-                          ⚡ Thao tác tạo bài tập sẽ trừ <b>1 lượt</b> tạo AI (còn <b>{quotaRemaining}/3</b> lượt hôm nay).
+                          <UiIcon name="zap" size={13} /> Thao tác tạo bài tập sẽ trừ <b>1 lượt</b> tạo AI (còn <b>{quotaRemaining}/3</b> lượt hôm nay).
                         </span>
                       )}
                     </div>
@@ -1745,7 +1747,7 @@ export const CreateAiQuizModal: React.FC<CreateAiQuizModalProps> = ({
                         padding: '10px 24px',
                         fontWeight: 800,
                         fontSize: 14,
-                        background: 'linear-gradient(135deg, #7C3AED 0%, #4F46E5 100%)',
+                        background: 'var(--sage)',
                         border: 'none',
                       }}
                     >
@@ -1797,8 +1799,8 @@ export const CreateAiQuizModal: React.FC<CreateAiQuizModalProps> = ({
                   gap: 6,
                 }}
               >
-                <div>🔒 <b>Trạng thái:</b> Riêng tư (chỉ mình bạn thấy)</div>
-                <div>✨ <b>Nguồn gốc:</b> Do AI tạo từ tài liệu</div>
+                <div><UiIcon name="lock" size={13} /> <b>Trạng thái:</b> Riêng tư (chỉ mình bạn thấy)</div>
+                <div><UiIcon name="sparkles" size={13} /> <b>Nguồn gốc:</b> Do AI tạo từ tài liệu</div>
                 <div>⏱️ <b>Thời gian làm bài:</b> {createdQuiz.timeLimit > 60 ? Math.round(createdQuiz.timeLimit / 60) : (createdQuiz.timeLimit || 10)} phút</div>
               </div>
 

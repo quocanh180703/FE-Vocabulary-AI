@@ -4,31 +4,32 @@ import { wordApi, aiApi, TOPIC_MAP, type Word, type GrammarResp } from '../../ap
 import { MotionCard } from '../../motion';
 import { Icon } from '../icons';
 import ResultPanel, { type OutlineReport } from './ResultPanel';
+import { UiIcon } from '../UiIcon';
 
 const LEVELS = ['A1', 'A2', 'B1', 'B2', 'C1'] as const;
 type Level = typeof LEVELS[number];
 
 const LEVEL_CONFIG: Record<Level, { label: string; desc: string; color: string; bg: string; border: string }> = {
-  A1: { label: 'A1', desc: 'Cơ bản', color: '#047857', bg: '#ECFDF5', border: '#A7F3D0' },
-  A2: { label: 'A2', desc: 'Sơ cấp', color: '#1D4ED8', bg: '#EFF6FF', border: '#BFDBFE' },
-  B1: { label: 'B1', desc: 'Trung cấp', color: '#6D28D9', bg: '#F5F3FF', border: '#DDD6FE' },
-  B2: { label: 'B2', desc: 'Trung cao', color: '#B45309', bg: '#FFFBEB', border: '#FDE68A' },
-  C1: { label: 'C1', desc: 'Nâng cao', color: '#BE123C', bg: '#FFF1F2', border: '#FECDD3' },
+  A1: { label: 'A1', desc: 'Cơ bản', color: '#34482e', bg: 'rgba(71, 96, 63, 0.12)', border: 'rgba(71, 96, 63, 0.28)' },
+  A2: { label: 'A2', desc: 'Sơ cấp', color: '#42774d', bg: 'rgba(66, 119, 77, 0.12)', border: 'rgba(66, 119, 77, 0.28)' },
+  B1: { label: 'B1', desc: 'Trung cấp', color: '#47603f', bg: 'rgba(71, 96, 63, 0.18)', border: 'rgba(71, 96, 63, 0.34)' },
+  B2: { label: 'B2', desc: 'Trung cao', color: '#8f5a14', bg: 'rgba(201, 134, 47, 0.14)', border: 'rgba(201, 134, 47, 0.35)' },
+  C1: { label: 'C1', desc: 'Nâng cao', color: '#9a4b43', bg: 'rgba(154, 75, 67, 0.12)', border: 'rgba(154, 75, 67, 0.30)' },
 };
 
 const TOPIC_ICONS: Record<string, string> = {
-  WORK: '💼',
-  TRAVEL: '✈️',
-  ACADEMIC: '🎓',
-  TECHNOLOGY: '💻',
-  HEALTH: '🏥',
-  FOOD: '🍜',
-  MONEY: '💰',
-  FAMILY: '👨‍👩‍👧',
-  SPORTS: '⚽',
-  ENVIRONMENT: '🌱',
-  SOCIETY: '🏛️',
-  ARTS: '🎨',
+  WORK: 'briefcase',
+  TRAVEL: 'plane',
+  ACADEMIC: 'graduation',
+  TECHNOLOGY: 'laptop',
+  HEALTH: 'health',
+  FOOD: 'food',
+  MONEY: 'coins',
+  FAMILY: 'users',
+  SPORTS: 'sport',
+  ENVIRONMENT: 'sprout',
+  SOCIETY: 'landmark',
+  ARTS: 'palette',
 };
 
 const STRUCTURES_BY_LEVEL: Record<Level, Array<{ name: string; template: string; note: string }>> = {
@@ -307,7 +308,7 @@ export default function TopicPanel() {
     return TOPIC_MAP[upper] || topicKey;
   };
 
-  const currentTopicIcon = TOPIC_ICONS[selectedTopic?.toUpperCase()] || '📝';
+  const currentTopicIcon = TOPIC_ICONS[selectedTopic?.toUpperCase()] || 'file';
   const sampleIdeaText = TOPIC_SAMPLE_IDEAS[selectedTopic?.toUpperCase()] || '';
 
   return (
@@ -316,10 +317,13 @@ export default function TopicPanel() {
       <MotionCard
         className="card"
         style={{
-          background: 'linear-gradient(180deg, #FFFFFF 0%, #F8FAFC 100%)',
-          border: '1.5px solid var(--line)',
+          background: 'var(--glass-strong)',
+          border: '1px solid var(--rim)',
           boxShadow: 'var(--shadow-sm)',
-          padding: '20px 24px',
+          padding: '16px 20px',
+          flex: 'none',
+          flexShrink: 0,
+          marginBottom: 14,
         }}
       >
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -352,10 +356,10 @@ export default function TopicPanel() {
                         fontWeight: 800,
                         fontSize: 13.5,
                         cursor: 'pointer',
-                        transition: 'all 0.2s ease',
+                        transition: 'transform var(--dur-micro) var(--ease), background-color var(--dur-micro) var(--ease), border-color var(--dur-micro) var(--ease)',
                         border: isSelected ? `2px solid ${cfg.color}` : '1.5px solid var(--line)',
-                        background: isSelected ? cfg.bg : '#FFFFFF',
-                        color: isSelected ? cfg.color : '#475569',
+                        background: isSelected ? cfg.bg : 'rgba(255, 255, 255, 0.72)',
+                        color: isSelected ? cfg.color : 'var(--muted)',
                         boxShadow: isSelected ? `0 2px 8px ${cfg.color}25` : 'none',
                         transform: isSelected ? 'scale(1.04)' : 'none',
                       }}
@@ -381,7 +385,7 @@ export default function TopicPanel() {
                     title="Bốc ngẫu nhiên 1 chủ đề khác"
                     style={{ padding: '3px 10px', fontSize: 12, fontWeight: 700, borderRadius: 8 }}
                   >
-                    🎲 Ngẫu nhiên
+                    <UiIcon name="dice" size={14} /> Ngẫu nhiên
                   </button>
                 )}
               </div>
@@ -412,14 +416,11 @@ export default function TopicPanel() {
                   ) : topicList.length === 0 ? (
                     <option>Không có chủ đề cho cấp độ này</option>
                   ) : (
-                    topicList.map((t) => {
-                      const icon = TOPIC_ICONS[t.topic.toUpperCase()] || '📝';
-                      return (
-                        <option key={t.topic} value={t.topic}>
-                          {icon} {getTopicLabel(t.topic)} ({t.count} từ vựng)
-                        </option>
-                      );
-                    })
+                    topicList.map((t) => (
+                      <option key={t.topic} value={t.topic}>
+                        {getTopicLabel(t.topic)} ({t.count} từ vựng)
+                      </option>
+                    ))
                   )}
                 </select>
               </div>
@@ -451,7 +452,7 @@ export default function TopicPanel() {
           {/* Header dàn ý */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{ fontSize: 20 }}>{currentTopicIcon}</span>
+              <span style={{ fontSize: 20 }}><UiIcon name={currentTopicIcon} size={16} /></span>
               <div>
                 <b style={{ fontSize: 16, color: 'var(--ink)' }}>
                   {selectedTopic ? getTopicLabel(selectedTopic) : 'Chủ đề'}
@@ -468,7 +469,7 @@ export default function TopicPanel() {
               className="btn ghost sm"
               style={{ padding: '4px 10px', fontSize: 12, fontWeight: 700, borderRadius: 8 }}
             >
-              {loadingWords ? '⏳ Đang đổi...' : '🔄 Đổi bộ từ khác'}
+              {loadingWords ? 'Đang đổi...' : <><UiIcon name="refresh" size={13} /> Đổi bộ từ khác</>}
             </button>
           </div>
 
@@ -477,20 +478,20 @@ export default function TopicPanel() {
             style={{
               padding: '12px 14px',
               borderRadius: 12,
-              background: progressPercent === 100 ? '#ECFDF5' : '#F8FAFC',
-              border: progressPercent === 100 ? '1.5px solid #86EFAC' : '1px solid #E2E8F0',
-              transition: 'all 0.3s ease',
+              background: progressPercent === 100 ? 'var(--success-bg)' : 'rgba(250, 248, 241, 0.65)',
+              border: progressPercent === 100 ? '1.5px solid rgba(66, 119, 77, 0.35)' : '1px solid var(--line)',
+              transition: 'background-color 0.3s var(--ease), border-color 0.3s var(--ease)',
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-              <span style={{ fontSize: 12.5, fontWeight: 800, color: progressPercent === 100 ? '#15803D' : '#334155' }}>
-                🎯 Tiến độ áp dụng từ gợi ý:
+              <span style={{ fontSize: 12.5, fontWeight: 800, color: progressPercent === 100 ? 'var(--green-dark)' : 'var(--ink)' }}>
+                <UiIcon name="target" size={14} /> Tiến độ áp dụng từ gợi ý:
               </span>
               <span
                 style={{
                   fontSize: 12.5,
                   fontWeight: 900,
-                  color: progressPercent === 100 ? '#15803D' : 'var(--primary)',
+                  color: progressPercent === 100 ? 'var(--green-dark)' : 'var(--sage)',
                 }}
               >
                 {usedCount}/{suggestedWords.length} từ ({progressPercent}%)
@@ -503,7 +504,7 @@ export default function TopicPanel() {
                 width: '100%',
                 height: 8,
                 borderRadius: 999,
-                background: '#E2E8F0',
+                background: 'rgba(71, 96, 63, 0.14)',
                 overflow: 'hidden',
               }}
             >
@@ -516,8 +517,8 @@ export default function TopicPanel() {
                   borderRadius: 999,
                   background:
                     progressPercent === 100
-                      ? 'linear-gradient(90deg, #10B981, #059669)'
-                      : 'linear-gradient(90deg, #3B82F6, #2563EB)',
+                      ? 'var(--success)'
+                      : 'var(--sage)',
                 }}
               />
             </div>
@@ -554,10 +555,10 @@ export default function TopicPanel() {
                       justifyContent: 'space-between',
                       padding: '10px 14px',
                       borderRadius: 10,
-                      transition: 'all 0.25s cubic-bezier(0.16, 1, 0.3, 1)',
-                      background: w.isUsed ? '#F0FDF4' : '#FFFFFF',
-                      border: w.isUsed ? '1.5px solid #86EFAC' : '1px solid #E2E8F0',
-                      boxShadow: w.isUsed ? '0 2px 6px rgba(16, 185, 129, 0.12)' : '0 1px 2px rgba(0,0,0,0.02)',
+                      transition: 'transform 0.25s var(--ease), background-color 0.25s var(--ease), border-color 0.25s var(--ease)',
+                      background: w.isUsed ? 'var(--success-bg)' : 'rgba(255, 255, 255, 0.78)',
+                      border: w.isUsed ? '1.5px solid rgba(66, 119, 77, 0.35)' : '1px solid var(--line)',
+                      boxShadow: w.isUsed ? 'var(--shadow-sm)' : 'none',
                     }}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -655,7 +656,7 @@ export default function TopicPanel() {
                   >
                     <div>
                       <div style={{ fontSize: 13, fontWeight: 700, color: '#1E293B' }}>
-                        📌 {st.name}
+                        <UiIcon name="pin" size={13} /> {st.name}
                       </div>
                       <div style={{ fontSize: 12, color: '#64748B', fontStyle: 'italic', marginTop: 2 }}>
                         {st.template}
@@ -707,7 +708,7 @@ export default function TopicPanel() {
                   className="btn ghost sm"
                   style={{ padding: '4px 10px', fontSize: 12, fontWeight: 700, borderRadius: 8 }}
                 >
-                  💡 {showIdea ? 'Ẩn gợi ý ý tưởng' : 'Gợi ý ý tưởng'}
+                  <UiIcon name="lightbulb" size={13} /> {showIdea ? 'Ẩn gợi ý ý tưởng' : 'Gợi ý ý tưởng'}
                 </button>
               )}
             </div>
@@ -729,7 +730,7 @@ export default function TopicPanel() {
                     color: '#92400E',
                   }}
                 >
-                  <b>💡 Câu mẫu gợi mở ý tưởng:</b> "{sampleIdeaText}"
+                  <b><UiIcon name="lightbulb" size={13} /> Câu mẫu gợi mở ý tưởng:</b> "{sampleIdeaText}"
                 </motion.div>
               )}
             </AnimatePresence>

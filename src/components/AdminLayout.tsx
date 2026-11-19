@@ -5,6 +5,8 @@ import { Icon, Mascot } from './icons';
 import { motion, AnimatePresence } from 'motion/react';
 import { PageTransition } from '../motion';
 import { ErrorBoundary } from './ErrorBoundary';
+import { SageScene } from './SageEffects';
+import { attachSagePointerEffects } from '../utils/interactiveEffects';
 
 interface AdminTabItem {
   to: string;
@@ -32,6 +34,15 @@ export function AdminLayout() {
   const location = useLocation();
   const currentOutlet = useOutlet();
   const [routeProgress, setRouteProgress] = useState(false);
+
+  useEffect(() => {
+    document.body.classList.add('sage-app-mode');
+    const detach = attachSagePointerEffects();
+    return () => {
+      detach();
+      document.body.classList.remove('sage-app-mode');
+    };
+  }, []);
 
   useEffect(() => {
     setRouteProgress(true);
@@ -80,15 +91,16 @@ export function AdminLayout() {
 
   return (
     <>
+      <SageScene />
       <div className={'layout-route-bar' + (routeProgress || isNavigating ? ' active' : '')} />
       <motion.div
-        className="sheet"
-        initial={{ opacity: 0, y: 12, scale: 0.995 }}
-        animate={isNavigating ? { opacity: 0, y: -10, scale: 0.995 } : { opacity: 1, y: 0, scale: 1 }}
-        transition={{ duration: isNavigating ? 0.22 : 0.35, ease: [0.16, 1, 0.3, 1] }}
+        className={`sheet shell ${isSidebarCollapsed ? 'is-collapsed' : ''}`}
+        initial={{ opacity: 0, y: 12 }}
+        animate={isNavigating ? { opacity: 0, y: -10 } : { opacity: 1, y: 0 }}
+        transition={{ duration: isNavigating ? 0.2 : 0.34, ease: [0.23, 1, 0.32, 1] }}
       >
-        {/* Sidebar Admin Portal chuẩn theo thiết kế */}
-        <aside className={'sidebar' + (isSidebarCollapsed ? ' collapsed' : '')}>
+        {/* Sidebar Admin Portal */}
+        <aside className={'sidebar glass' + (isSidebarCollapsed ? ' collapsed' : '')}>
           <div className="sidebar-header">
             <div
               className="brand"
@@ -111,9 +123,9 @@ export function AdminLayout() {
                   width: '100%',
                   justifyContent: 'center',
                   whiteSpace: 'nowrap',
-                  background: isInstructor ? 'rgba(79, 70, 229, 0.12)' : undefined,
-                  color: isInstructor ? '#4F46E5' : undefined,
-                  borderColor: isInstructor ? 'rgba(79, 70, 229, 0.25)' : undefined,
+                  background: isInstructor ? 'rgba(71, 96, 63, 0.14)' : undefined,
+                  color: isInstructor ? 'var(--sage-dark)' : undefined,
+                  borderColor: isInstructor ? 'rgba(71, 96, 63, 0.28)' : undefined,
                 }}
               >
                 {isInstructor ? 'INSTRUCTOR · GIẢNG VIÊN' : 'ADMIN · QUẢN TRỊ'}
@@ -186,7 +198,7 @@ export function AdminLayout() {
 
         {/* Main Admin Workspace */}
         <div className="main">
-          <div className="topbar">
+          <div className="topbar glass">
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <button
                 type="button"
@@ -224,7 +236,7 @@ export function AdminLayout() {
                   style={{
                     fontSize: '12.5px',
                     marginTop: '2px',
-                    color: isInstructor ? '#4F46E5' : undefined,
+                    color: 'var(--sage)',
                     fontWeight: 700,
                   }}
                 >
@@ -237,7 +249,7 @@ export function AdminLayout() {
                 onClick={() => nav('/profile')}
                 style={{
                   cursor: 'pointer',
-                  background: isInstructor ? '#4F46E5' : 'var(--primary)',
+                  background: 'var(--sage)',
                   color: '#fff',
                   overflow: 'hidden',
                   padding: 0,
@@ -260,16 +272,18 @@ export function AdminLayout() {
             </div>
           </div>
 
-          <div className="content" style={{ maxWidth: '1240px' }}>
-            <ErrorBoundary>
-              <AnimatePresence mode="wait" initial={false}>
-                {currentOutlet && (
-                  <PageTransition key={location.pathname}>
-                    {currentOutlet}
-                  </PageTransition>
-                )}
-              </AnimatePresence>
-            </ErrorBoundary>
+          <div className="app-pages">
+            <div className="content long-list" style={{ maxWidth: '1240px', overflowY: 'auto' }}>
+              <ErrorBoundary>
+                <AnimatePresence mode="wait" initial={false}>
+                  {currentOutlet && (
+                    <PageTransition key={location.pathname}>
+                      {currentOutlet}
+                    </PageTransition>
+                  )}
+                </AnimatePresence>
+              </ErrorBoundary>
+            </div>
           </div>
         </div>
       </motion.div>

@@ -4,6 +4,7 @@ import { motion } from 'motion/react';
 import { quizApi, errMsg } from '../../api';
 import type { QuizDetail, Question } from '../../api';
 import { Icon } from '../icons';
+import { UiIcon } from '../UiIcon';
 
 interface QuizDetailEditModalProps {
   quizId: number | null;
@@ -363,7 +364,7 @@ export const QuizDetailEditModal: React.FC<QuizDetailEditModalProps> = ({
             {/* Visibility Badge */}
             {isPublic ? (
               <span className="pill" style={{ background: '#DCFCE7', color: '#15803D', border: '1px solid #86EFAC' }}>
-                🌐 Công khai
+                <UiIcon name="globe" size={12} /> Công khai
               </span>
             ) : isPending ? (
               <span className="pill" style={{ background: '#FEF3C7', color: '#B45309', border: '1px solid #FCD34D' }}>
@@ -371,11 +372,11 @@ export const QuizDetailEditModal: React.FC<QuizDetailEditModalProps> = ({
               </span>
             ) : isRejected ? (
               <span className="pill" style={{ background: '#FEE2E2', color: '#B91C1C', border: '1px solid #FCA5A5' }}>
-                ⚠️ Bị từ chối
+                <UiIcon name="warning" size={12} /> Bị từ chối
               </span>
             ) : (
               <span className="pill" style={{ background: '#F1F5F9', color: '#475569', border: '1px solid #CBD5E1' }}>
-                🔒 Riêng tư
+                <UiIcon name="lock" size={12} /> Riêng tư
               </span>
             )}
 
@@ -430,7 +431,7 @@ export const QuizDetailEditModal: React.FC<QuizDetailEditModalProps> = ({
               gap: 8,
             }}
           >
-            <span>🌐</span>
+            <span><UiIcon name="globe" size={14} /></span>
             <span>
               Bài tập đã được duyệt công khai trên hệ thống cho tất cả học viên. Để chỉnh sửa câu hỏi, vui lòng ẩn bài về riêng tư trước.
             </span>
@@ -530,7 +531,7 @@ export const QuizDetailEditModal: React.FC<QuizDetailEditModalProps> = ({
                       fontWeight: 600,
                       color: '#0F172A',
                       outline: 'none',
-                      transition: 'all 0.2s ease',
+                      transition: 'transform var(--dur-micro) var(--ease), background-color var(--dur-micro) var(--ease), border-color var(--dur-micro) var(--ease), box-shadow var(--dur-micro) var(--ease)',
                       boxShadow: '0 1px 2px rgba(0, 0, 0, 0.04)',
                     }}
                     onFocus={(e) => {
@@ -567,7 +568,7 @@ export const QuizDetailEditModal: React.FC<QuizDetailEditModalProps> = ({
                         color: '#0F172A',
                         outline: 'none',
                         cursor: isReadOnly ? 'default' : 'pointer',
-                        transition: 'all 0.2s ease',
+                        transition: 'transform var(--dur-micro) var(--ease), background-color var(--dur-micro) var(--ease), border-color var(--dur-micro) var(--ease), box-shadow var(--dur-micro) var(--ease)',
                         boxShadow: '0 1px 2px rgba(0, 0, 0, 0.04)',
                       }}
                       onFocus={(e) => {
@@ -611,7 +612,7 @@ export const QuizDetailEditModal: React.FC<QuizDetailEditModalProps> = ({
                         fontWeight: 600,
                         color: '#0F172A',
                         outline: 'none',
-                        transition: 'all 0.2s ease',
+                        transition: 'transform var(--dur-micro) var(--ease), background-color var(--dur-micro) var(--ease), border-color var(--dur-micro) var(--ease), box-shadow var(--dur-micro) var(--ease)',
                         boxShadow: '0 1px 2px rgba(0, 0, 0, 0.04)',
                       }}
                       onFocus={(e) => {
@@ -652,7 +653,7 @@ export const QuizDetailEditModal: React.FC<QuizDetailEditModalProps> = ({
                       fontSize: 13.5,
                       color: '#0F172A',
                       outline: 'none',
-                      transition: 'all 0.2s ease',
+                      transition: 'transform var(--dur-micro) var(--ease), background-color var(--dur-micro) var(--ease), border-color var(--dur-micro) var(--ease), box-shadow var(--dur-micro) var(--ease)',
                       boxShadow: '0 1px 2px rgba(0, 0, 0, 0.04)',
                     }}
                     onFocus={(e) => {
@@ -751,7 +752,7 @@ export const QuizDetailEditModal: React.FC<QuizDetailEditModalProps> = ({
                           outline: 'none',
                           resize: 'vertical',
                           minHeight: 64,
-                          transition: 'all 0.2s ease',
+                          transition: 'transform var(--dur-micro) var(--ease), background-color var(--dur-micro) var(--ease), border-color var(--dur-micro) var(--ease), box-shadow var(--dur-micro) var(--ease)',
                           boxShadow: '0 1px 2px rgba(0, 0, 0, 0.04)',
                           fontFamily: 'inherit',
                         }}
@@ -787,7 +788,7 @@ export const QuizDetailEditModal: React.FC<QuizDetailEditModalProps> = ({
                               border: `1.5px solid ${isCorrect ? '#86EFAC' : '#E2E8F0'}`,
                               borderRadius: 12,
                               padding: '8px 14px',
-                              transition: 'all 0.15s ease',
+                              transition: 'transform var(--dur-micro) var(--ease), background-color var(--dur-micro) var(--ease), color var(--dur-micro) var(--ease)',
                             }}
                           >
                             <input
@@ -865,7 +866,7 @@ export const QuizDetailEditModal: React.FC<QuizDetailEditModalProps> = ({
                           fontSize: 13,
                           color: '#0F172A',
                           outline: 'none',
-                          transition: 'all 0.2s ease',
+                          transition: 'transform var(--dur-micro) var(--ease), background-color var(--dur-micro) var(--ease), border-color var(--dur-micro) var(--ease), box-shadow var(--dur-micro) var(--ease)',
                           boxShadow: '0 1px 2px rgba(0, 0, 0, 0.04)',
                         }}
                         onFocus={(e) => {
@@ -941,7 +942,7 @@ export const QuizDetailEditModal: React.FC<QuizDetailEditModalProps> = ({
                         fontWeight: 700,
                       }}
                     >
-                      {actionLoading ? 'Đang xử lý...' : '🔒 Chuyển về riêng tư'}
+                      {actionLoading ? 'Đang xử lý...' : <><UiIcon name="lock" size={13} /> Chuyển về riêng tư</>}
                     </button>
                   )}
                   {!isPending && !isPublic && (
@@ -952,12 +953,12 @@ export const QuizDetailEditModal: React.FC<QuizDetailEditModalProps> = ({
                       disabled={actionLoading || saving}
                       style={{
                         borderColor: '#A5B4FC',
-                        color: '#4F46E5',
+                        color: 'var(--sage-dark)',
                         background: '#EEF2FF',
                         fontWeight: 700,
                       }}
                     >
-                      {actionLoading ? 'Đang xử lý...' : '🚀 Gửi duyệt công khai'}
+                      {actionLoading ? 'Đang xử lý...' : <><UiIcon name="rocket" size={13} /> Gửi duyệt công khai</>}
                     </button>
                   )}
                 </div>
@@ -1051,7 +1052,7 @@ export const QuizDetailEditModal: React.FC<QuizDetailEditModalProps> = ({
                   confirmModal.type === 'delete'
                     ? '#DC2626'
                     : confirmModal.type === 'publish'
-                    ? '#4F46E5'
+                    ? 'var(--sage-dark)'
                     : confirmModal.type === 'withdraw'
                     ? '#D97706'
                     : '#475569',
@@ -1113,29 +1114,29 @@ export const QuizDetailEditModal: React.FC<QuizDetailEditModalProps> = ({
                 alignItems: 'flex-start',
                 background:
                   confirmModal.type === 'delete'
-                    ? '#FEF2F2'
+                    ? 'var(--danger-bg)'
                     : confirmModal.type === 'publish'
-                    ? '#F5F3FF'
+                    ? 'rgba(71, 96, 63, 0.12)'
                     : confirmModal.type === 'withdraw'
-                    ? '#FFFBEB'
-                    : '#F8FAFC',
+                    ? 'var(--amber-bg)'
+                    : 'rgba(250, 248, 241, 0.72)',
                 border: `1px solid ${
                   confirmModal.type === 'delete'
-                    ? '#FCA5A5'
+                    ? 'rgba(154, 75, 67, 0.35)'
                     : confirmModal.type === 'publish'
-                    ? '#DDD6FE'
+                    ? 'rgba(71, 96, 63, 0.28)'
                     : confirmModal.type === 'withdraw'
-                    ? '#FDE68A'
-                    : '#E2E8F0'
+                    ? 'rgba(201, 134, 47, 0.35)'
+                    : 'var(--line)'
                 }`,
                 color:
                   confirmModal.type === 'delete'
-                    ? '#991B1B'
+                    ? 'var(--red-dark)'
                     : confirmModal.type === 'publish'
-                    ? '#6D28D9'
+                    ? 'var(--sage-dark)'
                     : confirmModal.type === 'withdraw'
-                    ? '#B45309'
-                    : '#475569',
+                    ? 'var(--amber-dark)'
+                    : 'var(--muted)',
               }}
             >
               <div style={{ flexShrink: 0, marginTop: 1 }}>
@@ -1201,7 +1202,7 @@ export const QuizDetailEditModal: React.FC<QuizDetailEditModalProps> = ({
                     confirmModal.type === 'delete'
                       ? '#DC2626'
                       : confirmModal.type === 'publish'
-                      ? 'linear-gradient(135deg, #4F46E5 0%, #6366F1 100%)'
+                      ? 'linear-gradient(135deg, var(--sage) 0%, var(--sage-dark) 100%)'
                       : confirmModal.type === 'withdraw'
                       ? '#D97706'
                       : '#475569',

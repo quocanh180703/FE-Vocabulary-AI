@@ -9,6 +9,7 @@ import type {
   AdminPackageStats,
 } from '../../api';
 import { Icon } from '../../components/icons';
+import { ViLoadingScreen } from '../../components/states/ViLoadingScreen';
 import AutocompleteSearch from '../../components/AutocompleteSearch';
 import {
   MotionCard,
@@ -530,8 +531,8 @@ export default function AdminOrders() {
                 <tbody>
                   {orderLoading ? (
                     <tr>
-                      <td colSpan={8} style={{ padding: 48, textAlign: 'center', color: 'var(--muted)' }}>
-                        Đang tải danh sách đơn hàng...
+                      <td colSpan={8} style={{ padding: 16 }}>
+                        <ViLoadingScreen compact subtitle="Đang tải danh sách đơn hàng" />
                       </td>
                     </tr>
                   ) : payments.length === 0 ? (

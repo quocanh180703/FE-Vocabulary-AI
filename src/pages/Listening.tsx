@@ -11,7 +11,9 @@ import { useUsage } from '../context/UsageContext';
 import { QuotaBadge } from '../components/QuotaBadge';
 import { MotionCard, staggerContainer, staggerItem } from '../motion';
 import { VOICES } from '../components/VoiceChatPanel';
-import viAvatar from '../assets/vi-3d.webp';
+import { ViMascotImage } from '../components/ViMascotImage';
+import { SplitHeading, ScoreRing } from '../components/SageEffects';
+import { UiIcon, type UiIconName } from '../components/UiIcon';
 import './Listening.css';
 
 interface TopicItem {
@@ -19,17 +21,17 @@ interface TopicItem {
   en: string;
   category: 'daily' | 'hobbies' | 'work' | 'travel' | 'tech';
   tag: string;
-  icon: string;
+  icon: UiIconName;
   desc: string;
 }
 
-const CATEGORIES = [
-  { id: 'all', name: 'Tất cả', icon: '🌟' },
-  { id: 'daily', name: 'Đời sống', icon: '☕' },
-  { id: 'hobbies', name: 'Sở thích', icon: '🎨' },
-  { id: 'work', name: 'Công việc & Học tập', icon: '💼' },
-  { id: 'travel', name: 'Du lịch & Văn hóa', icon: '✈️' },
-  { id: 'tech', name: 'Công nghệ & Xã hội', icon: '💡' },
+const CATEGORIES: Array<{ id: string; name: string; icon: UiIconName }> = [
+  { id: 'all', name: 'Tất cả', icon: 'sparkles' },
+  { id: 'daily', name: 'Đời sống', icon: 'coffee' },
+  { id: 'hobbies', name: 'Sở thích', icon: 'palette' },
+  { id: 'work', name: 'Công việc & Học tập', icon: 'briefcase' },
+  { id: 'travel', name: 'Du lịch & Văn hóa', icon: 'plane' },
+  { id: 'tech', name: 'Công nghệ & Xã hội', icon: 'lightbulb' },
 ];
 
 const TOPICS: TopicItem[] = [
@@ -39,7 +41,7 @@ const TOPICS: TopicItem[] = [
     en: 'Introduce Yourself',
     category: 'daily',
     tag: 'A2',
-    icon: '👤',
+    icon: 'user',
     desc: 'Nghe đoạn giới thiệu tên tuổi, nghề nghiệp, nơi sống và sở thích cá nhân.',
   },
   {
@@ -47,7 +49,7 @@ const TOPICS: TopicItem[] = [
     en: 'My Last Weekend',
     category: 'daily',
     tag: 'A2',
-    icon: '🗓️',
+    icon: 'calendar',
     desc: 'Lắng nghe các hoạt động thư giãn, giải trí và sinh hoạt cuối tuần cùng bạn bè.',
   },
   {
@@ -55,7 +57,7 @@ const TOPICS: TopicItem[] = [
     en: 'My Daily Routine',
     category: 'daily',
     tag: 'A2',
-    icon: '⏰',
+    icon: 'clock',
     desc: 'Lịch trình từ sáng thức dậy, bữa ăn đến giờ làm việc và nghỉ ngơi buổi tối.',
   },
   {
@@ -63,7 +65,7 @@ const TOPICS: TopicItem[] = [
     en: 'Weather & Four Seasons',
     category: 'daily',
     tag: 'A2',
-    icon: '🌤️',
+    icon: 'weather',
     desc: 'Mô tả thời tiết yêu thích, sự thay đổi của khí hậu và các hoạt động theo mùa.',
   },
 
@@ -73,7 +75,7 @@ const TOPICS: TopicItem[] = [
     en: 'My Dream Career',
     category: 'work',
     tag: 'B1',
-    icon: '💼',
+    icon: 'briefcase',
     desc: 'Mô tả nghề nghiệp lý tưởng, môi trường làm việc và các kỹ năng cần thiết.',
   },
   {
@@ -81,7 +83,7 @@ const TOPICS: TopicItem[] = [
     en: 'Remote vs Office Work',
     category: 'work',
     tag: 'B2',
-    icon: '💻',
+    icon: 'laptop',
     desc: 'So sánh ưu nhược điểm giữa làm việc từ xa online và văn phòng truyền thống.',
   },
 
@@ -91,7 +93,7 @@ const TOPICS: TopicItem[] = [
     en: 'A Memorable Journey',
     category: 'travel',
     tag: 'B1',
-    icon: '✈️',
+    icon: 'plane',
     desc: 'Kỷ niệm du lịch, khám phá danh lam thắng cảnh, con người và ẩm thực địa phương.',
   },
   {
@@ -99,7 +101,7 @@ const TOPICS: TopicItem[] = [
     en: 'Coffee Culture & Cafes',
     category: 'travel',
     tag: 'A2',
-    icon: '☕',
+    icon: 'coffee',
     desc: 'Thói quen thưởng thức cà phê, không gian quán xá và phong cách sống hiện đại.',
   },
 
@@ -109,7 +111,7 @@ const TOPICS: TopicItem[] = [
     en: 'Favorite Food & Cooking',
     category: 'hobbies',
     tag: 'A2',
-    icon: '🍜',
+    icon: 'food',
     desc: 'Mô tả hương vị món ăn khoái khẩu, nguyên liệu tươi ngon và cách chế biến.',
   },
   {
@@ -117,7 +119,7 @@ const TOPICS: TopicItem[] = [
     en: 'Reading & Books',
     category: 'hobbies',
     tag: 'B1',
-    icon: '📚',
+    icon: 'books',
     desc: 'Lợi ích của việc đọc sách mỗi ngày, thể loại yêu thích và kỹ năng tự học.',
   },
 
@@ -127,7 +129,7 @@ const TOPICS: TopicItem[] = [
     en: 'AI in Daily Life',
     category: 'tech',
     tag: 'B2',
-    icon: '🤖',
+    icon: 'bot',
     desc: 'Những lợi ích và ứng dụng thực tế của AI trong công việc và đời sống hàng ngày.',
   },
   {
@@ -135,7 +137,7 @@ const TOPICS: TopicItem[] = [
     en: 'Social Media & Modern Life',
     category: 'tech',
     tag: 'B1',
-    icon: '📱',
+    icon: 'phone',
     desc: 'Sự kết nối, chia sẻ thông tin và cách cân bằng thời gian trên mạng xã hội.',
   },
 ];
@@ -148,13 +150,13 @@ const LEVELS = [
   { id: 'C1', name: 'C1 · Nâng cao', desc: '115–140 từ' },
 ];
 
-const VOICE_DETAILS = [
-  { id: 'coral', name: 'Coral', tone: 'Trong trẻo, Dễ nghe', gender: 'Nữ', avatar: '👩', badge: 'Khuyên dùng' },
-  { id: 'nova', name: 'Nova', tone: 'Trẻ trung, Năng động', gender: 'Nữ', avatar: '👩' },
-  { id: 'alloy', name: 'Alloy', tone: 'Tự nhiên, Chuẩn phát âm', gender: 'Chuẩn', avatar: '🎙️' },
-  { id: 'echo', name: 'Echo', tone: 'Ấm áp, Điềm tĩnh', gender: 'Nam', avatar: '👨' },
-  { id: 'onyx', name: 'Onyx', tone: 'Trầm ấm, Chững chạc', gender: 'Nam', avatar: '👨' },
-  { id: 'fable', name: 'Fable', tone: 'Biểu cảm, Kể chuyện', gender: 'Truyền cảm', avatar: '🎭' },
+const VOICE_DETAILS: Array<{ id: string; name: string; tone: string; gender: string; avatar: UiIconName; badge?: string }> = [
+  { id: 'coral', name: 'Coral', tone: 'Trong trẻo, Dễ nghe', gender: 'Nữ', avatar: 'user', badge: 'Khuyên dùng' },
+  { id: 'nova', name: 'Nova', tone: 'Trẻ trung, Năng động', gender: 'Nữ', avatar: 'sparkles' },
+  { id: 'alloy', name: 'Alloy', tone: 'Tự nhiên, Chuẩn phát âm', gender: 'Chuẩn', avatar: 'mic' },
+  { id: 'echo', name: 'Echo', tone: 'Ấm áp, Điềm tĩnh', gender: 'Nam', avatar: 'headphones' },
+  { id: 'onyx', name: 'Onyx', tone: 'Trầm ấm, Chững chạc', gender: 'Nam', avatar: 'volume' },
+  { id: 'fable', name: 'Fable', tone: 'Biểu cảm, Kể chuyện', gender: 'Truyền cảm', avatar: 'theater' },
 ];
 
 
@@ -354,8 +356,7 @@ export default function Listening() {
   const activeTopicObj = TOPICS.find((t) => t.name === topic);
 
   return (
-    <div className="listening-page" style={{ maxWidth: 1520, margin: '0 auto' }}>
-      {/* Hidden Audio Player */}
+    <div className="content listening-page">
       {audioUrl && (
         <audio
           ref={audioRef}
@@ -378,24 +379,21 @@ export default function Listening() {
       )}
 
       {/* Header Bar */}
-      <div className="listening-header">
+      <div className="pagehead listening-header">
         <div>
-          <h1>
-            <Icon n="headphones" s={28} />
-            <span>Luyện nghe Chép chính tả</span>
-          </h1>
-          <p className="sub" style={{ margin: '4px 0 0', fontSize: '14px' }}>
-            Rèn luyện kỹ năng nghe hiểu tiếng Anh qua phương pháp Dictation & Chấm điểm từng từ.
+          <div className="eyebrow">LISTENING STUDIO · DICTATION</div>
+          <SplitHeading text="Luyện nghe Chép chính tả" />
+          <p className="sub">
+            Rèn luyện kỹ năng nghe hiểu tiếng Anh qua phương pháp Dictation &amp; Chấm điểm từng từ.
           </p>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        <div className="row" style={{ gap: 10 }}>
           <QuotaBadge featureKey="listening" labelSuffix="bài hôm nay" />
           {view !== 'select' && (
             <button
               type="button"
-              className="btn sec"
-              style={{ padding: '8px 16px', borderRadius: '12px', fontSize: '13.5px', fontWeight: 700 }}
+              className="btn secondary sm"
               onClick={() => {
                 if (audioRef.current) audioRef.current.pause();
                 setView('select');
@@ -407,11 +405,7 @@ export default function Listening() {
         </div>
       </div>
 
-      {err && (
-        <div className="error" style={{ marginBottom: 16 }}>
-          {err}
-        </div>
-      )}
+      {err && <div className="error">{err}</div>}
 
       <AnimatePresence mode="wait">
       {/* VIEW 1: SELECT TOPIC & SETUP */}
@@ -422,19 +416,11 @@ export default function Listening() {
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -6 }}
           transition={{ duration: 0.22 }}
+          className="colstack"
+          style={{ flex: 1, minHeight: 0, gap: 10 }}
         >
           {/* Category Filter & Level Selector */}
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              flexWrap: 'wrap',
-              gap: 12,
-              marginBottom: 18,
-            }}
-          >
-            {/* Category tabs */}
+          <div className="row between" style={{ flexWrap: 'wrap', gap: 10, flex: 'none' }}>
             <div className="chiprow" style={{ margin: 0 }}>
               {CATEGORIES.map((c) => (
                 <button
@@ -442,28 +428,15 @@ export default function Listening() {
                   type="button"
                   className={'fchip' + (selectedCategory === c.id ? ' on' : '')}
                   onClick={() => setSelectedCategory(c.id)}
-                  style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: '13.5px', padding: '7px 15px' }}
                 >
-                  <span>{c.icon}</span>
+                  <UiIcon name={c.icon} size={14} />
                   <span>{c.name}</span>
                 </button>
               ))}
             </div>
 
-            {/* Trình độ (Level) Chips */}
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 6,
-                background: '#fff',
-                padding: '5px 12px',
-                borderRadius: 14,
-                border: '1px solid var(--border, #e2e8f0)',
-                boxShadow: '0 2px 6px rgba(0,0,0,0.03)',
-              }}
-            >
-              <span style={{ fontSize: '13px', fontWeight: 700, color: '#64748b', marginRight: 4 }}>
+            <div className="chips">
+              <span className="tiny" style={{ fontWeight: 800, color: 'var(--cream)', textShadow: '0 1px 4px rgba(0,0,0,0.4)', marginRight: 2 }}>
                 Trình độ:
               </span>
               {LEVELS.map((lvl) => (
@@ -471,12 +444,6 @@ export default function Listening() {
                   key={lvl.id}
                   type="button"
                   className={'fchip' + (level === lvl.id ? ' on' : '')}
-                  style={{
-                    padding: '5px 13px',
-                    fontSize: '12.5px',
-                    fontWeight: 800,
-                    cursor: 'pointer',
-                  }}
                   title={`${lvl.name} (${lvl.desc})`}
                   onClick={() => setLevel(lvl.id)}
                 >
@@ -486,84 +453,61 @@ export default function Listening() {
             </div>
           </div>
 
-          <div className="cols2" style={{ alignItems: 'start', gap: 22 }}>
-            {/* Left Column: Topics Grid & Custom Topic */}
-            <div className="colstack" style={{ flex: '1 1 63%' }}>
-              <motion.div
-                variants={staggerContainer}
-                initial="hidden"
-                animate="visible"
-                key={selectedCategory}
-                className="listening-topics-grid"
-              >
-                {filteredTopics.map((t) => {
-                  const isSelected = !isCustom && topic === t.name;
-                  return (
-                    <motion.div key={t.name} variants={staggerItem}>
-                      <button
-                        type="button"
-                        className={'listening-topic-card' + (isSelected ? ' on' : '')}
-                        onClick={() => {
-                          setTopic(t.name);
-                          setIsCustom(false);
-                        }}
-                      >
-                        <div className="listening-topic-card-top">
-                          <span className="listening-topic-icon">{t.icon}</span>
-                          {isSelected && (
-                            <span
-                              className="pill"
-                              style={{
-                                fontSize: '11.5px',
-                                padding: '3px 9px',
-                                fontWeight: 800,
-                                background: '#dbeafe',
-                                color: '#1e40af',
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: 4,
-                              }}
-                            >
-                              <Icon n="check" s={12} /> Đã chọn
-                            </span>
-                          )}
-                        </div>
-                        <div className="listening-topic-body">
-                          <b className="listening-topic-title">{t.name}</b>
-                          <div className="listening-topic-en">{t.en}</div>
-                          <p className="listening-topic-desc">{t.desc}</p>
-                        </div>
-                      </button>
-                    </motion.div>
-                  );
-                })}
-              </motion.div>
+          <div className="cols2" style={{ gridTemplateColumns: 'minmax(0, 1.35fr) minmax(300px, 0.9fr)', flex: 1, minHeight: 0, alignItems: 'stretch' }}>
+            {/* Left Column: Scrollable Topics Grid & Pinned Custom Input */}
+            <div className="card colstack" style={{ gap: 10, minHeight: 0 }}>
+              <div className="long-list" style={{ flex: 1, minHeight: 0, paddingRight: 4 }}>
+                <motion.div
+                  variants={staggerContainer}
+                  initial="hidden"
+                  animate="visible"
+                  key={selectedCategory}
+                  className="listening-topics-grid"
+                >
+                  {filteredTopics.map((t) => {
+                    const isSelected = !isCustom && topic === t.name;
+                    return (
+                      <motion.div key={t.name} variants={staggerItem}>
+                        <button
+                          type="button"
+                          className={'listening-topic-card' + (isSelected ? ' on' : '')}
+                          onClick={() => {
+                            setTopic(t.name);
+                            setIsCustom(false);
+                          }}
+                        >
+                          <div className="listening-topic-card-top">
+                            <span className="listening-topic-icon"><UiIcon name={t.icon} size={18} /></span>
+                            {isSelected && (
+                              <span className="pill greensoft" style={{ fontSize: 11 }}>
+                                <Icon n="check" s={12} /> Đã chọn
+                              </span>
+                            )}
+                          </div>
+                          <div className="listening-topic-body">
+                            <b className="listening-topic-title">{t.name}</b>
+                            <div className="listening-topic-en">{t.en}</div>
+                            <p className="listening-topic-desc">{t.desc}</p>
+                          </div>
+                        </button>
+                      </motion.div>
+                    );
+                  })}
+                </motion.div>
+              </div>
 
-              {/* Custom Topic Input */}
-              <div
-                style={{
-                  marginTop: 18,
-                  padding: '16px 20px',
-                  borderRadius: 18,
-                  background: '#ffffff',
-                  border: isCustom ? '2px solid var(--primary, #1565C0)' : '1.5px solid var(--border, #e2e8f0)',
-                  boxShadow: isCustom ? '0 6px 20px rgba(21, 101, 192, 0.12)' : '0 2px 8px rgba(15, 23, 42, 0.02)',
-                  transition: 'all 0.22s ease',
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-                  <label style={{ fontSize: 13.5, fontWeight: 800, color: 'var(--ink)', display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <span style={{ fontSize: 16 }}>✏️</span> Hoặc tự nhập chủ đề theo ý bạn:
+              {/* Custom Topic Input pinned at bottom */}
+              <div style={{ flex: 'none', paddingTop: 10, borderTop: '1px solid var(--line)' }}>
+                <div className="row between" style={{ marginBottom: 6 }}>
+                  <label className="tiny" style={{ fontWeight: 800, color: 'var(--ink)', display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                    <UiIcon name="pencil" size={13} /> Hoặc tự nhập chủ đề theo ý bạn:
                   </label>
-                  {isCustom && (
-                    <span className="pill greensoft" style={{ fontSize: 11, padding: '2px 8px' }}>
-                      Đang dùng chủ đề tự nhập
-                    </span>
-                  )}
+                  {isCustom && <span className="pill greensoft" style={{ fontSize: 11 }}>Đang dùng chủ đề tự nhập</span>}
                 </div>
-                <div style={{ display: 'flex', gap: 10 }}>
+                <div className="row" style={{ gap: 8 }}>
                   <input
                     type="text"
+                    className="input"
                     value={customTopic}
                     onChange={(e) => {
                       setCustomTopic(e.target.value);
@@ -572,16 +516,8 @@ export default function Listening() {
                     onFocus={() => {
                       if (customTopic.trim()) setIsCustom(true);
                     }}
-                    placeholder="Ví dụ: Lợi ích của việc đọc sách mỗi ngày, Trải nghiệm phỏng vấn đầu tiên..."
-                    style={{
-                      flex: 1,
-                      padding: '10px 14px',
-                      borderRadius: 12,
-                      border: '1.5px solid #cbd5e1',
-                      outline: 'none',
-                      fontSize: 14,
-                      background: '#fff',
-                    }}
+                    placeholder="Ví dụ: Lợi ích của việc đọc sách mỗi ngày..."
+                    style={{ flex: 1, fontSize: 13.5 }}
                   />
                   {isCustom && (
                     <button
@@ -591,7 +527,6 @@ export default function Listening() {
                         setIsCustom(false);
                         setCustomTopic('');
                       }}
-                      style={{ padding: '0 14px', fontSize: 13, borderRadius: 12 }}
                     >
                       Bỏ chọn
                     </button>
@@ -600,81 +535,59 @@ export default function Listening() {
               </div>
             </div>
 
-            {/* Right Column: Setup Summary, Dictation Guide, & History / Mascot Tip */}
-            <div className="colstack" style={{ flex: '1 1 37%', display: 'flex', flexDirection: 'column', gap: 16 }}>
-              {/* Card 1: Setup Summary & Start Button */}
-              <MotionCard style={{ padding: 22, borderRadius: 20 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 16 }}>
-                  <img
-                    src={viAvatar}
-                    alt="Vi AI"
-                    style={{
-                      width: 52,
-                      height: 52,
-                      borderRadius: '50%',
-                      objectFit: 'cover',
-                      boxShadow: '0 4px 12px rgba(21, 101, 192, 0.2)',
-                    }}
+            {/* Right Column: Setup Summary, Guide & History */}
+            <div className="colstack long-list" style={{ gap: 10, paddingRight: 4 }}>
+              <MotionCard style={{ padding: 18 }}>
+                <div className="row" style={{ gap: 12, marginBottom: 12 }}>
+                  <ViMascotImage
+                    pose="listen"
+                    animated
+                    size={58}
+                    priority
+                    alt="Vi đeo tai nghe sẵn sàng tạo bài luyện nghe tiếng Anh"
                   />
                   <div>
-                    <h3 style={{ margin: 0, fontSize: 17, fontWeight: 900, color: 'var(--ink)' }}>
+                    <h3 style={{ margin: 0, fontSize: 16, color: 'var(--ink)' }}>
                       Sẵn sàng luyện nghe!
                     </h3>
-                    <p className="sub" style={{ margin: '3px 0 0', fontSize: 12.5 }}>
-                      AI sẽ tạo đoạn văn độc quyền và đọc giọng chuẩn bản xứ cho bạn.
+                    <p className="tiny muted" style={{ margin: '2px 0 0' }}>
+                      AI sẽ tạo đoạn văn độc quyền và đọc giọng chuẩn bản xứ.
                     </p>
                   </div>
                 </div>
 
                 <div
                   style={{
-                    background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)',
-                    borderRadius: 16,
-                    padding: '16px',
-                    border: '1px solid #e2e8f0',
+                    background: 'rgba(250, 248, 241, 0.72)',
+                    borderRadius: 14,
+                    padding: 12,
+                    border: '1px solid var(--line)',
                     display: 'flex',
                     flexDirection: 'column',
-                    gap: 12,
-                    marginBottom: 18,
+                    gap: 10,
+                    marginBottom: 14,
                   }}
                 >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 13.5 }}>
-                    <span style={{ color: '#64748b', fontWeight: 600 }}>Chủ đề:</span>
-                    <b
-                      style={{
-                        color: 'var(--ink)',
-                        textAlign: 'right',
-                        maxWidth: '65%',
-                        whiteSpace: 'nowrap',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: 5,
-                      }}
-                    >
-                      <span>{isCustom ? '✏️' : activeTopicObj?.icon || '💡'}</span>
-                      <span>{isCustom && customTopic ? customTopic : topic}</span>
+                  <div className="row between" style={{ fontSize: 13 }}>
+                    <span className="muted">Chủ đề:</span>
+                    <b style={{ color: 'var(--ink)', maxWidth: '65%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                      <UiIcon name={isCustom ? 'pencil' : activeTopicObj?.icon || 'lightbulb'} size={14} /> {isCustom && customTopic ? customTopic : topic}
                     </b>
                   </div>
 
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 13.5 }}>
-                    <span style={{ color: '#64748b', fontWeight: 600 }}>Trình độ:</span>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <span className="pill" style={{ fontSize: '12px', fontWeight: 800 }}>
-                        Cấp {level}
-                      </span>
-                      <span style={{ fontSize: 12, color: '#64748b' }}>
-                        ({selectedLevelObj?.desc || 'Chuẩn CEFR'})
-                      </span>
+                  <div className="row between" style={{ fontSize: 13 }}>
+                    <span className="muted">Trình độ:</span>
+                    <div className="row" style={{ gap: 6 }}>
+                      <span className="pill">Cấp {level}</span>
+                      <span className="tiny muted">({selectedLevelObj?.desc || 'Chuẩn CEFR'})</span>
                     </div>
                   </div>
 
                   {/* Custom Modern Voice Selector */}
-                  <div className="custom-voice-select-wrap" ref={voiceDropdownRef} style={{ marginTop: 2 }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-                      <span style={{ color: '#64748b', fontWeight: 600, fontSize: 13 }}>Giọng đọc bản xứ:</span>
-                      <span className="pill" style={{ fontSize: 11, padding: '2px 8px', background: '#eff6ff', color: '#1d4ed8', fontWeight: 800 }}>
+                  <div className="custom-voice-select-wrap" ref={voiceDropdownRef}>
+                    <div className="row between" style={{ marginBottom: 6 }}>
+                      <span className="tiny muted" style={{ fontWeight: 700 }}>Giọng đọc bản xứ:</span>
+                      <span className="pill" style={{ fontSize: 11 }}>
                         {selectedVoiceDetail.gender} · {selectedVoiceDetail.tone}
                       </span>
                     </div>
@@ -684,16 +597,16 @@ export default function Listening() {
                       className={'custom-voice-trigger' + (isVoiceOpen ? ' active' : '')}
                       onClick={() => setIsVoiceOpen(!isVoiceOpen)}
                     >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                        <span className="voice-avatar-badge">{selectedVoiceDetail.avatar}</span>
+                      <div className="row" style={{ gap: 10 }}>
+                        <span className="voice-avatar-badge"><UiIcon name={selectedVoiceDetail.avatar} size={15} /></span>
                         <div style={{ textAlign: 'left' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                            <b style={{ fontSize: 13.5, color: 'var(--ink)' }}>{selectedVoiceDetail.name}</b>
+                          <div className="row" style={{ gap: 6 }}>
+                            <b style={{ fontSize: 13, color: 'var(--ink)' }}>{selectedVoiceDetail.name}</b>
                             {selectedVoiceDetail.badge && (
                               <span className="voice-recommend-badge">{selectedVoiceDetail.badge}</span>
                             )}
                           </div>
-                          <span style={{ fontSize: 11.5, color: '#64748b' }}>{selectedVoiceDetail.tone}</span>
+                          <span className="tiny muted">{selectedVoiceDetail.tone}</span>
                         </div>
                       </div>
                       <span className={'voice-chevron' + (isVoiceOpen ? ' open' : '')}>
@@ -723,18 +636,18 @@ export default function Listening() {
                                   setIsVoiceOpen(false);
                                 }}
                               >
-                                <span className="voice-avatar-badge">{v.avatar}</span>
+                                <span className="voice-avatar-badge"><UiIcon name={v.avatar} size={15} /></span>
                                 <div style={{ flex: 1, textAlign: 'left' }}>
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                                    <b style={{ fontSize: 13, color: isCurrent ? 'var(--primary)' : 'var(--ink)' }}>
+                                  <div className="row" style={{ gap: 6 }}>
+                                    <b style={{ fontSize: 13, color: isCurrent ? 'var(--sage-dark)' : 'var(--ink)' }}>
                                       {v.name}
                                     </b>
                                     <span className="voice-gender-tag">{v.gender}</span>
                                     {v.badge && <span className="voice-recommend-badge">{v.badge}</span>}
                                   </div>
-                                  <div style={{ fontSize: 11.5, color: '#64748b' }}>{v.tone}</div>
+                                  <div className="tiny muted">{v.tone}</div>
                                 </div>
-                                {isCurrent && <Icon n="check" s={16} style={{ color: 'var(--primary)' }} />}
+                                {isCurrent && <Icon n="check" s={16} />}
                               </button>
                             );
                           })}
@@ -746,169 +659,48 @@ export default function Listening() {
 
                 <button
                   type="button"
-                  className="btn primary"
+                  className="btn block"
                   disabled={loading}
-                  style={{
-                    width: '100%',
-                    padding: '14px',
-                    borderRadius: 14,
-                    fontSize: 15.5,
-                    fontWeight: 800,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: 10,
-                    boxShadow: '0 8px 24px rgba(21, 101, 192, 0.28)',
-                  }}
                   onClick={handleCreateExercise}
                 >
                   {loading ? (
                     <>
-                      <Icon n="loader" s={20} className="spin" />
+                      <Icon n="loader" s={18} className="spin" />
                       <span>Đang tạo bài nghe bằng AI...</span>
                     </>
                   ) : (
                     <>
-                      <Icon n="headphones" s={20} />
+                      <Icon n="headphones" s={18} />
                       <span>Bắt đầu Tạo bài nghe</span>
                     </>
                   )}
                 </button>
               </MotionCard>
 
-              {/* Card 2: Dictation Method Guide */}
-              <div
-                style={{
-                  background: '#ffffff',
-                  border: '1px solid var(--border, #e2e8f0)',
-                  borderRadius: 20,
-                  padding: '18px 20px',
-                  boxShadow: '0 2px 10px rgba(15, 23, 42, 0.03)',
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-                  <span style={{ fontSize: 18 }}>💡</span>
-                  <b style={{ fontSize: 14.5, color: 'var(--ink)' }}>Phương pháp Dictation 3 bước</b>
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 10, fontSize: 13 }}>
-                  <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
-                    <span
-                      style={{
-                        width: 22,
-                        height: 22,
-                        borderRadius: '50%',
-                        background: '#eff6ff',
-                        color: '#1d4ed8',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontSize: 11,
-                        fontWeight: 800,
-                        flexShrink: 0,
-                      }}
-                    >
-                      1
-                    </span>
-                    <div>
-                      <b style={{ color: '#1e293b' }}>Nghe tổng thể:</b>
-                      <span style={{ color: '#64748b' }}> Nghe lướt 1 lần để nắm ý chính, chủ đề và ngữ cảnh đoạn văn.</span>
-                    </div>
-                  </div>
-                  <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
-                    <span
-                      style={{
-                        width: 22,
-                        height: 22,
-                        borderRadius: '50%',
-                        background: '#eff6ff',
-                        color: '#1d4ed8',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontSize: 11,
-                        fontWeight: 800,
-                        flexShrink: 0,
-                      }}
-                    >
-                      2
-                    </span>
-                    <div>
-                      <b style={{ color: '#1e293b' }}>Chép chính tả:</b>
-                      <span style={{ color: '#64748b' }}> Vừa nghe vừa gõ lại; có thể tua lùi -5s hoặc chỉnh tốc độ 0.75x.</span>
-                    </div>
-                  </div>
-                  <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
-                    <span
-                      style={{
-                        width: 22,
-                        height: 22,
-                        borderRadius: '50%',
-                        background: '#eff6ff',
-                        color: '#1d4ed8',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontSize: 11,
-                        fontWeight: 800,
-                        flexShrink: 0,
-                      }}
-                    >
-                      3
-                    </span>
-                    <div>
-                      <b style={{ color: '#1e293b' }}>Đối chiếu &amp; Sửa sai:</b>
-                      <span style={{ color: '#64748b' }}> Nộp bài để AI so từ từng chữ, nhận diện các từ nối âm hoặc nuốt âm.</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Card 3: Recent History OR Mascot Coach Tip */}
               {historyList.length > 0 ? (
-                <div className="listening-history-card">
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-                    <h4 style={{ margin: 0, fontSize: 14.5, fontWeight: 800, color: 'var(--ink)' }}>
-                      🕒 Bài đã làm gần đây
-                    </h4>
-                    <span style={{ fontSize: 12, color: '#64748b' }}>{historyList.length} bài</span>
+                <div className="listening-history-card" style={{ padding: 16 }}>
+                  <div className="row between" style={{ marginBottom: 8 }}>
+                    <h4 style={{ margin: 0, fontSize: 14, color: 'var(--ink)', display: 'inline-flex', alignItems: 'center', gap: 6 }}><UiIcon name="clock" size={15} /> Bài đã làm gần đây</h4>
+                    <span className="tiny muted">{historyList.length} bài</span>
                   </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                    {historyList.slice(0, 4).map((item) => (
+                  <div className="colstack" style={{ gap: 6 }}>
+                    {historyList.slice(0, 3).map((item) => (
                       <div
                         key={item.id}
                         className="history-item-row"
+                        style={{ padding: '8px 10px', marginBottom: 0 }}
                         onClick={() => handleReviewHistoryItem(item)}
                       >
                         <div style={{ overflow: 'hidden', flex: 1, minWidth: 0, marginRight: 8 }}>
-                          <b
-                            style={{
-                              fontSize: 13,
-                              color: 'var(--ink)',
-                              display: 'block',
-                              textOverflow: 'ellipsis',
-                              whiteSpace: 'nowrap',
-                              overflow: 'hidden',
-                            }}
-                          >
+                          <b style={{ fontSize: 13, color: 'var(--ink)', display: 'block', textOverflow: 'ellipsis', whiteSpace: 'nowrap', overflow: 'hidden' }}>
                             {item.topic}
                           </b>
-                          <span style={{ fontSize: 11.5, color: '#64748b' }}>
+                          <span className="tiny muted">
                             Cấp {item.level} · {new Date(item.createdAt).toLocaleDateString('vi-VN')}
                           </span>
                         </div>
                         {item.score !== null && item.score !== undefined && (
-                          <span
-                            className="pill"
-                            style={{
-                              fontSize: 11.5,
-                              fontWeight: 800,
-                              padding: '3px 8px',
-                              borderRadius: 8,
-                              background: item.score >= 80 ? '#dcfce7' : item.score >= 50 ? '#fef3c7' : '#fee2e2',
-                              color: item.score >= 80 ? '#15803d' : item.score >= 50 ? '#b45309' : '#b91c1c',
-                              flexShrink: 0,
-                            }}
-                          >
+                          <span className={'pill ' + (item.score >= 80 ? 'greensoft' : item.score >= 50 ? 'warn' : 'redsoft')}>
                             {item.score}/100
                           </span>
                         )}
@@ -917,24 +709,16 @@ export default function Listening() {
                   </div>
                 </div>
               ) : (
-                <div
-                  style={{
-                    background: 'linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%)',
-                    borderRadius: 20,
-                    border: '1px solid #bbf7d0',
-                    padding: '18px 20px',
-                    display: 'flex',
-                    gap: 14,
-                    alignItems: 'center',
-                  }}
-                >
-                  <img
-                    src={viAvatar}
-                    alt="Vi"
-                    style={{ width: 44, height: 44, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }}
-                  />
-                  <div style={{ fontSize: 12.8, color: '#166534', lineHeight: 1.5 }}>
-                    <b>Vi mách nhỏ:</b> Đừng ngại nếu lần đầu chưa nghe kịp hết! Bạn có thể nghe đi nghe lại thoải mái và giảm tốc độ để luyện phản xạ tai tốt hơn nhé.
+                <div className="card" style={{ padding: 14 }}>
+                  <div className="coach">
+                    <ViMascotImage
+                      pose="listen"
+                      size={44}
+                      alt="Vi mách nhỏ mẹo luyện nghe chép chính tả"
+                    />
+                    <div className="bubble" style={{ fontSize: 12.5, lineHeight: 1.45 }}>
+                      <b>Vi mách nhỏ:</b> Bạn có thể nghe lại nhiều lần và giảm tốc độ xuống 0.75x để luyện bắt âm nối tự nhiên.
+                    </div>
                   </div>
                 </div>
               )}
@@ -951,52 +735,34 @@ export default function Listening() {
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -6 }}
           transition={{ duration: 0.22 }}
+          className="long-list colstack"
+          style={{ flex: 1, minHeight: 0, gap: 12, paddingRight: 4 }}
         >
-          {/* Exercise Info & Audio Player */}
           <div className="listening-player-card">
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-              <div>
-                <span className="pill" style={{ fontSize: 12, fontWeight: 800, marginRight: 8 }}>
-                  Cấp {currentExercise.level}
-                </span>
-                <b style={{ fontSize: 18, color: 'var(--ink)' }}>{currentExercise.topic}</b>
+            <div className="row between" style={{ marginBottom: 12, flexWrap: 'wrap', gap: 8 }}>
+              <div className="row" style={{ gap: 8 }}>
+                <span className="pill">Cấp {currentExercise.level}</span>
+                <b style={{ fontSize: 16.5, color: 'var(--ink)' }}>{currentExercise.topic}</b>
               </div>
-              <div style={{ fontSize: 13, color: '#64748b' }}>
-                Giọng: <b>{selectedVoiceObj.name}</b>
+              <div className="row" style={{ gap: 10 }}>
+                <ViMascotImage pose="listen" animated size={40} alt="Vi đang phát bài nghe tiếng Anh" />
+                <span className="tiny muted">Giọng: <b>{selectedVoiceObj.name}</b></span>
               </div>
             </div>
 
-            {/* Custom Modern Audio Controls */}
             <div className="listening-audio-controls">
-              {/* Play/Pause Button */}
               <button
                 type="button"
                 className="audio-btn-circle"
                 onClick={togglePlay}
                 title={isPlaying ? 'Tạm dừng' : 'Phát âm thanh'}
               >
-                {isPlaying ? <span style={{ fontSize: 20 }}>⏸</span> : <span style={{ fontSize: 22, marginLeft: 3 }}>▶</span>}
+                {isPlaying ? <span style={{ fontSize: 18 }}>⏸</span> : <span style={{ fontSize: 20, marginLeft: 2 }}>▶</span>}
               </button>
 
-              {/* Seek -5s and +5s */}
-              <button
-                type="button"
-                className="audio-btn-sec"
-                onClick={() => seekRelative(-5)}
-                title="Lùi lại 5 giây"
-              >
-                ⏪ -5s
-              </button>
-              <button
-                type="button"
-                className="audio-btn-sec"
-                onClick={() => seekRelative(5)}
-                title="Tua tới 5 giây"
-              >
-                ⏩ +5s
-              </button>
+              <button type="button" className="audio-btn-sec" onClick={() => seekRelative(-5)}>⏪ -5s</button>
+              <button type="button" className="audio-btn-sec" onClick={() => seekRelative(5)}>⏩ +5s</button>
 
-              {/* Progress Bar & Current Time */}
               <div className="audio-progress-wrap">
                 <input
                   type="range"
@@ -1011,24 +777,18 @@ export default function Listening() {
                     if (audioRef.current) audioRef.current.currentTime = target;
                   }}
                 />
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#64748b', fontWeight: 600 }}>
+                <div className="row between tiny muted">
                   <span>{formatTime(currentTime)}</span>
                   <span>{formatTime(duration)}</span>
                 </div>
               </div>
 
-              {/* Speed Toggles */}
-              <div style={{ display: 'flex', gap: 6 }}>
+              <div className="row" style={{ gap: 6 }}>
                 {[0.75, 1.0].map((rate) => (
                   <button
                     key={rate}
                     type="button"
-                    className={'audio-btn-sec' + (playbackRate === rate ? ' active' : '')}
-                    style={{
-                      background: playbackRate === rate ? 'var(--primary)' : '#fff',
-                      color: playbackRate === rate ? '#fff' : '#334155',
-                      borderColor: playbackRate === rate ? 'var(--primary)' : '#cbd5e1',
-                    }}
+                    className={playbackRate === rate ? 'btn sm' : 'btn secondary sm'}
                     onClick={() => changeRate(rate)}
                   >
                     {rate}x
@@ -1038,13 +798,12 @@ export default function Listening() {
             </div>
           </div>
 
-          {/* Typing Area */}
           <div className="listening-player-card">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-              <label style={{ fontSize: 15, fontWeight: 800, color: 'var(--ink)' }}>
-                ✍️ Gõ lại những gì bạn nghe được:
+            <div className="row between" style={{ marginBottom: 10 }}>
+              <label style={{ fontSize: 14.5, fontWeight: 800, color: 'var(--ink)' }}>
+                <UiIcon name="pen" size={14} /> Gõ lại những gì bạn nghe được:
               </label>
-              <span style={{ fontSize: 13, color: '#64748b' }}>
+              <span className="tiny muted">
                 Đã gõ: <b>{typedText.trim() ? typedText.trim().split(/\s+/).length : 0}</b> từ
               </span>
             </div>
@@ -1057,48 +816,37 @@ export default function Listening() {
               autoFocus
             />
 
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 18, flexWrap: 'wrap', gap: 12 }}>
-              <div style={{ fontSize: 13, color: '#64748b', display: 'flex', alignItems: 'center', gap: 6 }}>
-                <span>💡</span>
-                <span>Mẹo: Bạn có thể nghe lại bao nhiêu lần tùy thích trước khi nộp bài.</span>
+            <div className="row between" style={{ marginTop: 14, flexWrap: 'wrap', gap: 10 }}>
+              <div className="tiny muted">
+                <UiIcon name="lightbulb" size={14} /> Mẹo: Bạn có thể nghe lại bao nhiêu lần tùy thích trước khi nộp bài.
               </div>
 
-              <div style={{ display: 'flex', gap: 12 }}>
+              <div className="row" style={{ gap: 10 }}>
                 <button
                   type="button"
-                  className="btn sec"
+                  className="btn secondary sm"
                   onClick={() => {
                     if (audioRef.current) audioRef.current.pause();
                     setView('select');
                   }}
-                  style={{ padding: '12px 20px', borderRadius: 12, fontWeight: 700 }}
                 >
                   Làm bài khác
                 </button>
 
                 <button
                   type="button"
-                  className="btn primary"
+                  className="btn sm"
                   disabled={submitting || !typedText.trim()}
                   onClick={handleSubmit}
-                  style={{
-                    padding: '12px 28px',
-                    borderRadius: 12,
-                    fontSize: 15,
-                    fontWeight: 800,
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 8,
-                  }}
                 >
                   {submitting ? (
                     <>
-                      <Icon n="loader" s={18} className="spin" />
+                      <Icon n="loader" s={16} className="spin" />
                       <span>Đang chấm điểm...</span>
                     </>
                   ) : (
                     <>
-                      <Icon n="check" s={18} />
+                      <Icon n="check" s={16} />
                       <span>Chấm điểm ngay</span>
                     </>
                   )}
@@ -1117,129 +865,113 @@ export default function Listening() {
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -6 }}
           transition={{ duration: 0.22 }}
+          className="long-list colstack"
+          style={{ flex: 1, minHeight: 0, paddingRight: 4 }}
         >
-          {/* Result Score Card */}
           <div className="result-card">
             <div className="score-hero">
-              {/* Score circle */}
-              <div
-                className={
-                  'score-circle ' +
-                  (submitResult.score >= 85
-                    ? 'excellent'
-                    : submitResult.score >= 70
-                    ? 'good'
-                    : submitResult.score >= 50
-                    ? 'fair'
-                    : 'poor')
-                }
-              >
-                <span style={{ fontSize: 32, lineHeight: 1 }}>{submitResult.score}</span>
-                <span style={{ fontSize: 12, opacity: 0.9 }}>/ 100</span>
-              </div>
+              <ScoreRing
+                value={submitResult.score}
+                label={`${submitResult.score}/100`}
+                size={88}
+                accentColor={submitResult.score >= 80 ? 'var(--success)' : submitResult.score >= 50 ? 'var(--sage)' : 'var(--danger)'}
+              />
+              <ViMascotImage
+                pose={submitResult.score >= 70 ? 'celebrate' : 'listen'}
+                animated={submitResult.score >= 80}
+                size={76}
+                alt={submitResult.score >= 70 ? 'Vi ăn mừng kết quả nghe chép chính tả tốt' : 'Vi khích lệ bạn luyện nghe thêm'}
+              />
 
-              {/* Title & Feedback */}
-              <div style={{ flex: 1 }}>
-                <h2 style={{ margin: '0 0 6px', fontSize: 22, fontWeight: 800, color: 'var(--ink)' }}>
-                  {submitResult.score >= 85
-                    ? '🎉 Xuất sắc! Khả năng nghe của bạn rất ấn tượng!'
-                    : submitResult.score >= 70
-                    ? '👍 Rất tốt! Bạn đã nắm bắt hầu hết đoạn văn.'
-                    : submitResult.score >= 50
-                    ? '💪 Khá ổn! Tiếp tục luyện tập để quen tai hơn nhé.'
-                    : '🌱 Cần cố gắng thêm! Hãy nghe lại và đối chiếu từng từ bên dưới.'}
+              <div style={{ flex: 1, minWidth: 200 }}>
+                <h2 style={{ margin: '0 0 4px', fontSize: 19, color: 'var(--ink)', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                  <UiIcon
+                    name={
+                      submitResult.score >= 85
+                        ? 'award'
+                        : submitResult.score >= 70
+                        ? 'thumbs-up'
+                        : submitResult.score >= 50
+                        ? 'dumbbell'
+                        : 'sprout'
+                    }
+                    size={20}
+                  />
+                  <span>
+                    {submitResult.score >= 85
+                      ? 'Xuất sắc! Khả năng nghe của bạn rất ấn tượng!'
+                      : submitResult.score >= 70
+                      ? 'Rất tốt! Bạn đã nắm bắt hầu hết đoạn văn.'
+                      : submitResult.score >= 50
+                      ? 'Khá ổn! Tiếp tục luyện tập để quen tai hơn nhé.'
+                      : 'Cần cố gắng thêm! Hãy nghe lại và đối chiếu từng từ bên dưới.'}
+                  </span>
                 </h2>
-                <p className="sub" style={{ margin: 0, fontSize: 14 }}>
+                <p className="sub" style={{ margin: 0, fontSize: 13.5 }}>
                   Chủ đề: <b>{currentExercise?.topic}</b> · Trình độ: <b>Cấp {currentExercise?.level}</b>
                 </p>
               </div>
 
-              {/* Actions */}
-              <div style={{ display: 'flex', gap: 10 }}>
+              <div className="row" style={{ gap: 8 }}>
                 <button
                   type="button"
-                  className="btn sec"
+                  className="btn secondary sm"
                   onClick={() => {
                     if (audioRef.current) {
                       audioRef.current.currentTime = 0;
                       audioRef.current.play().catch(() => {});
                     }
                   }}
-                  style={{ padding: '10px 16px', borderRadius: 12, fontWeight: 700, fontSize: 13.5 }}
                 >
-                  🔊 Nghe lại
+                  <UiIcon name="volume" size={15} /> Nghe lại
                 </button>
 
                 <button
                   type="button"
-                  className="btn primary"
+                  className="btn sm"
                   onClick={() => {
                     if (audioRef.current) audioRef.current.pause();
                     setView('select');
                   }}
-                  style={{ padding: '10px 20px', borderRadius: 12, fontWeight: 800, fontSize: 13.5 }}
                 >
                   Luyện bài tiếp theo →
                 </button>
               </div>
             </div>
 
-            {/* Quick Statistics Bar */}
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
-                gap: 12,
-                marginTop: 20,
-              }}
-            >
-              <div style={{ background: '#f8fafc', padding: '12px 16px', borderRadius: 12, border: '1px solid #e2e8f0' }}>
-                <div style={{ fontSize: 12, color: '#64748b' }}>Tổng số từ</div>
-                <b style={{ fontSize: 20, color: '#1e293b' }}>{submitResult.totalWords}</b>
+            <div className="cols2" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 10, marginTop: 14 }}>
+              <div className="kpi" style={{ padding: 12 }}>
+                <div className="lbl">Tổng số từ</div>
+                <div className="num" style={{ fontSize: 20 }}>{submitResult.totalWords}</div>
               </div>
-
-              <div style={{ background: '#f0fdf4', padding: '12px 16px', borderRadius: 12, border: '1px solid #bbf7d0' }}>
-                <div style={{ fontSize: 12, color: '#166534' }}>Từ đúng hoàn toàn</div>
-                <b style={{ fontSize: 20, color: '#15803d' }}>{submitResult.correctWords}</b>
+              <div className="kpi" style={{ padding: 12 }}>
+                <div className="lbl">Từ đúng</div>
+                <div className="num" style={{ fontSize: 20, color: 'var(--green-dark)' }}>{submitResult.correctWords}</div>
               </div>
-
-              <div style={{ background: '#fefce8', padding: '12px 16px', borderRadius: 12, border: '1px solid #fef08a' }}>
-                <div style={{ fontSize: 12, color: '#854d0e' }}>Gần đúng (sai nhẹ)</div>
-                <b style={{ fontSize: 20, color: '#b45309' }}>{submitResult.nearMissWords}</b>
+              <div className="kpi" style={{ padding: 12 }}>
+                <div className="lbl">Sai nhẹ</div>
+                <div className="num" style={{ fontSize: 20, color: 'var(--amber-dark)' }}>{submitResult.nearMissWords}</div>
               </div>
-
-              <div style={{ background: '#fef2f2', padding: '12px 16px', borderRadius: 12, border: '1px solid #fecaca' }}>
-                <div style={{ fontSize: 12, color: '#991b1b' }}>Từ thiếu hoặc sai</div>
-                <b style={{ fontSize: 20, color: '#dc2626' }}>
+              <div className="kpi" style={{ padding: 12 }}>
+                <div className="lbl">Thiếu / Sai</div>
+                <div className="num" style={{ fontSize: 20, color: 'var(--red-dark)' }}>
                   {Math.max(0, submitResult.totalWords - submitResult.correctWords - submitResult.nearMissWords)}
-                </b>
+                </div>
               </div>
             </div>
 
-            {/* Word-by-Word Diff Visualizer */}
-            <div style={{ marginTop: 24 }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
-                <h3 style={{ margin: 0, fontSize: 16, fontWeight: 800, color: 'var(--ink)' }}>
-                  🔍 Chi tiết đối chiếu từng từ:
+            <div style={{ marginTop: 18 }}>
+              <div className="row between" style={{ flexWrap: 'wrap', gap: 8 }}>
+                <h3 style={{ margin: 0, fontSize: 15, color: 'var(--ink)' }}>
+                  <UiIcon name="search" size={14} /> Chi tiết đối chiếu từng từ:
                 </h3>
-                {/* Legend */}
-                <div style={{ display: 'flex', gap: 10, fontSize: 12, flexWrap: 'wrap' }}>
-                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                    <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#10b981' }} /> Đúng
-                  </span>
-                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                    <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#f59e0b' }} /> Sai nhẹ (Near-miss)
-                  </span>
-                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                    <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#ef4444' }} /> Từ sai
-                  </span>
-                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                    <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#94a3b8' }} /> Bỏ sót
-                  </span>
+                <div className="row tiny" style={{ gap: 10 }}>
+                  <span className="pill greensoft">Đúng</span>
+                  <span className="pill warn">Sai nhẹ</span>
+                  <span className="pill redsoft">Từ sai</span>
                 </div>
               </div>
 
-              {/* Aligned tokens */}
               <div className="diff-stream">
                 {submitResult.wordResults.map((w, idx) => {
                   const status = w.status.toLowerCase();
@@ -1295,39 +1027,24 @@ export default function Listening() {
               </div>
             </div>
 
-            {/* Revealed Original Transcript */}
             {submitResult.transcript && (
               <div className="transcript-box">
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-                  <b style={{ fontSize: 14, textTransform: 'uppercase', letterSpacing: 0.5 }}>
-                    📖 Văn bản đầy đủ đoạn nghe:
-                  </b>
+                <div className="row between" style={{ marginBottom: 6 }}>
+                  <b style={{ fontSize: 13.5, display: 'inline-flex', alignItems: 'center', gap: 6 }}><UiIcon name="book" size={15} /> Văn bản đầy đủ đoạn nghe:</b>
                   <button
                     type="button"
+                    className="btn ghost sm"
                     onClick={() => {
                       if (audioRef.current) {
                         audioRef.current.currentTime = 0;
                         audioRef.current.play().catch(() => {});
                       }
                     }}
-                    style={{
-                      background: 'none',
-                      border: 'none',
-                      color: '#166534',
-                      fontWeight: 700,
-                      cursor: 'pointer',
-                      fontSize: 13,
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: 4,
-                    }}
                   >
-                    🔊 Nghe lại đoạn này
+                    <UiIcon name="volume" size={15} /> Nghe lại đoạn này
                   </button>
                 </div>
-                <p style={{ margin: 0, fontStyle: 'normal' }}>
-                  {submitResult.transcript}
-                </p>
+                <p style={{ margin: 0 }}>{submitResult.transcript}</p>
               </div>
             )}
           </div>

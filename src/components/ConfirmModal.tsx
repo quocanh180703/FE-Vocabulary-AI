@@ -48,11 +48,11 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
   }, [isOpen, isLoading, onClose]);
 
   const isDanger = variant === 'danger';
-  const themeColor = isDanger ? '#DC2626' : variant === 'warning' ? '#D97706' : '#2563EB';
-  const badgeBg = isDanger ? '#FEE2E2' : variant === 'warning' ? '#FEF3C7' : '#EFF6FF';
-  const warnBg = isDanger ? '#FEF2F2' : variant === 'warning' ? '#FFFBEB' : '#F0F9FF';
-  const warnBorder = isDanger ? '#FECDD3' : variant === 'warning' ? '#FDE68A' : '#BAE6FD';
-  const warnText = isDanger ? '#991B1B' : variant === 'warning' ? '#92400E' : '#0369A1';
+  const themeColor = isDanger ? 'var(--danger)' : variant === 'warning' ? 'var(--amber)' : 'var(--sage)';
+  const badgeBg = isDanger ? 'var(--danger-bg)' : variant === 'warning' ? 'var(--amber-bg)' : 'rgba(71, 96, 63, 0.14)';
+  const warnBg = isDanger ? 'var(--danger-bg)' : variant === 'warning' ? 'var(--amber-bg)' : 'rgba(71, 96, 63, 0.1)';
+  const warnBorder = isDanger ? 'rgba(154, 75, 67, 0.3)' : variant === 'warning' ? 'rgba(201, 134, 47, 0.35)' : 'rgba(71, 96, 63, 0.28)';
+  const warnText = isDanger ? 'var(--red-dark)' : variant === 'warning' ? 'var(--amber-dark)' : 'var(--ink)';
 
   return createPortal(
     <AnimatePresence>
@@ -67,8 +67,8 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
             position: 'fixed',
             inset: 0,
             zIndex: 100050,
-            background: 'rgba(15, 23, 42, 0.65)',
-            backdropFilter: 'blur(4px)',
+            background: 'rgba(16, 36, 24, 0.56)',
+            backdropFilter: 'blur(6px)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -76,18 +76,19 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
           }}
         >
           <motion.div
-            initial={{ scale: 0.92, opacity: 0, y: 10 }}
+            initial={{ scale: 0.96, opacity: 0, y: 10 }}
             animate={{ scale: 1, opacity: 1, y: 0 }}
-            exit={{ scale: 0.92, opacity: 0, y: 10 }}
-            transition={{ type: 'spring', damping: 25, stiffness: 350 }}
+            exit={{ scale: 0.96, opacity: 0, y: 8 }}
+            transition={{ duration: 0.22, ease: [0.23, 1, 0.32, 1] }}
             style={{
-              background: '#FFFFFF',
-              borderRadius: 20,
+              background: 'var(--glass-strong)',
+              backdropFilter: 'blur(26px)',
+              borderRadius: 'var(--r-lg)',
               width: '100%',
               maxWidth: 440,
               padding: '24px 24px 20px',
-              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
-              border: '1px solid #F1F5F9',
+              boxShadow: 'var(--shadow-lg)',
+              border: '1px solid var(--rim)',
               textAlign: 'center',
             }}
           >

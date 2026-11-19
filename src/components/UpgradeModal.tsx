@@ -58,8 +58,8 @@ export const UpgradeModal: React.FC = () => {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            backgroundColor: 'rgba(15, 23, 42, 0.75)',
-            backdropFilter: 'blur(6px)',
+            backgroundColor: 'rgba(16, 36, 24, 0.56)',
+            backdropFilter: 'blur(8px)',
             padding: '16px',
           }}
           onClick={closeUpgradeModal}
@@ -72,20 +72,21 @@ export const UpgradeModal: React.FC = () => {
         style={{
           maxWidth: '520px',
           width: '100%',
-          backgroundColor: '#ffffff',
-          borderRadius: '20px',
-          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+          backgroundColor: 'var(--glass-strong)',
+          backdropFilter: 'blur(26px)',
+          borderRadius: '28px',
+          boxShadow: 'var(--shadow-lg)',
           overflow: 'hidden',
-          border: '1px solid #e2e8f0',
+          border: '1px solid var(--rim)',
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header with vibrant gold gradient banner */}
+        {/* Header with deep-sage Sage Thư Viện banner */}
         <div
           style={{
-            background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)',
+            background: 'linear-gradient(135deg, #1d382c 0%, #34563f 100%)',
             padding: '24px 28px',
-            color: '#ffffff',
+            color: 'var(--cream)',
             position: 'relative',
           }}
         >
@@ -95,30 +96,30 @@ export const UpgradeModal: React.FC = () => {
               position: 'absolute',
               top: '16px',
               right: '16px',
-              background: 'rgba(255, 255, 255, 0.1)',
-              border: 'none',
+              background: 'rgba(250, 248, 241, 0.14)',
+              border: '1px solid rgba(250, 248, 241, 0.25)',
               borderRadius: '50%',
               width: '32px',
               height: '32px',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              color: '#94a3b8',
+              color: 'var(--cream)',
               cursor: 'pointer',
-              fontSize: '18px',
+              fontSize: '16px',
             }}
           >
             ✕
           </button>
 
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '4px 12px', background: 'rgba(245, 158, 11, 0.2)', borderRadius: '999px', border: '1px solid rgba(245, 158, 11, 0.4)', marginBottom: '12px' }}>
-            <span style={{ color: '#fbbf24', fontSize: '14px', fontWeight: 700 }}>★ PREMIUM PASS</span>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '4px 12px', background: 'rgba(201, 134, 47, 0.2)', borderRadius: '999px', border: '1px solid rgba(201, 134, 47, 0.45)', marginBottom: '12px' }}>
+            <span style={{ color: '#f3c683', fontSize: '13px', fontWeight: 700 }}>✦ PREMIUM</span>
           </div>
 
-          <h3 style={{ fontSize: '20px', fontWeight: 800, margin: '0 0 6px 0', color: '#f8fafc', lineHeight: 1.3 }}>
+          <h3 style={{ fontSize: '20px', fontWeight: 700, margin: '0 0 6px 0', color: 'var(--cream)', lineHeight: 1.3 }}>
             {getFeatureHeadline()}
           </h3>
-          <p style={{ fontSize: '14px', color: '#94a3b8', margin: 0, lineHeight: 1.5 }}>
+          <p style={{ fontSize: '13.5px', color: 'rgba(250, 248, 241, 0.85)', margin: 0, lineHeight: 1.5 }}>
             Nâng cấp gói Premium để mở khóa không giới hạn mọi tính năng AI và kho từ vựng. Lượt miễn phí mới sẽ mở lại lúc 00:00 đêm nay.
           </p>
         </div>
@@ -128,50 +129,50 @@ export const UpgradeModal: React.FC = () => {
           <div
             style={{
               padding: '18px 20px',
-              borderRadius: '16px',
-              border: '2px solid #3b82f6',
-              backgroundColor: '#eff6ff',
+              borderRadius: '20px',
+              border: '2px solid var(--sage)',
+              backgroundColor: 'rgba(250, 248, 241, 0.85)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
-              marginBottom: '20px',
-              boxShadow: '0 4px 14px rgba(59, 130, 246, 0.12)',
+              marginBottom: '18px',
+              boxShadow: 'var(--shadow-sm)',
             }}
           >
             <div>
               <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
-                <span style={{ fontSize: '13px', fontWeight: 800, color: '#1d4ed8', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                <span style={{ fontSize: '13px', fontWeight: 800, color: 'var(--sage)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                   Gói Theo Tháng
                 </span>
                 <span
                   style={{
-                    backgroundColor: '#dbeafe',
-                    color: '#1e40af',
+                    backgroundColor: 'var(--amber-bg)',
+                    color: 'var(--amber-dark)',
                     fontSize: '11px',
                     fontWeight: 700,
                     padding: '2px 8px',
                     borderRadius: '999px',
-                    border: '1px solid #bfdbfe',
+                    border: '1px solid rgba(201, 134, 47, 0.35)',
                   }}
                 >
-                  Gói chuẩn PRO
+                  Thanh toán PayOS
                 </span>
               </div>
-              <div style={{ fontSize: '13px', color: '#475569' }}>
+              <div style={{ fontSize: '13px', color: 'var(--muted)' }}>
                 Mở khóa không giới hạn · Hủy khi nào cũng được
               </div>
             </div>
             <div style={{ textAlign: 'right' }}>
-              <div style={{ fontSize: '22px', fontWeight: 900, color: '#0f172a', lineHeight: 1.1 }}>
+              <div style={{ fontSize: '22px', fontWeight: 800, color: 'var(--ink)', lineHeight: 1.1 }}>
                 99.000đ
               </div>
-              <div style={{ fontSize: '12px', color: '#64748b', fontWeight: 600 }}>/ tháng</div>
+              <div style={{ fontSize: '12px', color: 'var(--muted)', fontWeight: 600 }}>/ tháng</div>
             </div>
           </div>
 
           {/* Premium Perks Checklist */}
-          <div style={{ backgroundColor: '#f8fafc', borderRadius: '12px', padding: '14px 16px', marginBottom: '20px' }}>
-            <div style={{ fontSize: '13px', fontWeight: 700, color: '#334155', marginBottom: '8px' }}>
+          <div style={{ backgroundColor: 'rgba(255, 255, 255, 0.58)', borderRadius: '14px', padding: '14px 16px', marginBottom: '18px', border: '1px solid var(--line)' }}>
+            <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--ink)', marginBottom: '8px' }}>
               Quyền lợi mở khóa ngay lập tức:
             </div>
             <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '6px' }}>
@@ -182,8 +183,8 @@ export const UpgradeModal: React.FC = () => {
                 'Mở khóa toàn bộ 4.900+ từ vựng chuẩn Oxford CEFR A1–C1',
                 'Lộ trình học AI cá nhân hóa & dự đoán tiến độ tự động',
               ].map((perk, i) => (
-                <li key={i} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: '#475569' }}>
-                  <span style={{ color: '#10b981', fontWeight: 700 }}>✓</span>
+                <li key={i} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: 'var(--ink)' }}>
+                  <span style={{ color: 'var(--sage)', fontWeight: 800 }}>✓</span>
                   <span>{perk}</span>
                 </li>
               ))}
@@ -191,38 +192,24 @@ export const UpgradeModal: React.FC = () => {
           </div>
 
           {error && (
-            <div style={{ padding: '10px 14px', borderRadius: '8px', backgroundColor: '#fef2f2', color: '#b91c1c', fontSize: '13px', marginBottom: '16px' }}>
+            <div className="error" style={{ marginBottom: '14px' }}>
               {error}
             </div>
           )}
 
           {/* Actions */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             <button
               onClick={handlePayOS}
               disabled={loading}
-              style={{
-                width: '100%',
-                padding: '14px 20px',
-                borderRadius: '12px',
-                backgroundColor: '#2563eb',
-                color: '#ffffff',
-                border: 'none',
-                fontWeight: 700,
-                fontSize: '15px',
-                cursor: loading ? 'not-allowed' : 'pointer',
-                boxShadow: '0 4px 12px rgba(37, 99, 235, 0.3)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '8px',
-              }}
+              className="btn block"
+              style={{ padding: '13px 20px', fontSize: '14.5px' }}
             >
               {loading ? (
                 <span>Đang kết nối PayOS...</span>
               ) : (
                 <>
-                  <Icon n="spark" s={18} />
+                  <Icon n="spark" s={17} />
                   <span>Nâng cấp ngay qua PayOS</span>
                 </>
               )}
@@ -231,17 +218,8 @@ export const UpgradeModal: React.FC = () => {
             <button
               onClick={closeUpgradeModal}
               disabled={loading}
-              style={{
-                width: '100%',
-                padding: '10px 16px',
-                borderRadius: '10px',
-                backgroundColor: 'transparent',
-                color: '#64748b',
-                border: 'none',
-                fontWeight: 600,
-                fontSize: '14px',
-                cursor: 'pointer',
-              }}
+              className="btn ghost block"
+              style={{ padding: '10px 16px' }}
             >
               Để mai dùng tiếp
             </button>

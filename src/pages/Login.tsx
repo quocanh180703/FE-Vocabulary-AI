@@ -3,10 +3,13 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { authApi, placementApi, errMsg } from '../api';
 import { GoogleLogin } from '@react-oauth/google';
 import { useAuth } from '../auth/AuthContext';
-import { Mascot, Icon } from '../components/icons';
+import { Icon } from '../components/icons';
 import { motion, AnimatePresence } from 'motion/react';
 import { motionTokens } from '../motion';
-import viHeroImg from '../assets/vi-hero.png';
+import { ViMascotImage } from '../components/ViMascotImage';
+import { SageScene } from '../components/SageEffects';
+import { MOCK_TEST_ACCOUNTS, findMockAccount, type MockTestAccount } from '../constants/mockAccounts';
+import { UiIcon } from '../components/UiIcon';
 
 type AuthMode = 'login' | 'register' | 'forgot';
 
@@ -82,8 +85,26 @@ export default function Login() {
     }, 220);
   };
 
+  const handleMockLogin = (acc: MockTestAccount) => {
+    setErr('');
+    sessionStorage.setItem('placement_dismissed', '1');
+    login(
+      acc.user,
+      `mock-access-${acc.id}-token`,
+      `mock-refresh-${acc.id}-token`
+    );
+    nav(acc.landingRoute, { replace: true });
+  };
+
   const submit = async () => {
     setErr('');
+    if (mode === 'login') {
+      const mockAcc = findMockAccount(id, pw);
+      if (mockAcc) {
+        handleMockLogin(mockAcc);
+        return;
+      }
+    }
     setBusy(true);
     try {
       if (mode === 'login') {
@@ -216,6 +237,7 @@ export default function Login() {
         }}
         style={{ position: 'relative' }}
       >
+        <SageScene />
         <button
           type="button"
           className="topbar-home-btn"
@@ -226,8 +248,10 @@ export default function Login() {
             top: 22,
             left: 22,
             zIndex: 50,
-            background: 'rgba(255, 255, 255, 0.92)',
-            backdropFilter: 'blur(8px)',
+            background: 'var(--glass-strong)',
+            color: 'var(--ink)',
+            border: '1px solid var(--rim)',
+            backdropFilter: 'blur(12px)',
           }}
         >
           <Icon n="home" s={16} />
@@ -236,11 +260,19 @@ export default function Login() {
 
         <div className="auth-sheet">
           <div className="auth-left">
-            <div className="brand" onClick={handleGoHome} style={{ cursor: 'pointer' }}>
-              <Mascot s={36} />
+            <div className="brand" onClick={handleGoHome} style={{ cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 10 }}>
+              <img
+                src="/mascot/vi-logo-transparent.webp"
+                width={38}
+                height={38}
+                alt="VocabularyAI"
+                style={{ objectFit: 'contain', display: 'block', filter: 'drop-shadow(0 4px 10px rgba(8, 24, 15, 0.35))' }}
+              />
               VocabularyAI
             </div>
-            <img className="hero" src={viHeroImg} alt="Vi — trợ lý học tiếng Anh" />
+            <div style={{ display: 'inline-flex', width: 'fit-content' }}>
+              <ViMascotImage pose="happy-wave" size={118} priority />
+            </div>
             <h1>Học vui mỗi ngày cùng Vi</h1>
             <p>Từ vựng, quiz và luyện nói cùng AI — dành cho mọi lứa tuổi, từ 5 đến 70!</p>
             <div className="auth-pills">
@@ -401,11 +433,11 @@ export default function Login() {
                     {googleClientId && (
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '4px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                          <div style={{ flex: 1, height: '1px', background: 'var(--line, #E2E8F0)' }} />
-                          <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--muted, #64748B)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                          <div style={{ flex: 1, height: '1px', background: 'var(--line)' }} />
+                          <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                             hoặc
                           </span>
-                          <div style={{ flex: 1, height: '1px', background: 'var(--line, #E2E8F0)' }} />
+                          <div style={{ flex: 1, height: '1px', background: 'var(--line)' }} />
                         </div>
 
                         <div
@@ -414,7 +446,7 @@ export default function Login() {
                             display: 'flex',
                             justifyContent: 'center',
                             borderRadius: '999px',
-                            transition: 'all 0.2s ease',
+                            transition: 'transform var(--dur-micro) var(--ease)',
                           }}
                         >
                           <GoogleLogin
@@ -437,16 +469,16 @@ export default function Login() {
                             gap: '7px',
                             padding: '8px 14px',
                             borderRadius: '12px',
-                            background: 'var(--tint, #EAF3FC)',
-                            color: 'var(--primary-dark, #0D47A1)',
+                            background: 'var(--sage-soft)',
+                            color: 'var(--sage-dark)',
                             fontSize: '12.5px',
                             fontWeight: 700,
                             lineHeight: 1.45,
                             textAlign: 'center',
-                            border: '1px solid rgba(21, 101, 192, 0.12)',
+                            border: '1px solid var(--line)',
                           }}
                         >
-                          <span style={{ fontSize: '13px' }}>✨</span>
+                          <UiIcon name="sparkles" size={14} />
                           <span>Tự động tạo tài khoản nếu bạn đăng nhập lần đầu</span>
                         </div>
                       </div>
@@ -468,6 +500,59 @@ export default function Login() {
                       >
                         Quên mật khẩu?
                       </button>
+                    </div>
+
+                    {/* Quick UI Test Accounts — 3 Roles Mock (No Backend required) */}
+                    <div
+                      style={{
+                        marginTop: '6px',
+                        padding: '12px',
+                        borderRadius: '14px',
+                        background: 'rgba(250, 248, 241, 0.72)',
+                        border: '1px solid var(--line)',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '8px',
+                      }}
+                    >
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12px', fontWeight: 700, color: 'var(--sage-dark)' }}>
+                        <span>Test UI nhanh · 3 Role (Mock · không cần BE)</span>
+                        <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--muted)' }}>Pass: 123456</span>
+                      </div>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '6px' }}>
+                        {MOCK_TEST_ACCOUNTS.map((acc) => (
+                          <button
+                            key={acc.id}
+                            type="button"
+                            onClick={() => handleMockLogin(acc)}
+                            title={`${acc.user.email} / ${acc.password} — ${acc.description}`}
+                            style={{
+                              display: 'flex',
+                              flexDirection: 'column',
+                              alignItems: 'flex-start',
+                              gap: '2px',
+                              padding: '8px 9px',
+                              borderRadius: '10px',
+                              border: '1px solid rgba(71, 96, 63, 0.24)',
+                              background: 'rgba(255, 255, 255, 0.85)',
+                              color: 'var(--ink)',
+                              cursor: 'pointer',
+                              textAlign: 'left',
+                              transition: 'transform 140ms var(--ease), border-color 140ms var(--ease), background-color 140ms var(--ease)',
+                            }}
+                          >
+                            <span style={{ fontSize: '10px', fontWeight: 800, letterSpacing: '0.06em', color: acc.id === 'admin' ? 'var(--amber-dark)' : 'var(--sage-dark)' }}>
+                              {acc.roleBadge}
+                            </span>
+                            <span style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--ink)', lineHeight: 1.2 }}>
+                              {acc.label}
+                            </span>
+                            <span style={{ fontSize: '10.5px', color: 'var(--muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', width: '100%' }}>
+                              {acc.user.email}
+                            </span>
+                          </button>
+                        ))}
+                      </div>
                     </div>
                   </motion.div>
                 )}
@@ -647,7 +732,7 @@ export default function Login() {
                           />
                         </div>
                         <div style={{ fontSize: '12px', color: 'var(--muted)', lineHeight: '1.45' }}>
-                          💡 Mật khẩu tối thiểu 8 ký tự, bao gồm ít nhất 1 chữ hoa, 1 chữ thường, 1 số và 1 ký tự đặc biệt (@$!%*?&).
+                          <UiIcon name="lightbulb" size={13} /> Mật khẩu tối thiểu 8 ký tự, bao gồm ít nhất 1 chữ hoa, 1 chữ thường, 1 số và 1 ký tự đặc biệt (@$!%*?&).
                         </div>
                         <button
                           type="button"
@@ -679,7 +764,7 @@ export default function Login() {
                   className="pill level"
                   style={{ padding: '10px 14px', borderRadius: '14px', fontSize: '13.5px', display: 'flex', width: '100%', justifyContent: 'center' }}
                 >
-                  Tạo tài khoản xong rồi — đăng nhập để bắt đầu nhé! 🎉
+                  Tạo tài khoản xong rồi — đăng nhập để bắt đầu nhé!
                 </div>
               )}
 

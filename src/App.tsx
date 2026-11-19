@@ -8,6 +8,7 @@ import { Layout } from './components/Layout';
 import { AdminLayout } from './components/AdminLayout';
 import { Protected, Guest, AdminGuard, InstructorGuard } from './components/Guards';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import { ViLoadingScreen } from './components/states/ViLoadingScreen';
 
 // Landing Page is loaded directly for optimal LCP & FCP
 import LandingPage from './pages/LandingPage';
@@ -45,7 +46,7 @@ const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'));
 
 function HomeSwitcher() {
   const { user, loading } = useAuth();
-  if (loading) return <div className="loading">Đang tải...</div>;
+  if (loading) return <ViLoadingScreen fullscreen />;
   if (!user) {
     return <LandingPage />;
   }
@@ -75,7 +76,7 @@ export default function App() {
           <AuthProvider>
             <UsageProvider>
               <UpgradeModal />
-              <Suspense fallback={<div className="loading" style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>Đang tải...</div>}>
+              <Suspense fallback={<ViLoadingScreen fullscreen />}>
                 <Routes>
                   {/* Public Landing Page & Legal Pages */}
                   <Route path="/landing" element={<LandingPage />} />

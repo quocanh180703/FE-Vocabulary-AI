@@ -4,7 +4,10 @@ import { motion } from 'motion/react';
 import { placementApi } from '../api';
 import type { PlacementStatus, PlacementQuestion, PlacementSubmitResult } from '../api';
 import { PageTransition, AnimatedProgressBar, staggerContainer, staggerItem } from '../motion';
-import viImg from '../assets/vi-hero.png';
+import { ViMascotImage } from '../components/ViMascotImage';
+import { SageScene } from '../components/SageEffects';
+import { ViLoadingScreen } from '../components/states/ViLoadingScreen';
+import { UiIcon } from '../components/UiIcon';
 import './PlacementTest.css';
 
 export default function PlacementTest() {
@@ -112,9 +115,8 @@ export default function PlacementTest() {
   if (loading) {
     return (
       <div className="placement-page">
-        <div className="placement-card" style={{ padding: '60px 20px', textAlign: 'center' }}>
-          <div className="loading">Đang tải thông tin kiểm tra...</div>
-        </div>
+        <SageScene />
+        <ViLoadingScreen fullscreen subtitle="Đang chuẩn bị bài kiểm tra trình độ" />
       </div>
     );
   }
@@ -126,10 +128,11 @@ export default function PlacementTest() {
 
     return (
       <PageTransition className="placement-page">
-        <div className="placement-card">
+        <SageScene />
+        <div className="placement-card glass">
           <div className="placement-hero">
             <div className="placement-mascot-wrap">
-              <img src={viImg} alt="Vi Mascot" className="placement-mascot-img" />
+              <ViMascotImage pose="encourage" size={92} priority />
             </div>
 
             <span className="placement-badge-pill">
@@ -148,7 +151,7 @@ export default function PlacementTest() {
 
             {isRetest && (
               <div className="placement-retest-banner">
-                <span>💡</span>
+                <span><UiIcon name="lightbulb" size={16} /></span>
                 <span>
                   <strong>Không giới hạn số lần làm lại:</strong> Kết quả mới nhất sẽ được lưu và dùng làm mức chuẩn cho hệ thống học tập của bạn.
                 </span>
@@ -162,7 +165,7 @@ export default function PlacementTest() {
               animate="visible"
             >
               <motion.div className="placement-feature-item" variants={staggerItem}>
-                <div className="placement-feature-icon">📝</div>
+                <div className="placement-feature-icon"><UiIcon name="file" size={18} /></div>
                 <div>
                   <div className="placement-feature-title">20 câu trắc nghiệm</div>
                   <div className="placement-feature-sub">4 câu mỗi cấp A1 → C1 từ ngân hàng từ vựng thật</div>
@@ -176,7 +179,7 @@ export default function PlacementTest() {
                 </div>
               </motion.div>
               <motion.div className="placement-feature-item" variants={staggerItem}>
-                <div className="placement-feature-icon">🎯</div>
+                <div className="placement-feature-icon"><UiIcon name="target" size={18} /></div>
                 <div>
                   <div className="placement-feature-title">Cá nhân hóa ngay</div>
                   <div className="placement-feature-sub">Flashcard & Quiz lập tức đồng bộ theo cấp độ của bạn</div>
@@ -185,7 +188,7 @@ export default function PlacementTest() {
             </motion.div>
 
             {error && (
-              <div style={{ color: '#DC2626', marginBottom: '18px', fontWeight: 700 }}>
+              <div style={{ color: 'var(--danger)', marginBottom: '18px', fontWeight: 700 }}>
                 {error}
               </div>
             )}
@@ -222,6 +225,7 @@ export default function PlacementTest() {
 
     return (
       <PageTransition className="placement-page">
+        <SageScene />
         <div className="placement-card">
           <div className="placement-test-header">
             <div className="placement-test-nav">
@@ -245,7 +249,7 @@ export default function PlacementTest() {
             </div>
 
             <div className="placement-progress-track">
-              <AnimatedProgressBar value={progress} color="#1565C0" height={8} />
+              <AnimatedProgressBar value={progress} color="var(--sage)" height={8} />
             </div>
           </div>
 
@@ -272,7 +276,7 @@ export default function PlacementTest() {
             </div>
 
             {error && (
-              <div style={{ color: '#DC2626', marginTop: '16px', fontWeight: 700 }}>
+              <div style={{ color: 'var(--danger)', marginTop: '16px', fontWeight: 700 }}>
                 {error}
               </div>
             )}
@@ -301,7 +305,6 @@ export default function PlacementTest() {
               <button
                 type="button"
                 className="btn-primary-placement"
-                style={{ background: '#1E7E46' }}
                 disabled={submitting}
                 onClick={handleSubmit}
               >
@@ -330,10 +333,16 @@ export default function PlacementTest() {
 
     return (
       <PageTransition className="placement-page">
+        <SageScene />
         <div className="placement-card">
           <div className="placement-result-card">
-            <div className={`placement-result-badge ${lvl.toLowerCase()}`}>
-              {lvl}
+            <div className="placement-result-hero">
+              <div style={{ display: 'inline-flex', padding: '5px', borderRadius: '24px', background: 'var(--cream)', border: '1px solid var(--rim)', boxShadow: 'var(--shadow)' }}>
+                <ViMascotImage pose="celebrate" animated size={82} />
+              </div>
+              <div className={`placement-result-badge ${lvl.toLowerCase()}`}>
+                {lvl}
+              </div>
             </div>
 
             <h2 className="placement-result-level-name">
@@ -341,7 +350,7 @@ export default function PlacementTest() {
             </h2>
 
             <div className="placement-vi-quote">
-              💬 <strong>Lời khuyên từ Vi:</strong> {submitResult.feedback}
+              <UiIcon name="message" size={14} /> <strong>Lời khuyên từ Vi:</strong> {submitResult.feedback}
             </div>
 
             <div className="placement-breakdown-title">
@@ -373,7 +382,7 @@ export default function PlacementTest() {
               })}
             </motion.div>
 
-            <p style={{ fontSize: '14.5px', color: '#64748B', maxWidth: '560px', margin: '0 auto 28px' }}>
+            <p style={{ fontSize: '14.5px', color: 'var(--muted)', maxWidth: '560px', margin: '0 auto 24px' }}>
               Toàn bộ bài tập Flashcard ôn tập, đề xuất bài Quiz và lộ trình học tập cá nhân hóa của bạn đã được cập nhật chuẩn theo mức <strong>{lvl}</strong>.
             </p>
 
@@ -381,7 +390,6 @@ export default function PlacementTest() {
               <button
                 type="button"
                 className="btn-primary-placement"
-                style={{ background: '#1E7E46' }}
                 onClick={() => navigate('/dashboard')}
               >
                 Vào Dashboard học ngay ▸

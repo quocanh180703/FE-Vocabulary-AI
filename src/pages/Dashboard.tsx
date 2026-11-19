@@ -4,15 +4,10 @@ import { learnApi, wordApi, placementApi, errMsg, daysOverdue } from '../api';
 import type { ProgressItem, LearningStats, Word } from '../api';
 import { useAuth } from '../auth/AuthContext';
 import { Icon } from '../components/icons';
-import viAvatar from '../assets/vi-3d.webp';
+import { ViMascotImage } from '../components/ViMascotImage';
+import { ScoreRing, SplitHeading } from '../components/SageEffects';
 import { motion } from 'motion/react';
-import {
-  AnimatedCounter,
-  AnimatedProgressBar,
-  MotionCard,
-  staggerContainer,
-  staggerItem,
-} from '../motion';
+import { AnimatedCounter, AnimatedProgressBar, staggerContainer, staggerItem } from '../motion';
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -26,7 +21,8 @@ export default function Dashboard() {
   const nav = useNavigate();
 
   const loadQueue = () => {
-    learnApi.queue(10)
+    learnApi
+      .queue(10)
       .then(({ data }) => {
         setQueue(data?.content || []);
         setTotal(data?.totalElements || 0);
@@ -46,18 +42,19 @@ export default function Dashboard() {
     const onReviewDone = () => loadQueue();
     window.addEventListener('vocab_review_completed', onReviewDone);
 
-  learnApi.stats()
-    .then(({ data }) => {
-      if (data) setStats(data);
-    })
-    .catch(() => {});
+    learnApi
+      .stats()
+      .then(({ data }) => {
+        if (data) setStats(data);
+      })
+      .catch(() => {});
 
-  // Load sample explore words for right column
-  wordApi.list({ page: 0, size: 3, level: 'B2' })
-    .then(({ data }) => {
-      if (data?.content?.length) setExploreWords(data.content.slice(0, 3));
-    })
-    .catch(() => {});
+    wordApi
+      .list({ page: 0, size: 3, level: 'B2' })
+      .then(({ data }) => {
+        if (data?.content?.length) setExploreWords(data.content.slice(0, 3));
+      })
+      .catch(() => {});
 
     const loadFavs = (e?: Event) => {
       const ce = e as CustomEvent;
@@ -66,7 +63,8 @@ export default function Dashboard() {
         return;
       }
 
-      wordApi.favorites(0, 100)
+      wordApi
+        .favorites(0, 100)
         .then(({ data }) => {
           const ids = new Set<string>();
           (data?.content || []).forEach((w: any) => {
@@ -85,15 +83,14 @@ export default function Dashboard() {
     loadFavs();
     window.addEventListener('vocab_favorites_changed', loadFavs);
 
-    placementApi.getStatus()
+    placementApi
+      .getStatus()
       .then(({ data }) => {
         setPlacementCompleted(!!data?.completed);
       })
       .catch(() => {});
 
-    const onPlacementUpdated = () => {
-      setPlacementCompleted(true);
-    };
+    const onPlacementUpdated = () => setPlacementCompleted(true);
     window.addEventListener('vocab_placement_updated', onPlacementUpdated);
 
     return () => {
@@ -138,378 +135,299 @@ export default function Dashboard() {
   const dailyGoal = stats?.dailyGoal ?? 10;
   const goalPercent = Math.min(100, Math.round((dailyDone / dailyGoal) * 100));
 
+  const featuredList =
+    exploreWords.length > 0
+      ? exploreWords
+      : [
+          { id: 101, word: 'negotiate', pronunciation: '/nɪˈɡəʊʃieɪt/', meaning: 'đàm phán, thương lượng', level: 'B2' },
+          { id: 102, word: 'efficient', pronunciation: '/ɪˈfɪʃnt/', meaning: 'hiệu quả, năng suất', level: 'B2' },
+        ];
+  const primaryWord = featuredList[0] as any;
+
   return (
-    <div className="content" style={{ maxWidth: 1600 }}>
-      {/* Page Header */}
-      <div className="pagehead" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 14 }}>
+    <div className="content">
+      {/* Compact Intro Row */}
+      <div className="pagehead">
         <div>
-          <h1>Tổng quan học tập</h1>
-          <div className="sub">
-            Chào buổi sáng, <b>{displayName}</b> 👋 — hôm nay mình chinh phục mục tiêu gì nè?
-          </div>
+          <div className="eyebrow">GOOD MORNING · YOUR LEARNING LIBRARY</div>
+          <SplitHeading text="Hôm nay, mình học gì?" />
+          <p className="sub">
+            Chào <b>{displayName}</b> — một hàng đợi duy nhất: học từ mới, ôn đúng lúc và luyện nói cùng Vi.
+          </p>
         </div>
-        <div style={{ display: 'flex', gap: 10 }}>
-          <button className="btn ghost" onClick={() => nav('/roadmap')} style={{ minHeight: 44, padding: '0 18px', fontSize: 14 }}>
-            <Icon n="spark" s={16} /> Lộ trình AI
+
+        <div className="row">
+          {!placementCompleted && (
+            <button type="button" className="btn secondary sm" onClick={() => nav('/placement')}>
+              <Icon n="target" s={15} /> Kiểm tra xếp lớp 10p
+            </button>
+          )}
+          <button type="button" className="btn ghost sm" onClick={() => nav('/roadmap')}>
+            <Icon n="spark" s={15} /> Lộ trình AI
           </button>
-          <button className="btn" onClick={() => nav('/review')} style={{ minHeight: 44, padding: '0 20px', fontSize: 14 }}>
-            Ôn tập ngay
+          <button type="button" className="btn sm" onClick={() => nav('/review?mode=SRS')}>
+            Ôn tập ngay ({dueCount})
           </button>
         </div>
       </div>
 
       {err && <div className="error">{err}</div>}
 
-      {/* Placement Test Banner if not completed */}
-      {!placementCompleted && (
-        <div
-          style={{
-            background: 'linear-gradient(90deg, #EFF6FF 0%, #F0FDF4 100%)',
-            border: '1.5px solid #BFDBFE',
-            borderRadius: 18,
-            padding: '16px 20px',
-            marginBottom: 20,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            flexWrap: 'wrap',
-            gap: 12,
-            boxShadow: '0 4px 14px rgba(21, 101, 192, 0.06)',
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-            <div
-              style={{
-                width: 44,
-                height: 44,
-                borderRadius: 12,
-                background: '#DBEAFE',
-                color: '#1565C0',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: 22,
-                flexShrink: 0,
-              }}
-            >
-              🎓
-            </div>
-            <div>
-              <div style={{ fontWeight: 800, fontSize: 15.5, color: 'var(--ink)' }}>
-                Làm bài kiểm tra 10 phút để Vi xếp lớp đúng cho bạn
+      {/* Viewport-Locked 2-Column Dashboard Grid matching Sage Library Prototype */}
+      <div className="dash-grid">
+        {/* Left Top: Hero Coach Card */}
+        <section className="card hero-card dash-hero tilt-target" data-tilt-max="4">
+          <div className="hero-inner">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <div>
+                <span className="tag">✦ VI · AI LEARNING COACH</span>
               </div>
-              <div style={{ fontSize: 13.5, color: 'var(--muted)', marginTop: 2 }}>
-                20 câu trắc nghiệm A1 → C1 giúp cá nhân hóa toàn bộ từ vựng, flashcard và lộ trình học.
+              <h2 style={{ fontSize: 'clamp(20px, 2.2vw, 28px)', margin: 0 }}>
+                Mỗi từ bạn nhớ, một câu chuyện bạn kể.
+              </h2>
+              <p className="sub" style={{ margin: 0 }}>
+                Tiếp tục vòng học Học → Ôn → Nói với thuật toán lặp lại ngắt quãng SRS 1–3–7–14–30 ngày.
+              </p>
+              <div className="row" style={{ flexWrap: 'wrap', marginTop: 4 }}>
+                <button type="button" className="btn" onClick={() => nav('/review?mode=SRS')}>
+                  Bắt đầu vòng học
+                </button>
+                <button type="button" className="btn secondary sm" onClick={() => nav('/chat')}>
+                  <Icon n="msg" s={15} /> Chat với Vi
+                </button>
+                <button type="button" className="btn secondary sm" onClick={() => nav('/grammar')}>
+                  <Icon n="pen" s={15} /> Sửa ngữ pháp
+                </button>
               </div>
             </div>
-          </div>
-          <button
-            type="button"
-            className="btn"
-            style={{
-              background: 'var(--primary)',
-              color: '#fff',
-              padding: '10px 20px',
-              borderRadius: 12,
-              fontWeight: 800,
-              fontSize: 14,
-              border: 'none',
-              cursor: 'pointer',
-              boxShadow: '0 4px 12px rgba(21, 101, 192, 0.25)',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 6,
-            }}
-            onClick={() => nav('/placement')}
-          >
-            Làm bài ngay ▸
-          </button>
-        </div>
-      )}
 
-      {/* 4 KPIs matching dashboard.html */}
-      <motion.div
-        className="kpi-row"
-        variants={staggerContainer}
-        initial="hidden"
-        animate="visible"
-      >
-        <motion.div variants={staggerItem} className="kpi" onClick={() => nav('/review')} style={{ cursor: 'pointer' }}>
-          <div className="kic" style={{ background: 'var(--red-bg)', color: 'var(--red-dark)' }}>
-            <svg viewBox="0 0 24 24" className="ic"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
-          </div>
-          <div className="lbl">Từ đến hạn ôn</div>
-          <div className="num"><AnimatedCounter value={dueCount} /></div>
-          <div className={`delta ${dueCount > 0 ? 'down' : 'up'}`}>
-            {dueCount > 0 ? `${dueCount} từ đang chờ` : 'Đã hoàn thành!'}
-          </div>
-        </motion.div>
-
-        <motion.div variants={staggerItem} className="kpi" onClick={() => nav('/words')} style={{ cursor: 'pointer' }}>
-          <div className="kic" style={{ background: 'var(--tint)', color: 'var(--primary)' }}>
-            <svg viewBox="0 0 24 24" className="ic"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
-          </div>
-          <div className="lbl">Từ đã học</div>
-          <div className="num"><AnimatedCounter value={totalLearned} /></div>
-          <div className="delta up">
-            {stats ? `+${stats.masteredWords || 0} đã thành thạo` : '+12 tuần này'}
-          </div>
-        </motion.div>
-
-        <motion.div variants={staggerItem} className="kpi" onClick={() => nav('/quiz')} style={{ cursor: 'pointer' }}>
-          <div className="kic" style={{ background: 'var(--yellow-bg)', color: 'var(--yellow-dark)' }}>
-            <svg viewBox="0 0 24 24" className="ic"><path d="M13 2 3 14h7l-1 8 10-12h-7l1-8z"/></svg>
-          </div>
-          <div className="lbl">Điểm quiz TB</div>
-          <div className="num"><AnimatedCounter value={accuracyRate} />%</div>
-          <div className="delta up">{stats && (stats.totalActivities || stats.totalPoints) ? `Tổng ${stats.totalActivities || 0} hoạt động` : 'Chưa có hoạt động'}</div>
-        </motion.div>
-
-        <motion.div variants={staggerItem} className="kpi">
-          <div className="kic" style={{ background: 'var(--green-bg)', color: 'var(--green-dark)' }}>
-            <svg viewBox="0 0 24 24" className="ic"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>
-          </div>
-          <div className="lbl">Streak</div>
-          <div className="num"><AnimatedCounter value={streak} /> <small style={{ fontSize: 16, fontWeight: 700 }}>ngày</small></div>
-          <div className="delta up">Kỷ lục: {stats?.longestStreak ?? streak} ngày</div>
-        </motion.div>
-      </motion.div>
-
-      {/* 2-Column Content */}
-      <div className="cols2">
-        {/* Left Column Stack */}
-        <div className="colstack">
-          {/* Card: Ôn tập hôm nay */}
-          <MotionCard>
-            <div className="row">
-              <h2><span className="dot r"></span>Ôn tập hôm nay</h2>
-              {dueCount > 0 ? (
-                <span className="pill warn">{dueCount} từ</span>
-              ) : (
-                <span className="pill greensoft">Hết nợ 🎉</span>
-              )}
+            <div style={{ display: 'flex', justifyContent: 'center' }}>
+              <ViMascotImage
+                pose="happy-wave"
+                size={96}
+                priority
+                alt="Vi mascot — vẫy tay chào bạn trên trang Tổng quan"
+              />
             </div>
+          </div>
+        </section>
 
-            {queue.length === 0 ? (
-              <div className="empty" style={{ padding: '36px 20px', textAlign: 'center' }}>
-                <div style={{ fontSize: 36, marginBottom: 8 }}>🎉</div>
-                <b style={{ fontSize: 16, color: 'var(--ink)' }}>Không có từ nào cần ôn hôm nay!</b>
-                <div className="sub mt8" style={{ maxWidth: 360, margin: '8px auto 0' }}>
-                  Bạn đã hoàn thành mục tiêu SRS xuất sắc. Hãy khám phá thêm từ mới hoặc luyện nói với Vi nhé!
-                </div>
-              </div>
-            ) : (
-              <div className="mt8">
-                {queue.slice(0, 5).map((q) => {
-                  const od = daysOverdue(q);
-                  const wordText = q.word.word || q.word.lemma || '';
-                  const meaning = q.word.meaning || q.word.vietnameseMeaning || 'Chưa có nghĩa';
-                  return (
-                    <div
-                      className="wrow"
-                      key={q.id}
-                      onClick={() => nav(`/words/${q.word.id}`)}
-                      style={{ cursor: 'pointer' }}
-                    >
-                      <span className="wchk">
-                        <svg viewBox="0 0 24 24" className="ic"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
-                      </span>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div className="w">{wordText}</div>
-                        <div className="m">{meaning} · đã ôn {q.reviewCount || 0} lần</div>
-                      </div>
-                      <span style={{ marginLeft: 'auto', display: 'flex', gap: 8, alignItems: 'center' }}>
-                        {od > 0 ? (
-                          <span className="pill redsoft">trễ {od} ngày</span>
-                        ) : (
-                          <span className="pill level">hôm nay</span>
-                        )}
-                        <span
-                          className="pill"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            const targetId = q.word?.id || q.id;
-                            nav(`/review?mode=SRS&wordId=${targetId}`);
-                          }}
-                        >
-                          ôn ngay
-                        </span>
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-
-            <button
-              className="btn block mt16"
-              onClick={() => nav('/review?mode=SRS')}
-              disabled={queue.length === 0}
-            >
-              Bắt đầu ôn tập ({total} từ)
-            </button>
-          </MotionCard>
-
-          {/* Card: Hoạt động gần đây */}
-          <MotionCard>
-            <div className="row">
-              <h2><span className="dot"></span>Hoạt động gần đây</h2>
-            </div>
-            {(!stats?.recentActivities || stats.recentActivities.length === 0) ? (
-              <div className="mt8">
-                <div className="taskrow">
-                  <span className="tk" style={{ color: 'var(--primary)' }}>
-                    <svg viewBox="0 0 24 24" className="ic"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.4 1 2.3h6c0-.9.4-1.8 1-2.3A7 7 0 0 0 12 2z"/></svg>
-                  </span>
-                  <div style={{ flex: 1 }}>
-                    <b style={{ fontSize: 15.5 }}>Ôn tập SRS buổi sáng</b>
-                    <div className="sub">Đã hoàn thành 5 từ vựng gần nhất</div>
-                  </div>
-                  <span className="sub" style={{ whiteSpace: 'nowrap' }}>Hôm nay</span>
-                </div>
-                <div className="taskrow">
-                  <span className="tk" style={{ color: 'var(--yellow-dark)' }}>
-                    <svg viewBox="0 0 24 24" className="ic"><path d="M13 2 3 14h7l-1 8 10-12h-7l1-8z"/></svg>
-                  </span>
-                  <div style={{ flex: 1 }}>
-                    <b style={{ fontSize: 15.5 }}>Quiz Business Vocabulary</b>
-                    <div className="sub">Bài 3 · Đạt 8/10 điểm</div>
-                  </div>
-                  <span className="sub" style={{ whiteSpace: 'nowrap' }}>Hôm qua</span>
-                </div>
-                <div className="taskrow">
-                  <span className="tk" style={{ color: 'var(--green-dark)' }}>
-                    <svg viewBox="0 0 24 24" className="ic"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0"/><path d="M12 17.5V21"/></svg>
-                  </span>
-                  <div style={{ flex: 1 }}>
-                    <b style={{ fontSize: 15.5 }}>Luyện nói AI — Topic Interview</b>
-                    <div className="sub">Điểm tổng kết: 78/100</div>
-                  </div>
-                  <span className="sub" style={{ whiteSpace: 'nowrap' }}>2 ngày trước</span>
-                </div>
-              </div>
-            ) : (
-              <div className="mt8">
-                {stats.recentActivities.map((act, i) => (
-                  <div className="taskrow" key={i}>
-                    <span className="tk" style={{ color: act.type === 'QUIZ' ? 'var(--yellow-dark)' : act.type === 'SPEAKING' ? 'var(--green-dark)' : 'var(--primary)' }}>
-                      <Icon n={act.type === 'QUIZ' ? 'zap' : act.type === 'SPEAKING' ? 'mic' : 'bulb'} s={18} />
-                    </span>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <b style={{ fontSize: 15.5 }}>{act.title}</b>
-                      <div className="sub">{act.result || 'Đã hoàn thành'}</div>
-                    </div>
-                    <span className="sub" style={{ whiteSpace: 'nowrap' }}>{act.timeAgo || 'Gần đây'}</span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </MotionCard>
+        {/* Right Top: Today's Queue */}
+        <div className="section-head dash-queue-head">
+          <h2>Hàng đợi hôm nay</h2>
+          <span className="tag">{dueCount > 0 ? `${dueCount} từ cần ôn` : 'Hoàn thành'}</span>
         </div>
 
-        {/* Right Column Stack */}
-        <div className="colstack">
-          {/* Card: Luyện tập trắc nghiệm */}
-          <MotionCard>
-            <div className="row">
-              <h2><span className="dot g"></span>Luyện tập trắc nghiệm</h2>
-              <span className="pill level">B1 · Business</span>
+        <section className="card dash-queue-card">
+          {queue.length === 0 ? (
+            <div className="center" style={{ flex: 1, gap: 10 }}>
+              <ViMascotImage
+                pose="sleep"
+                size={76}
+                alt="Vi nghỉ ngơi — bạn đã hoàn thành hết từ cần ôn hôm nay"
+              />
+              <strong style={{ fontSize: 14.5 }}>Hết từ cần ôn hôm nay rồi!</strong>
+              <p className="tiny muted" style={{ margin: 0, maxWidth: 280 }}>
+                Bạn đã hoàn thành mục tiêu SRS. Khám phá thêm từ mới hoặc luyện nói cùng Vi nhé.
+              </p>
+              <div className="row">
+                <button type="button" className="btn sm" onClick={() => nav('/words')}>
+                  Khám phá từ
+                </button>
+                <button type="button" className="btn secondary sm" onClick={() => nav('/speaking')}>
+                  Luyện nói
+                </button>
+              </div>
             </div>
-            <div className="mt16">
-              <b style={{ fontSize: 17.5 }}>Business English — Trung cấp</b>
-              <div className="sub mt8">Dở dang bài 4/12 · 24 câu hỏi kiểm tra tính giờ</div>
-            </div>
-            <AnimatedProgressBar progress={45} className="mt8" />
-            <button className="btn ghost block mt16" onClick={() => nav('/quiz')}>
-              Tiếp tục làm quiz
-            </button>
-          </MotionCard>
+          ) : (
+            <div className="colstack long-list" style={{ flex: 1, gap: 8 }}>
+              <div className="queue-item" style={{ cursor: 'pointer' }} onClick={() => nav('/review?mode=SRS')}>
+                <div className="queue-num">01</div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <strong>Ôn từ đến hạn</strong>
+                  <div className="tiny muted">{total} từ · SRS 1–3–7–14–30 ngày</div>
+                </div>
+                <button type="button" className="btn sm">Ôn ngay</button>
+              </div>
 
-          {/* Card: Khám phá từ mới */}
-          <MotionCard>
-            <div className="row">
-              <h2><span className="dot a"></span>Khám phá từ mới</h2>
-              <span className="pill">Cấp B2</span>
-            </div>
-            <div className="mt8">
-              {(exploreWords.length > 0 ? exploreWords : [
-                { id: 101, word: 'negotiate', pronunciation: '/nɪˈɡəʊʃieɪt/', meaning: 'đàm phán, thương lượng', level: 'B2' },
-                { id: 102, word: 'efficient', pronunciation: '/ɪˈfɪʃnt/', meaning: 'hiệu quả, năng suất', level: 'B2' },
-                { id: 103, word: 'deadline', pronunciation: '/ˈdedlaɪn/', meaning: 'hạn chót, thời hạn cuối', level: 'A2' },
-              ]).map((w: any) => {
-                const isSaved = favs.has(String(w.id).toLowerCase().trim()) || (!!w.word && favs.has(w.word.toLowerCase().trim())) || (!!w.lemma && favs.has(w.lemma.toLowerCase().trim()));
+              {queue.slice(0, 4).map((q) => {
+                const od = daysOverdue(q);
+                const wordText = q.word.word || q.word.lemma || '';
+                const meaning = q.word.meaning || q.word.vietnameseMeaning || 'Chưa có nghĩa';
                 return (
                   <div
+                    key={q.id}
                     className="wrow"
-                    key={w.id}
-                    onClick={() => nav(`/words/${w.id}`)}
                     style={{ cursor: 'pointer' }}
+                    onClick={() => nav(`/words/${q.word.id}`)}
                   >
                     <span className="wchk">
-                      <svg viewBox="0 0 24 24" className="ic"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+                      <Icon n="book" s={16} />
                     </span>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div className="w">
-                        {w.word}{' '}
-                        {w.pronunciation && (
-                          <span style={{ color: 'var(--muted)', fontSize: 13, fontWeight: 700 }}>
-                            {w.pronunciation}
-                          </span>
-                        )}
+                      <div className="w" style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {wordText}
                       </div>
-                      <div className="m">{w.meaning || w.vietnameseMeaning}</div>
+                      <div className="m" style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {meaning} · đã ôn {q.reviewCount || 0} lần
+                      </div>
                     </div>
-                    <span className="pill level">{w.level || 'B2'}</span>
+                    {od > 0 ? (
+                      <span className="pill redsoft">trễ {od}d</span>
+                    ) : (
+                      <span className="pill level">hôm nay</span>
+                    )}
                     <button
-                      className={'heartbtn' + (isSaved ? ' on' : '')}
-                      onClick={(e) => toggleFav(w, e)}
-                      title={isSaved ? 'Bỏ lưu yêu thích' : 'Lưu yêu thích'}
+                      type="button"
+                      className="btn secondary sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        nav(`/review?mode=SRS&wordId=${q.word?.id || q.id}`);
+                      }}
                     >
-                      <svg viewBox="0 0 24 24" className="ic"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
+                      Ôn
                     </button>
                   </div>
                 );
               })}
-            </div>
-            <button className="btn ghost block mt16" onClick={() => nav('/words')}>
-              Xem tất cả từ vựng
-            </button>
-          </MotionCard>
 
-          {/* Card: Mục tiêu hôm nay */}
-          <MotionCard className="card">
-            <div className="row">
-              <h2><span className="dot"></span>Mục tiêu hôm nay</h2>
-              <span className="pill">{dailyDone}/{dailyGoal}</span>
-            </div>
-            <AnimatedProgressBar progress={goalPercent} className="mt16 green" />
-            <div className="sub mt8">
-              {dailyDone >= dailyGoal
-                ? 'Tuyệt vời! Bạn đã hoàn thành 100% mục tiêu hôm nay 🎉'
-                : `Còn ${dailyGoal - dailyDone} hoạt động nữa là hoàn thành. Cố lên!`}
-            </div>
-          </MotionCard>
-
-          {/* Mascot Coach Companion Card */}
-          <MotionCard className="card" style={{ background: 'linear-gradient(135deg, #EEF7F2 0%, #E6F3EA 100%)', border: '1px solid #C2E4D2' }}>
-            <div className="coach">
-              <img src={viAvatar} alt="Vi" style={{ width: 54, height: 54, borderRadius: '50%', objectFit: 'cover' }} />
-              <div className="bubble" style={{ background: '#FFFFFF', borderColor: '#C2E4D2' }}>
-                <b>Trợ lý Vi AI:</b> Bạn có thể trò chuyện 24/7 với mình ở mục Trò chuyện hoặc dùng tính năng Sửa ngữ pháp để kiểm tra câu viết tiếng Anh!
+              <div className="queue-item" style={{ cursor: 'pointer' }} onClick={() => nav('/speaking')}>
+                <div className="queue-num">03</div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <strong>Luyện nói cùng Vi</strong>
+                  <div className="tiny muted">Chấm 5 tiêu chí · 30–60 giây</div>
+                </div>
+                <button type="button" className="btn secondary sm">Nói ngay</button>
               </div>
             </div>
-            <div className="btn-row mt16">
-              <button className="btn block" style={{ flex: 1 }} onClick={() => nav('/chat')}>
-                <Icon n="msg" s={18} /> Chat với Vi
-              </button>
-              <button className="btn ghost block" style={{ flex: 1, background: '#FFFFFF' }} onClick={() => nav('/grammar')}>
-                <Icon n="spark" s={18} /> Sửa ngữ pháp
-              </button>
-            </div>
-          </MotionCard>
+          )}
+        </section>
+
+        {/* Left Bottom Header & 2 Explore Cards */}
+        <div className="section-head dash-explore-head">
+          <h2>Tiếp tục khám phá</h2>
+          <button type="button" className="btn ghost sm" onClick={() => nav('/quiz')} style={{ color: 'var(--cream)', borderColor: 'rgba(250,248,241,0.3)', background: 'rgba(250,248,241,0.12)' }}>
+            Làm Quiz
+          </button>
         </div>
+
+        <div className="dash-explore-grid">
+          <section className="card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+            <div className="row between">
+              <div>
+                <div className="overline">MỤC TIÊU HÔM NAY</div>
+                <h3 style={{ marginTop: 6, marginBottom: 4 }}>Học đều, nhớ lâu</h3>
+                <p className="tiny muted" style={{ margin: 0 }}>
+                  {dailyDone}/{dailyGoal} hoạt động hôm nay
+                </p>
+              </div>
+              <ScoreRing value={goalPercent} label={`${goalPercent}%`} size={68} />
+            </div>
+            <div style={{ marginTop: 10 }}>
+              <AnimatedProgressBar progress={goalPercent} />
+            </div>
+          </section>
+
+          {primaryWord && (
+            <section
+              className="card"
+              style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', cursor: 'pointer' }}
+              onClick={() => nav(`/words/${primaryWord.id}`)}
+            >
+              <div className="row between">
+                <div className="overline">TỪ VỰNG NỔI BẬT</div>
+                <div className="row" style={{ gap: 6 }}>
+                  <span className="tag">{primaryWord.level || 'B2'}</span>
+                  <button
+                    type="button"
+                    className={
+                      'heartbtn' +
+                      (favs.has(String(primaryWord.id).toLowerCase()) || favs.has(String(primaryWord.word).toLowerCase())
+                        ? ' on'
+                        : '')
+                    }
+                    style={{ width: 28, height: 28 }}
+                    onClick={(e) => toggleFav(primaryWord, e)}
+                    aria-label="Lưu từ yêu thích"
+                  >
+                    <Icon n="heart" s={14} />
+                  </button>
+                </div>
+              </div>
+              <div>
+                <h3 style={{ fontSize: 20, margin: '4px 0 2px' }}>{primaryWord.word}</h3>
+                <p className="tiny muted" style={{ margin: 0 }}>
+                  {primaryWord.pronunciation ? `${primaryWord.pronunciation} · ` : ''}
+                  {primaryWord.meaning || primaryWord.vietnameseMeaning}
+                </p>
+              </div>
+              <div className="row between">
+                <button
+                  type="button"
+                  className="btn secondary sm"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    nav(`/words/${primaryWord.id}`);
+                  }}
+                >
+                  Khám phá từ này
+                </button>
+                <button
+                  type="button"
+                  className="btn ghost sm"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    nav('/words');
+                  }}
+                >
+                  Thư viện →
+                </button>
+              </div>
+            </section>
+          )}
+        </div>
+
+        {/* Right Bottom Header & 2x2 KPI Grid */}
+        <div className="section-head dash-stats-head">
+          <h2>Nhịp học của bạn</h2>
+          <span className="tiny" style={{ color: 'rgba(250,248,241,0.85)' }}>Kỷ lục: {stats?.longestStreak ?? streak} ngày</span>
+        </div>
+
+        <motion.div
+          className="dash-kpi-grid"
+          variants={staggerContainer}
+          initial="hidden"
+          animate="visible"
+        >
+          <motion.div variants={staggerItem} className="kpi" onClick={() => nav('/review')} style={{ cursor: 'pointer' }}>
+            <div className="lbl">Từ đến hạn</div>
+            <div className="num"><AnimatedCounter value={dueCount} /></div>
+            <div className={`delta ${dueCount > 0 ? 'down' : 'up'}`}>
+              {dueCount > 0 ? `${dueCount} từ đang chờ` : 'Hoàn thành!'}
+            </div>
+          </motion.div>
+
+          <motion.div variants={staggerItem} className="kpi" onClick={() => nav('/words')} style={{ cursor: 'pointer' }}>
+            <div className="lbl">Từ đã học</div>
+            <div className="num"><AnimatedCounter value={totalLearned} /></div>
+            <div className="delta up">+{stats?.masteredWords || 0} thành thạo</div>
+          </motion.div>
+
+          <motion.div variants={staggerItem} className="kpi" onClick={() => nav('/quiz')} style={{ cursor: 'pointer' }}>
+            <div className="lbl">Điểm quiz TB</div>
+            <div className="num"><AnimatedCounter value={accuracyRate} />%</div>
+            <div className="delta up">{stats?.totalActivities || 0} hoạt động</div>
+          </motion.div>
+
+          <motion.div variants={staggerItem} className="kpi">
+            <div className="lbl">Streak</div>
+            <div className="num" style={{ color: 'var(--amber)' }}>
+              <AnimatedCounter value={streak} /> <small style={{ fontSize: 13 }}>ngày</small>
+            </div>
+            <div className="delta" style={{ color: 'var(--amber-dark)' }}>Nhịp liên tục</div>
+          </motion.div>
+        </motion.div>
       </div>
     </div>
   );
 }
-

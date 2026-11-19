@@ -4,8 +4,10 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { speakApi, errMsg } from '../api';
 import type { SessionDetail, AttemptDetail } from '../api';
 import { Icon } from '../components/icons';
-import { AnimatedProgressBar, AnimatedCounter, MotionCard } from '../motion';
-import viAvatar from '../assets/vi-3d.webp';
+import { AnimatedProgressBar, MotionCard } from '../motion';
+import { ViMascotImage } from '../components/ViMascotImage';
+import { UiIcon } from '../components/UiIcon';
+import { ScoreRing, SplitHeading } from '../components/SageEffects';
 
 function parseList(val: any): string[] {
   if (!val) return [];
@@ -120,11 +122,17 @@ export default function SpeakingResult() {
 
   if (!state?.sessionId) {
     return (
-      <div className="content narrow center" style={{ paddingTop: 80 }}>
-        <div className="sub">Chưa có phiên luyện nói nào.</div>
-        <button type="button" className="btn mt16" onClick={() => nav('/speaking')}>
-          Luyện nói ngay
-        </button>
+      <div className="content" style={{ justifyContent: 'center', alignItems: 'center' }}>
+        <div className="card stack center" style={{ maxWidth: 440, padding: '28px 32px', gap: 12 }}>
+          <ViMascotImage pose="listen" size={84} alt="Vi đang chờ bản ghi âm luyện nói của bạn" />
+          <div style={{ fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: 18, color: 'var(--ink)' }}>
+            Chưa có phiên luyện nói nào
+          </div>
+          <div className="sub">Chọn một chủ đề và thu âm 1–2 phút để Vi AI chấm 5 tiêu chí nhé.</div>
+          <button type="button" className="btn" onClick={() => nav('/speaking')}>
+            Luyện nói ngay
+          </button>
+        </div>
       </div>
     );
   }
@@ -139,13 +147,13 @@ export default function SpeakingResult() {
 
   if (!d) {
     return (
-      <div className="content center" style={{ padding: 60 }}>
-        <img
-          src={viAvatar}
-          alt="Vi"
-          style={{ width: 64, height: 64, animation: 'float 2s ease-in-out infinite' }}
+      <div className="content center">
+        <ViMascotImage
+          pose="thinking"
+          size={76}
+          alt="Vi đang tải bảng điểm chi tiết"
         />
-        <div className="mt16" style={{ fontWeight: 800, color: 'var(--primary)' }}>
+        <div className="mt12" style={{ fontWeight: 800, color: 'var(--cream)' }}>
           Vi đang tổng hợp kết quả chấm điểm từ AI...
         </div>
       </div>
@@ -185,292 +193,257 @@ export default function SpeakingResult() {
   const suggestions = parseList(fb.suggestions || state?.latestResult?.feedback?.suggestions);
   const corrections = parseCorrections(fb.corrections || state?.latestResult?.feedback?.corrections);
 
-  // SVG circular score ring: radius=74 -> circumference = 2*pi*74 ≈ 465
-  const circumference = 465;
-  const strokeDashoffset = circumference - (circumference * overallScore) / 100;
-
   return (
-    <div className="content" style={{ maxWidth: 920 }}>
+    <div className="content">
       {/* Page Header */}
       <div className="pagehead">
-        <h1>Kết quả luyện nói</h1>
-        <div className="sub">
-          Chủ đề &ldquo;{d.topic}&rdquo; · Cấp độ {d.level} · Lần thử #{currentAttempt?.attemptNumber || selectedAttemptIdx + 1}
-        </div>
-      </div>
-
-      {/* Attempts selector if multiple */}
-      {attempts.length > 1 && (
-        <div className="chiprow">
-          <span style={{ fontWeight: 800, fontSize: 13, color: 'var(--muted)', alignSelf: 'center' }}>
-            Lần thử:
-          </span>
-          {attempts.map((a, idx) => {
-            const isSelected = idx === selectedAttemptIdx;
-            const sc = a.overallScore ?? a.feedback?.overallScore;
-            return (
-              <button
-                key={a.id || idx}
-                type="button"
-                className={`fchip ${isSelected ? 'on' : ''}`}
-                onClick={() => setSelectedAttemptIdx(idx)}
-              >
-                Lần #{a.attemptNumber || idx + 1}
-                {sc != null && ` (${Math.round(Number(sc))}đ)`}
-              </button>
-            );
-          })}
-        </div>
-      )}
-
-      {/* Overall Score & 5 Criteria Card */}
-      <MotionCard style={{ display: 'flex', gap: 30, alignItems: 'center', flexWrap: 'wrap' }}>
-        <div className="scorering">
-          <svg width="168" height="168" viewBox="0 0 168 168">
-            <circle cx="84" cy="84" r="74" fill="none" stroke="#E7EEF5" strokeWidth="13" />
-            <circle
-              cx="84"
-              cy="84"
-              r="74"
-              fill="none"
-              stroke="var(--primary)"
-              strokeWidth="13"
-              strokeLinecap="round"
-              strokeDasharray={circumference}
-              strokeDashoffset={strokeDashoffset}
-              transform="rotate(-90 84 84)"
-              style={{ transition: 'stroke-dashoffset 1s ease' }}
-            />
-          </svg>
-          <div className="sc">
-            <b><AnimatedCounter value={overallScore} /></b>
-            <span>/ 100 ĐIỂM</span>
-          </div>
+        <div>
+          <div className="eyebrow">SPEAKING FEEDBACK · 5 CRITERIA</div>
+          <SplitHeading text="Kết quả luyện nói" />
+          <p className="sub">
+            Chủ đề &ldquo;{d.topic}&rdquo; · Cấp độ {d.level} · Lần thử #{currentAttempt?.attemptNumber || selectedAttemptIdx + 1}
+          </p>
         </div>
 
-        <div style={{ flex: 1, minWidth: 280 }}>
-          <div className="bar-row">
-            <span className="lbl">Ngữ pháp</span>
-            <div style={{ flex: 1, margin: '0 10px' }}>
-              <AnimatedProgressBar value={grammarScore} />
+        <div className="row" style={{ gap: 8, flexWrap: 'wrap' }}>
+          {attempts.length > 1 && (
+            <div className="chips">
+              {attempts.map((a, idx) => {
+                const isSelected = idx === selectedAttemptIdx;
+                const sc = a.overallScore ?? a.feedback?.overallScore;
+                return (
+                  <button
+                    key={a.id || idx}
+                    type="button"
+                    className={`fchip ${isSelected ? 'on' : ''}`}
+                    onClick={() => setSelectedAttemptIdx(idx)}
+                  >
+                    Lần #{a.attemptNumber || idx + 1}
+                    {sc != null && ` (${Math.round(Number(sc))}đ)`}
+                  </button>
+                );
+              })}
             </div>
-            <b><AnimatedCounter value={grammarScore} /></b>
-          </div>
-
-          <div className="bar-row">
-            <span className="lbl">Từ vựng</span>
-            <div style={{ flex: 1, margin: '0 10px' }}>
-              <AnimatedProgressBar value={vocabularyScore} />
-            </div>
-            <b><AnimatedCounter value={vocabularyScore} /></b>
-          </div>
-
-          <div className="bar-row">
-            <span className="lbl">Trôi chảy</span>
-            <div style={{ flex: 1, margin: '0 10px' }}>
-              <AnimatedProgressBar
-                value={fluencyScore}
-                color={fluencyScore < 70 ? 'var(--yellow)' : 'var(--primary)'}
-              />
-            </div>
-            <b><AnimatedCounter value={fluencyScore} /></b>
-          </div>
-
-          <div className="bar-row">
-            <span className="lbl">Nội dung</span>
-            <div style={{ flex: 1, margin: '0 10px' }}>
-              <AnimatedProgressBar value={contentScore} />
-            </div>
-            <b><AnimatedCounter value={contentScore} /></b>
-          </div>
-
-          <div className="bar-row">
-            <span className="lbl">Phát âm</span>
-            <div style={{ flex: 1, margin: '0 10px' }}>
-              <AnimatedProgressBar value={pronunciationScore} />
-            </div>
-            <b><AnimatedCounter value={pronunciationScore} /></b>
-          </div>
-        </div>
-      </MotionCard>
-
-      {/* Transcript Card */}
-      <MotionCard className="mt16">
-        <div className="row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10 }}>
-          <h2>
-            <span className="dot" />
-            Bài nói của bạn
-          </h2>
-          <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-            <span className="pill greensoft">Whisper nghe được</span>
-            <button
-              type="button"
-              className="btn small ghost"
-              onClick={handlePlayAudio}
-              disabled={audioLoading}
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 6,
-                fontWeight: 700,
-                padding: '6px 14px',
-                borderRadius: 999,
-                fontSize: 13,
-                cursor: 'pointer',
-              }}
-            >
-              <Icon n="head" s={16} />
-              {audioLoading ? 'Đang tải audio...' : audioUrl ? 'Đang mở phát' : 'Nghe lại bản ghi'}
-            </button>
-          </div>
-        </div>
-
-        <p
-          className="mt8"
-          style={{
-            fontSize: 16.5,
-            lineHeight: 1.65,
-            fontWeight: 700,
-            color: transcript ? '#33475C' : 'var(--muted)',
-            fontStyle: transcript ? 'normal' : 'italic',
-          }}
-        >
-          {transcript ? `“${transcript}”` : 'Không nhận diện được nội dung hoặc âm lượng quá nhỏ.'}
-        </p>
-
-        {/* Audio Player */}
-        {audioUrl && (
-          <div style={{ marginTop: 16, padding: '12px 16px', background: '#F1F5F9', borderRadius: 14 }}>
-            <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--muted)', marginBottom: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                <Icon n="vol" s={15} />
-                Bản ghi âm lần thử #{currentAttempt?.attemptNumber || selectedAttemptIdx + 1}
-              </span>
-              <button
-                type="button"
-                style={{ background: 'none', border: 'none', color: 'var(--muted)', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}
-                onClick={() => {
-                  if (audioUrl) URL.revokeObjectURL(audioUrl);
-                  setAudioUrl(null);
-                }}
-              >
-                Đóng trình phát ✕
-              </button>
-            </div>
-            <audio controls autoPlay src={audioUrl} style={{ width: '100%', height: 42, outline: 'none' }} />
-          </div>
-        )}
-
-        {/* Audio Error */}
-        {audioErr && (
-          <div className="error mt12" style={{ fontSize: 13.5, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', borderRadius: 10 }}>
-            <span>{audioErr}</span>
-            <button
-              type="button"
-              className="btn small ghost"
-              style={{ padding: '4px 10px', fontSize: 12, marginLeft: 8 }}
-              onClick={handlePlayAudio}
-            >
-              Thử lại
-            </button>
-          </div>
-        )}
-      </MotionCard>
-
-      {/* Vi Coach Feedback Card */}
-      <MotionCard className="mt16">
-        <div className="coach">
-          <img src={viAvatar} alt="Vi" />
-          <div className="bubble">
-            <b>Nhận xét của Vi:</b> {generalFeedback}
-          </div>
-        </div>
-
-        {/* Strengths / Weaknesses / Corrections */}
-        {(strengths.length > 0 || weaknesses.length > 0 || corrections.length > 0) && (
-          <div style={{ marginTop: 20, display: 'flex', flexDirection: 'column', gap: 12 }}>
-            {strengths.length > 0 && (
-              <div style={{ padding: '12px 16px', background: 'var(--green-bg)', borderRadius: 14 }}>
-                <b style={{ color: 'var(--green-dark)', display: 'block', marginBottom: 6 }}>
-                  ✓ Điểm bạn đã làm tốt:
-                </b>
-                <ul style={{ margin: 0, paddingLeft: 20, color: 'var(--ink)', fontSize: 14, lineHeight: 1.6 }}>
-                  {strengths.map((str, i) => (
-                    <li key={i}>{str}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
-            {weaknesses.length > 0 && (
-              <div style={{ padding: '12px 16px', background: 'var(--yellow-bg)', borderRadius: 14 }}>
-                <b style={{ color: 'var(--yellow-dark)', display: 'block', marginBottom: 6 }}>
-                  ⚡ Cần cải thiện:
-                </b>
-                <ul style={{ margin: 0, paddingLeft: 20, color: 'var(--ink)', fontSize: 14, lineHeight: 1.6 }}>
-                  {weaknesses.map((w, i) => (
-                    <li key={i}>{w}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
-            {corrections.length > 0 && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                <b style={{ color: 'var(--red-dark)', fontSize: 14.5 }}>
-                  Chi tiết lỗi cần sửa ({corrections.length} lỗi):
-                </b>
-                {corrections.map((cor, i) => (
-                  <div key={i} className="taskrow" style={{ alignItems: 'flex-start' }}>
-                    <span className="tk" style={{ color: 'var(--red)' }}>
-                      <Icon n="x" s={16} />
-                    </span>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-                        <span style={{ textDecoration: 'line-through', color: 'var(--red)', fontWeight: 800 }}>
-                          {cor.original}
-                        </span>
-                        <span>→</span>
-                        <span style={{ color: 'var(--green-dark)', fontWeight: 800 }}>
-                          {cor.corrected}
-                        </span>
-                        {cor.errorType && <span className="pill warn">{cor.errorType}</span>}
-                      </div>
-                      {cor.explanation && (
-                        <div className="sub mt8" style={{ fontSize: 13, color: 'var(--ink)' }}>
-                          {cor.explanation}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {suggestions.length > 0 && (
-              <div style={{ padding: '12px 16px', background: 'var(--tint)', borderRadius: 14 }}>
-                <b style={{ color: 'var(--primary-dark)', display: 'block', marginBottom: 6 }}>
-                  💡 Gợi ý cho lần tới:
-                </b>
-                <ul style={{ margin: 0, paddingLeft: 20, color: 'var(--ink)', fontSize: 14, lineHeight: 1.6 }}>
-                  {suggestions.map((sug, i) => (
-                    <li key={i}>{sug}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
-          </div>
-        )}
-
-        <div className="btn-row mt16">
-          <button type="button" className="btn ghost" onClick={() => nav('/speaking')}>
+          )}
+          <button type="button" className="btn secondary sm" onClick={() => nav('/speaking')}>
             Chọn chủ đề khác
           </button>
-          <button type="button" className="btn" onClick={() => nav('/speaking')}>
+          <button type="button" className="btn sm" onClick={() => nav('/speaking')}>
             Nói lại lần nữa
           </button>
         </div>
-      </MotionCard>
+      </div>
+
+      {/* Viewport-Locked 2-Column Feedback Board */}
+      <div className="cols2" style={{ gridTemplateColumns: 'minmax(310px, 410px) minmax(0, 1fr)', flex: 1, minHeight: 0, alignItems: 'stretch' }}>
+        {/* Left: ScoreRing + Celebrate/Listen Mascot + 5 Criteria + Coach */}
+        <div className="colstack long-list" style={{ gap: 12, paddingRight: 4 }}>
+          <MotionCard className="colstack" style={{ gap: 14 }}>
+            <div className="row between" style={{ gap: 14 }}>
+              <ScoreRing
+                value={overallScore}
+                label={`${overallScore}/100`}
+                size={96}
+                accentColor={overallScore >= 80 ? 'var(--success)' : overallScore >= 60 ? 'var(--sage)' : 'var(--amber)'}
+              />
+              <ViMascotImage
+                pose={overallScore >= 65 ? 'celebrate' : 'listen'}
+                animated={overallScore >= 75}
+                size={92}
+                priority
+                alt={overallScore >= 65 ? 'Vi ăn mừng kết quả luyện nói của bạn' : 'Vi lắng nghe và khích lệ bạn tiếp tục luyện nói'}
+              />
+            </div>
+
+            <div className="colstack" style={{ gap: 8 }}>
+              <div className="bar-row">
+                <span className="lbl">Ngữ pháp</span>
+                <div style={{ flex: 1, margin: '0 8px' }}>
+                  <AnimatedProgressBar value={grammarScore} />
+                </div>
+                <b>{grammarScore}</b>
+              </div>
+              <div className="bar-row">
+                <span className="lbl">Từ vựng</span>
+                <div style={{ flex: 1, margin: '0 8px' }}>
+                  <AnimatedProgressBar value={vocabularyScore} />
+                </div>
+                <b>{vocabularyScore}</b>
+              </div>
+              <div className="bar-row">
+                <span className="lbl">Trôi chảy</span>
+                <div style={{ flex: 1, margin: '0 8px' }}>
+                  <AnimatedProgressBar
+                    value={fluencyScore}
+                    color={fluencyScore < 70 ? 'var(--amber)' : 'var(--sage)'}
+                  />
+                </div>
+                <b>{fluencyScore}</b>
+              </div>
+              <div className="bar-row">
+                <span className="lbl">Nội dung</span>
+                <div style={{ flex: 1, margin: '0 8px' }}>
+                  <AnimatedProgressBar value={contentScore} />
+                </div>
+                <b>{contentScore}</b>
+              </div>
+              <div className="bar-row">
+                <span className="lbl">Phát âm</span>
+                <div style={{ flex: 1, margin: '0 8px' }}>
+                  <AnimatedProgressBar value={pronunciationScore} />
+                </div>
+                <b>{pronunciationScore}</b>
+              </div>
+            </div>
+          </MotionCard>
+
+          <MotionCard>
+            <div className="coach">
+              <ViMascotImage
+                pose="listen"
+                size={48}
+                alt="Vi nhận xét chi tiết bài luyện nói"
+              />
+              <div className="bubble" style={{ fontSize: 13.5, lineHeight: 1.5 }}>
+                <b>Nhận xét của Vi:</b> {generalFeedback}
+              </div>
+            </div>
+          </MotionCard>
+        </div>
+
+        {/* Right: Transcript + Audio Playback + Strengths/Weaknesses/Corrections */}
+        <div className="colstack long-list" style={{ gap: 12, paddingRight: 4 }}>
+          <MotionCard>
+            <div className="row between" style={{ flexWrap: 'wrap', gap: 10 }}>
+              <h2 style={{ fontSize: 16, margin: 0 }}>Bài nói của bạn</h2>
+              <div className="row" style={{ gap: 8 }}>
+                <span className="pill greensoft">Whisper nghe được</span>
+                <button
+                  type="button"
+                  className="btn secondary sm"
+                  onClick={handlePlayAudio}
+                  disabled={audioLoading}
+                >
+                  <Icon n="head" s={15} />
+                  {audioLoading ? 'Đang tải audio...' : audioUrl ? 'Đang mở phát' : 'Nghe lại bản ghi'}
+                </button>
+              </div>
+            </div>
+
+            <p
+              className="mt8"
+              style={{
+                fontSize: 15.5,
+                lineHeight: 1.6,
+                fontWeight: 700,
+                color: transcript ? 'var(--ink)' : 'var(--muted)',
+                fontStyle: transcript ? 'normal' : 'italic',
+                marginBottom: 0,
+              }}
+            >
+              {transcript ? `“${transcript}”` : 'Không nhận diện được nội dung hoặc âm lượng quá nhỏ.'}
+            </p>
+
+            {audioUrl && (
+              <div style={{ marginTop: 12, padding: '10px 14px', background: 'rgba(250, 248, 241, 0.72)', borderRadius: 12, border: '1px solid var(--line)' }}>
+                <div className="row between" style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--muted)', marginBottom: 6 }}>
+                  <span className="row" style={{ gap: 6 }}>
+                    <Icon n="vol" s={14} />
+                    Bản ghi âm lần thử #{currentAttempt?.attemptNumber || selectedAttemptIdx + 1}
+                  </span>
+                  <button
+                    type="button"
+                    className="btn ghost sm"
+                    onClick={() => {
+                      if (audioUrl) URL.revokeObjectURL(audioUrl);
+                      setAudioUrl(null);
+                    }}
+                  >
+                    Đóng ✕
+                  </button>
+                </div>
+                <audio controls autoPlay src={audioUrl} style={{ width: '100%', height: 38, outline: 'none' }} />
+              </div>
+            )}
+
+            {audioErr && (
+              <div className="error row between mt8">
+                <span>{audioErr}</span>
+                <button type="button" className="btn ghost sm" onClick={handlePlayAudio}>
+                  Thử lại
+                </button>
+              </div>
+            )}
+          </MotionCard>
+
+          {(strengths.length > 0 || weaknesses.length > 0 || corrections.length > 0 || suggestions.length > 0) && (
+            <MotionCard className="colstack" style={{ gap: 10 }}>
+              {strengths.length > 0 && (
+                <div style={{ padding: '10px 14px', background: 'var(--success-bg)', borderRadius: 12 }}>
+                  <b style={{ color: 'var(--green-dark)', display: 'block', marginBottom: 4, fontSize: 13.5 }}>
+                    ✓ Điểm bạn đã làm tốt:
+                  </b>
+                  <ul style={{ margin: 0, paddingLeft: 18, color: 'var(--ink)', fontSize: 13.5, lineHeight: 1.55 }}>
+                    {strengths.map((str, i) => (
+                      <li key={i}>{str}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {weaknesses.length > 0 && (
+                <div style={{ padding: '10px 14px', background: 'var(--amber-bg)', borderRadius: 12 }}>
+                  <b style={{ color: 'var(--amber-dark)', display: 'block', marginBottom: 4, fontSize: 13.5 }}>
+                    <UiIcon name="zap" size={14} /> Cần cải thiện:
+                  </b>
+                  <ul style={{ margin: 0, paddingLeft: 18, color: 'var(--ink)', fontSize: 13.5, lineHeight: 1.55 }}>
+                    {weaknesses.map((w, i) => (
+                      <li key={i}>{w}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {corrections.length > 0 && (
+                <div className="colstack" style={{ gap: 6 }}>
+                  <b style={{ color: 'var(--red-dark)', fontSize: 13.5 }}>
+                    Chi tiết lỗi cần sửa ({corrections.length} lỗi):
+                  </b>
+                  {corrections.map((cor, i) => (
+                    <div key={i} className="taskrow" style={{ alignItems: 'flex-start' }}>
+                      <span className="tk" style={{ color: 'var(--danger)' }}>
+                        <Icon n="x" s={15} />
+                      </span>
+                      <div style={{ flex: 1, fontSize: 13.5 }}>
+                        <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
+                          <span style={{ textDecoration: 'line-through', color: 'var(--red-dark)', fontWeight: 700 }}>{cor.original}</span>
+                          <span>→</span>
+                          <b style={{ color: 'var(--green-dark)' }}>{cor.corrected}</b>
+                          {cor.errorType && <span className="pill warn">{cor.errorType}</span>}
+                        </div>
+                        {cor.explanation && <div className="tiny muted mt4">{cor.explanation}</div>}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {suggestions.length > 0 && (
+                <div style={{ padding: '10px 14px', background: 'rgba(71, 96, 63, 0.1)', borderRadius: 12 }}>
+                  <b style={{ color: 'var(--sage-dark)', display: 'block', marginBottom: 4, fontSize: 13.5 }}>
+                    <UiIcon name="lightbulb" size={14} /> Gợi ý cho lần tới:
+                  </b>
+                  <ul style={{ margin: 0, paddingLeft: 18, color: 'var(--ink)', fontSize: 13.5, lineHeight: 1.55 }}>
+                    {suggestions.map((sug, i) => (
+                      <li key={i}>{sug}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </MotionCard>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

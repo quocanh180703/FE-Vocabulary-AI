@@ -4,6 +4,7 @@ import { useSearchParams } from 'react-router-dom';
 import { adminApi } from '../../api';
 import type { AdminVocabularyItem, AdminCefrStats } from '../../api';
 import { Icon } from '../../components/icons';
+import { UiIcon } from '../../components/UiIcon';
 import { ConfirmModal } from '../../components/ConfirmModal';
 import { AutocompleteSearch } from '../../components/AutocompleteSearch';
 import { AdminVocabStudio } from './AdminVocabStudio';
@@ -624,7 +625,7 @@ export default function AdminWords() {
             style={{ fontSize: 13, padding: '0 16px' }}
           >
             <Icon n="spark" s={14} />
-            ⚡ Gắn tag AI cho {selectedWordIds.length} từ
+            <UiIcon name="zap" size={14} /> Gắn tag AI cho {selectedWordIds.length} từ
           </button>
         </div>
       )}

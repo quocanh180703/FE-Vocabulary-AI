@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
-import { Mascot, Icon } from './icons';
+import { Icon } from './icons';
+import { ViMascotImage } from './ViMascotImage';
+import { UiIcon } from './UiIcon';
 
 export interface AiExplanationBoxProps {
   explanation: string;
@@ -22,47 +24,47 @@ const SECTION_MAP: Record<SectionKey, SectionConfig> = {
   examples: {
     key: 'examples',
     title: 'Ví dụ thực tế',
-    icon: '💡',
-    badgeBg: '#e0f2fe',
-    badgeColor: '#0284c7',
-    borderColor: '#bae6fd',
-    bgColor: '#f8fafc',
+    icon: 'lightbulb',
+    badgeBg: 'rgba(71, 96, 63, 0.14)',
+    badgeColor: '#2f4329',
+    borderColor: 'rgba(71, 96, 63, 0.22)',
+    bgColor: 'rgba(250, 248, 241, 0.72)',
   },
   synonyms_antonyms: {
     key: 'synonyms_antonyms',
     title: 'Synonyms & Antonyms',
-    icon: '🔗',
-    badgeBg: '#f3e8ff',
-    badgeColor: '#7c3aed',
-    borderColor: '#e9d5ff',
-    bgColor: '#faf5ff',
+    icon: 'link',
+    badgeBg: 'rgba(71, 96, 63, 0.16)',
+    badgeColor: '#22301f',
+    borderColor: 'rgba(71, 96, 63, 0.24)',
+    bgColor: 'rgba(238, 240, 233, 0.72)',
   },
   context: {
     key: 'context',
     title: 'Ngữ cảnh sử dụng',
-    icon: '🎯',
-    badgeBg: '#fef3c7',
-    badgeColor: '#d97706',
-    borderColor: '#fde68a',
-    bgColor: '#fffdf5',
+    icon: 'target',
+    badgeBg: 'rgba(201, 134, 47, 0.16)',
+    badgeColor: '#8f5c1a',
+    borderColor: 'rgba(201, 134, 47, 0.3)',
+    bgColor: 'rgba(250, 248, 241, 0.76)',
   },
   mistakes: {
     key: 'mistakes',
     title: 'Lỗi thường gặp',
-    icon: '⚠️',
-    badgeBg: '#ffe4e6',
-    badgeColor: '#e11d48',
-    borderColor: '#fecdd3',
-    bgColor: '#fff5f5',
+    icon: 'warning',
+    badgeBg: 'rgba(154, 75, 67, 0.14)',
+    badgeColor: '#74322b',
+    borderColor: 'rgba(154, 75, 67, 0.28)',
+    bgColor: 'rgba(250, 244, 243, 0.78)',
   },
   memory_tips: {
     key: 'memory_tips',
     title: 'Mẹo ghi nhớ',
-    icon: '🧠',
-    badgeBg: '#dcfce7',
-    badgeColor: '#16a34a',
-    borderColor: '#bbf7d0',
-    bgColor: '#f4fbf6',
+    icon: 'brain',
+    badgeBg: 'rgba(66, 119, 77, 0.14)',
+    badgeColor: '#285130',
+    borderColor: 'rgba(66, 119, 77, 0.28)',
+    bgColor: 'rgba(244, 249, 244, 0.78)',
   },
 };
 
@@ -261,16 +263,16 @@ export const AiExplanationBox: React.FC<AiExplanationBoxProps> = ({ explanation,
           justifyContent: 'space-between',
           marginBottom: 14,
           paddingBottom: 10,
-          borderBottom: '1px solid #e2e8f0',
+          borderBottom: '1px solid var(--line)',
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <Mascot s={compact ? 28 : 34} />
+          <ViMascotImage pose="explain" size={compact ? 32 : 40} />
           <div>
             <div
               style={{
-                fontWeight: 800,
-                color: '#0369a1',
+                fontWeight: 700,
+                color: 'var(--sage-dark)',
                 fontSize: compact ? 13 : 15,
                 display: 'flex',
                 alignItems: 'center',
@@ -282,8 +284,8 @@ export const AiExplanationBox: React.FC<AiExplanationBoxProps> = ({ explanation,
                 style={{
                   fontSize: 10,
                   fontWeight: 700,
-                  background: '#e0f2fe',
-                  color: '#0284c7',
+                  background: 'var(--sage-soft)',
+                  color: 'var(--sage-dark)',
                   padding: '2px 8px',
                   borderRadius: 99,
                   textTransform: 'uppercase',
@@ -293,7 +295,7 @@ export const AiExplanationBox: React.FC<AiExplanationBoxProps> = ({ explanation,
                 AI Pro
               </span>
             </div>
-            <div style={{ fontSize: 11, color: '#64748b', marginTop: 1 }}>
+            <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 1 }}>
               5 phần: Ví dụ · Bảng Đồng/Trái nghĩa · Ngữ cảnh · Lỗi sai · Mẹo nhớ
             </div>
           </div>
@@ -365,7 +367,7 @@ export const AiExplanationBox: React.FC<AiExplanationBoxProps> = ({ explanation,
                   marginBottom: 8,
                 }}
               >
-                <span>{SECTION_MAP.examples.icon}</span>
+                <span><UiIcon name={SECTION_MAP.examples.icon} size={15} /></span>
                 <span>{SECTION_MAP.examples.title}</span>
               </div>
 
@@ -428,7 +430,7 @@ export const AiExplanationBox: React.FC<AiExplanationBoxProps> = ({ explanation,
                   marginBottom: 8,
                 }}
               >
-                <span>{SECTION_MAP.synonyms_antonyms.icon}</span>
+                <span><UiIcon name={SECTION_MAP.synonyms_antonyms.icon} size={15} /></span>
                 <span>{SECTION_MAP.synonyms_antonyms.title}</span>
               </div>
 
@@ -469,7 +471,7 @@ export const AiExplanationBox: React.FC<AiExplanationBoxProps> = ({ explanation,
                               fontSize: compact ? 11 : 12,
                             }}
                           >
-                            ⚡ Trái nghĩa (Antonyms)
+                            <UiIcon name="zap" size={13} /> Trái nghĩa (Antonyms)
                           </span>
                         </th>
                         <th
@@ -493,7 +495,7 @@ export const AiExplanationBox: React.FC<AiExplanationBoxProps> = ({ explanation,
                               fontSize: compact ? 11 : 12,
                             }}
                           >
-                            🔗 Đồng nghĩa (Synonyms)
+                            <UiIcon name="link" size={13} /> Đồng nghĩa (Synonyms)
                           </span>
                         </th>
                       </tr>
@@ -614,7 +616,7 @@ export const AiExplanationBox: React.FC<AiExplanationBoxProps> = ({ explanation,
                   marginBottom: 8,
                 }}
               >
-                <span>{SECTION_MAP.context.icon}</span>
+                <span><UiIcon name={SECTION_MAP.context.icon} size={15} /></span>
                 <span>{SECTION_MAP.context.title}</span>
               </div>
 
@@ -652,7 +654,7 @@ export const AiExplanationBox: React.FC<AiExplanationBoxProps> = ({ explanation,
                   marginBottom: 8,
                 }}
               >
-                <span>{SECTION_MAP.mistakes.icon}</span>
+                <span><UiIcon name={SECTION_MAP.mistakes.icon} size={15} /></span>
                 <span>{SECTION_MAP.mistakes.title}</span>
               </div>
 
@@ -690,7 +692,7 @@ export const AiExplanationBox: React.FC<AiExplanationBoxProps> = ({ explanation,
                   marginBottom: 8,
                 }}
               >
-                <span>{SECTION_MAP.memory_tips.icon}</span>
+                <span><UiIcon name={SECTION_MAP.memory_tips.icon} size={15} /></span>
                 <span>{SECTION_MAP.memory_tips.title}</span>
               </div>
 

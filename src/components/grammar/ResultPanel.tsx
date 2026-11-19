@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { motion } from 'motion/react';
 import type { GrammarResp, GrammarErr } from '../../api';
 import { MotionCard, AnimatedCounter, staggerContainer, staggerItem } from '../../motion';
-import viAvatar from '../../assets/vi-3d.webp';
+import { ViMascotImage } from '../ViMascotImage';
+import { UiIcon } from '../UiIcon';
 
 export interface OutlineReport {
   targetWordCount?: number;
@@ -125,7 +126,7 @@ export default function ResultPanel({ res, outlineReport, translationVerdict, ex
       } else if (isWordMissing) {
         statusBadge = (
           <span className="pill warn" style={{ fontWeight: 800 }}>
-            ⚠ Chưa đạt — Thiếu từ mục tiêu
+            <UiIcon name="warning" size={14} /> Chưa đạt — Thiếu từ mục tiêu
           </span>
         );
       } else {
@@ -138,7 +139,7 @@ export default function ResultPanel({ res, outlineReport, translationVerdict, ex
     } else if (translationVerdict.meaningMatch === 'PARTIAL') {
       statusBadge = (
         <span className="pill warn" style={{ fontWeight: 800 }}>
-          ⚠ Tạm đạt — Cần chỉnh nghĩa
+          <UiIcon name="warning" size={14} /> Tạm đạt — Cần chỉnh nghĩa
         </span>
       );
     } else {
@@ -203,7 +204,7 @@ export default function ResultPanel({ res, outlineReport, translationVerdict, ex
           >
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
               <span style={{ fontSize: 13, fontWeight: 800, color: '#065F46' }}>
-                📋 Khớp dàn ý: {outlineReport.usedWordCount || 0}/{outlineReport.targetWordCount || 5} từ gợi ý
+                <UiIcon name="clipboard" size={14} /> Khớp dàn ý: {outlineReport.usedWordCount || 0}/{outlineReport.targetWordCount || 5} từ gợi ý
               </span>
               {outlineReport.usedWordCount === outlineReport.targetWordCount && (
                 <span className="pill" style={{ background: '#10B981', color: '#fff', fontSize: 11, fontWeight: 800 }}>
@@ -251,7 +252,7 @@ export default function ResultPanel({ res, outlineReport, translationVerdict, ex
             {/* Structures report */}
             {outlineReport.usedStructures && outlineReport.usedStructures.length > 0 && (
               <div style={{ marginTop: 10, fontSize: 12.5, color: '#047857' }}>
-                🎯 <b>Cấu trúc đã áp dụng:</b> {outlineReport.usedStructures.join(', ')}
+                <UiIcon name="target" size={14} /> <b>Cấu trúc đã áp dụng:</b> {outlineReport.usedStructures.join(', ')}
               </div>
             )}
 
@@ -316,7 +317,7 @@ export default function ResultPanel({ res, outlineReport, translationVerdict, ex
               flexShrink: 0,
             }}
           >
-            {copied ? '✓ Đã chép' : '📋 Sao chép'}
+            {copied ? '✓ Đã chép' : <><UiIcon name="clipboard" size={13} /> Sao chép</>}
           </button>
         </div>
 
@@ -338,9 +339,9 @@ export default function ResultPanel({ res, outlineReport, translationVerdict, ex
                 style={{
                   cursor: 'pointer',
                   borderRadius: 10,
-                  transition: 'all 0.15s ease',
-                  border: idx === activeErrorIdx ? '1.5px solid #EF4444' : undefined,
-                  background: idx === activeErrorIdx ? '#FEF2F2' : undefined,
+                  transition: 'border-color var(--dur-micro) var(--ease), background-color var(--dur-micro) var(--ease)',
+                  border: idx === activeErrorIdx ? '1.5px solid var(--danger)' : undefined,
+                  background: idx === activeErrorIdx ? 'var(--danger-bg)' : undefined,
                 }}
               >
                 <span className="tk" style={{ color: 'var(--primary)', fontWeight: 800 }}>
@@ -356,7 +357,7 @@ export default function ResultPanel({ res, outlineReport, translationVerdict, ex
                     )}
                   </div>
                   <div className="sub mt8" style={{ color: 'var(--ink)', fontSize: 13, lineHeight: 1.5 }}>
-                    💡 <b>Gợi ý:</b> {e.suggestion}
+                    <UiIcon name="lightbulb" size={13} /> <b>Gợi ý:</b> {e.suggestion}
                   </div>
                 </div>
               </motion.div>
@@ -368,7 +369,11 @@ export default function ResultPanel({ res, outlineReport, translationVerdict, ex
       {/* 2. Coach Vi's Advice */}
       <MotionCard className="card">
         <div className="coach">
-          <img src={viAvatar} alt="Vi" style={{ width: 48, height: 48, objectFit: 'contain' }} />
+          <ViMascotImage
+            pose={hasErrors ? 'surprised' : 'explain'}
+            size={52}
+            alt={hasErrors ? 'Vi bất ngờ trước lỗi cần sửa trong bài viết' : 'Vi giải thích nhận xét ngữ pháp'}
+          />
           <div className="bubble" style={{ fontSize: 13.5, lineHeight: 1.5 }}>
             <b>Gợi ý của Vi:</b> {coachFeedback}
           </div>

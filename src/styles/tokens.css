@@ -1,0 +1,178 @@
+/* ==========================================================================
+   SAGE THƯ VIỆN — SINGLE SOURCE OF TRUTH DESIGN TOKENS
+   Shared across Landing Page, Auth, and Logged-in App Shell.
+   ========================================================================== */
+:root {
+  /* Core Palette */
+  --scene: #263d30;
+  --scene-deep: #172e24;
+  --scene-mid: #385b42;
+  --sage: #47603f;
+  --sage-dark: #2f4329;
+  --sage-soft: rgba(71, 96, 63, 0.12);
+  --ink: #22301f;
+  --bg: #eef0e9;
+  --tint: #eef0e9;
+  --cream: #faf8f1;
+  --amber: #c9862f; /* STRICT LAW: EXCLUSIVELY FOR STREAK & PREMIUM ACCENTS */
+  --amber-dark: #8f5c1a;
+  --amber-bg: rgba(201, 134, 47, 0.13);
+  --white: #ffffff;
+  --muted: #4b5b49; /* >= 4.5:1 contrast on glass cream surface */
+  --danger: #9a4b43;
+  --danger-bg: rgba(154, 75, 67, 0.14);
+  --success: #42774d;
+  --success-bg: rgba(66, 119, 77, 0.14);
+  --line: rgba(71, 96, 63, 0.18);
+
+  /* Backward-compatible semantic aliases (for existing components/inline tokens) */
+  --color-sage: var(--sage);
+  --color-ink: var(--ink);
+  --color-bg: var(--bg);
+  --color-cream: var(--cream);
+  --color-streak: var(--amber);
+  --primary: var(--sage);
+  --primary-dark: var(--ink);
+  --primary-light: var(--tint);
+  --secondary: var(--sage);
+  --green: var(--success);
+  --green-dark: #285130;
+  --green-bg: var(--success-bg);
+  --yellow: var(--amber);
+  --yellow-dark: var(--amber-dark);
+  --yellow-bg: var(--amber-bg);
+  --red: var(--danger);
+  --red-dark: #74322b;
+  --red-bg: var(--danger-bg);
+  --card: var(--glass);
+  --tint-blue: rgba(71, 96, 63, 0.10);
+  --mascot: #14c7bb;
+  --text-main: var(--ink);
+  --text-sub: var(--muted);
+  --text-muted: var(--muted);
+  --border-color: var(--line);
+  --bg-card: var(--glass-strong);
+  --bg-subtle: rgba(250, 248, 241, 0.52);
+
+  /* 6-Layer Glass Material Parameters */
+  --glass: rgba(250, 248, 241, 0.78);
+  --glass-strong: rgba(250, 248, 241, 0.88);
+  --glass-blur: 24px;
+  --rim: rgba(255, 255, 255, 0.92);
+  --rim-rainbow: linear-gradient(
+    118deg,
+    rgba(242, 255, 239, 0.74),
+    rgba(182, 209, 172, 0.48) 30%,
+    rgba(250, 229, 239, 0.18) 65%,
+    rgba(255, 255, 255, 0.82)
+  );
+  --shadow: 0 18px 38px rgba(8, 28, 18, 0.22), 0 3px 9px rgba(8, 28, 18, 0.10);
+  --sh: var(--shadow);
+  --shadow-sm: 0 4px 12px rgba(12, 34, 19, 0.08);
+  --shadow-md: 0 14px 32px rgba(12, 34, 19, 0.14);
+  --shadow-lg: 0 22px 52px rgba(12, 34, 19, 0.22);
+
+  /* Radii */
+  --r-sm: 12px;
+  --r-md: 20px;
+  --r-lg: 28px;
+  --r-pill: 999px;
+  --radius-sm: var(--r-sm);
+  --radius-md: var(--r-md);
+  --radius-lg: var(--r-lg);
+
+  /* 4/8 Spacing Scale */
+  --s1: 4px;
+  --s2: 8px;
+  --s3: 12px;
+  --s4: 16px;
+  --s5: 24px;
+  --s6: 32px;
+  --s7: 48px;
+  --shell-pad: var(--s3);
+  --content-gap: var(--s3);
+  --content-pad: var(--s4);
+
+  /* Typography — exact source of truth from index (4).html + Landing preview */
+  --font-heading: 'Space Grotesk', sans-serif;
+  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-editorial: 'Newsreader', Georgia, serif;
+
+  /* UI Motion Laws */
+  --ease: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-out-quart: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-gentle: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-premium: cubic-bezier(0.23, 1, 0.32, 1);
+  --dur-enter: 620ms;
+  --dur-exit: 465ms; /* ~75% of enter */
+  --dur-micro: 220ms;
+  --duration-fast: 150ms;
+  --duration-normal: 220ms;
+  --duration-moderate: 320ms;
+  --duration-deliberate: 480ms;
+  --press-scale: 0.965;
+  --stagger-step: 65ms;
+}
+
+/* ==========================================================================
+   6-LAYER GLASS SURFACE (Shared across Landing + Logged-in App)
+   1. Milky near-transparent fill
+   2. Backdrop blur + brightness/saturation lift
+   3. Bright Fresnel rim border
+   4. Specular highlight top-left + cursor glint
+   5. Faint iridescence strictly on the rim via mask-composite
+   6. Soft caustic shadow beneath
+   ========================================================================== */
+.glass {
+  position: relative;
+  background: var(--glass);
+  backdrop-filter: blur(var(--glass-blur)) brightness(1.06) saturate(1.08);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) brightness(1.06) saturate(1.08);
+  border: 1px solid var(--rim);
+  box-shadow:
+    var(--shadow),
+    inset 0 1px 0 rgba(255, 255, 255, 0.98),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.34);
+  border-radius: var(--r-lg);
+  isolation: isolate;
+}
+
+.glass::before {
+  content: "";
+  position: absolute;
+  inset: 1px;
+  border-radius: inherit;
+  pointer-events: none;
+  padding: 1px;
+  background: var(--rim-rainbow);
+  opacity: 0.72;
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  -webkit-mask-composite: xor;
+  z-index: 2;
+}
+
+.glass::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  box-shadow:
+    inset 2px 2px 8px rgba(255, 255, 255, 0.65),
+    inset -2px -2px 4px rgba(209, 233, 224, 0.36);
+  background: radial-gradient(
+    240px circle at var(--glint-x, 10%) var(--glint-y, 8%),
+    rgba(255, 255, 255, 0.38),
+    transparent 70%
+  );
+  opacity: var(--glint-alpha, 0.62);
+  transition: opacity var(--dur-micro) var(--ease);
+  z-index: 1;
+}
+
+.glass > * {
+  position: relative;
+  z-index: 3;
+}

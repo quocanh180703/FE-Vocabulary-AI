@@ -8,6 +8,7 @@ import {
   TOPIC_MAP,
 } from '../../api';
 import { Icon } from '../../components/icons';
+import { UiIcon } from '../../components/UiIcon';
 import { motion, AnimatePresence } from 'motion/react';
 
 const TOPIC_OPTIONS = [
@@ -438,7 +439,7 @@ export function AdminVocabStudio({ onSaved, onBackToWords }: AdminVocabStudioPro
       <div className="row" style={{ flexWrap: 'wrap', gap: 12 }}>
         <div>
           <h1 style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <span style={{ color: 'var(--primary)' }}>⚡</span>
+            <span style={{ color: 'var(--primary)', display: 'inline-flex' }}><UiIcon name="zap" size={15} /></span>
             Xưởng Từ Vựng AI (Vocab AI Studio)
           </h1>
           <div className="sub">
@@ -1010,7 +1011,7 @@ export function AdminVocabStudio({ onSaved, onBackToWords }: AdminVocabStudioPro
                     color: '#0369A1',
                   }}
                 >
-                  <b style={{ fontSize: 15, display: 'block', marginBottom: 4 }}>🎯 Gắn tag có phạm vi (Scoped AI Tagging)</b>
+                  <b style={{ fontSize: 15, display: 'inline-flex', alignItems: 'center', gap: 6, marginBottom: 4 }}><UiIcon name="target" size={15} /> Gắn tag có phạm vi (Scoped AI Tagging)</b>
                   <p style={{ margin: 0, fontSize: 13.5, lineHeight: 1.6 }}>
                     Thay vì quét mù toàn bộ cơ sở dữ liệu, bạn có thể gắn tag chính xác theo <b>đợt Import mới</b> (theo nguồn dataset hoặc mốc ngày tạo) hoặc theo <b>danh sách từ cụ thể</b>.
                     Các từ chức năng (giới từ, liên từ...) và từ trừu tượng/chung chung sẽ tự động được <b>bỏ qua chủ đích</b> mà không làm phình hàng chờ duyệt tay.
@@ -1028,7 +1029,7 @@ export function AdminVocabStudio({ onSaved, onBackToWords }: AdminVocabStudioPro
                       style={{ fontSize: 13, padding: '6px 16px', border: 'none', boxShadow: 'none' }}
                       disabled={backfillStatus?.status === 'RUNNING'}
                     >
-                      📦 Theo đợt Import (Nguồn / Ngày)
+                      <UiIcon name="package" size={14} /> Theo đợt Import (Nguồn / Ngày)
                     </button>
                     <button
                       type="button"
@@ -1037,7 +1038,7 @@ export function AdminVocabStudio({ onSaved, onBackToWords }: AdminVocabStudioPro
                       style={{ fontSize: 13, padding: '6px 16px', border: 'none', boxShadow: 'none' }}
                       disabled={backfillStatus?.status === 'RUNNING'}
                     >
-                      🎯 Theo danh sách từ chỉ định (Word IDs)
+                      <UiIcon name="target" size={14} /> Theo danh sách từ chỉ định (Word IDs)
                     </button>
                   </div>
                 </div>
@@ -1311,7 +1312,7 @@ export function AdminVocabStudio({ onSaved, onBackToWords }: AdminVocabStudioPro
                           gap: 8,
                         }}
                       >
-                        <span style={{ fontSize: 16 }}>⚠️</span>
+                        <span style={{ display: 'inline-flex' }}><UiIcon name="warning" size={15} /></span>
                         <span>
                           <b>Lý do lỗi gần nhất:</b> {backfillStatus.lastError} (các từ lỗi này chưa được gắn tag và sẽ được thử lại khi chạy lại job)
                         </span>

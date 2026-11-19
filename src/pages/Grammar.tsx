@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { QuotaBadge } from '../components/QuotaBadge';
 import { Icon } from '../components/icons';
+import { SplitHeading } from '../components/SageEffects';
 import FreeCheckPanel from '../components/grammar/FreeCheckPanel';
 import TopicPanel from '../components/grammar/TopicPanel';
 import TranslationPanel from '../components/grammar/TranslationPanel';
@@ -50,76 +51,66 @@ export default function Grammar() {
   };
 
   return (
-    <div className="content" style={{ maxWidth: 1600 }}>
+    <div className="content">
       {/* Page Header */}
-      <div
-        className="pagehead"
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          flexWrap: 'wrap',
-          gap: 12,
-        }}
-      >
+      <div className="pagehead">
         <div>
-          <h1>Sửa ngữ pháp &amp; Luyện viết AI</h1>
-          <div className="sub">
+          <div className="eyebrow">GRAMMAR STUDIO · AI COACH</div>
+          <SplitHeading text="Sửa ngữ pháp & Luyện viết AI" />
+          <p className="sub">
             Vi đồng hành phân tích ngữ pháp, gợi ý cấu trúc câu và chấm bài viết chuyên sâu
-          </div>
+          </p>
         </div>
         <QuotaBadge featureKey="grammar" labelSuffix="lượt kiểm tra hôm nay" />
       </div>
 
       {/* 4 Tabs Switcher */}
-      <div className="chips" style={{ marginBottom: 22, gap: 10 }}>
+      <div className="chips" style={{ flex: 'none' }}>
         <button
           type="button"
           className={'chip' + (activeTab === 'topics' ? ' on' : '')}
           onClick={() => handleTabChange('topics')}
-          style={{ padding: '8px 20px', fontSize: 14, fontWeight: 700 }}
         >
-          <Icon n="pen" s={18} /> 1. Viết theo chủ đề
+          <Icon n="pen" s={16} /> 1. Viết theo chủ đề
         </button>
 
         <button
           type="button"
           className={'chip' + (activeTab === 'translate' ? ' on' : '')}
           onClick={() => handleTabChange('translate')}
-          style={{ padding: '8px 20px', fontSize: 14, fontWeight: 700 }}
         >
-          <Icon n="heart" s={18} /> 2. Luyện câu theo từ yêu thích
+          <Icon n="heart" s={16} /> 2. Luyện câu theo từ yêu thích
         </button>
 
         <button
           type="button"
           className={'chip' + (activeTab === 'free' ? ' on' : '')}
           onClick={() => handleTabChange('free')}
-          style={{ padding: '8px 20px', fontSize: 14, fontWeight: 700 }}
         >
-          <Icon n="spark" s={18} /> 3. Viết tự do
+          <Icon n="spark" s={16} /> 3. Viết tự do
         </button>
 
         <button
           type="button"
           className={'chip' + (activeTab === 'history' ? ' on' : '')}
           onClick={() => handleTabChange('history')}
-          style={{ padding: '8px 20px', fontSize: 14, fontWeight: 700 }}
         >
-          <Icon n="clock" s={18} /> 4. Lịch sử
+          <Icon n="clock" s={16} /> 4. Lịch sử
         </button>
       </div>
 
-      {/* Tab Panels */}
-      {activeTab === 'topics' && <TopicPanel />}
-      {activeTab === 'translate' && <TranslationPanel />}
-      {activeTab === 'free' && <FreeCheckPanel />}
-      {activeTab === 'history' && (
-        <HistoryPanel
-          onReplay={handleReplay}
-          onGoToTopics={() => handleTabChange('topics')}
-        />
-      )}
+      {/* Tab Panels inside viewport-locked inner scroll */}
+      <div className="long-list" style={{ flex: 1, minHeight: 0, paddingRight: 4, display: 'block' }}>
+        {activeTab === 'topics' && <TopicPanel />}
+        {activeTab === 'translate' && <TranslationPanel />}
+        {activeTab === 'free' && <FreeCheckPanel />}
+        {activeTab === 'history' && (
+          <HistoryPanel
+            onReplay={handleReplay}
+            onGoToTopics={() => handleTabChange('topics')}
+          />
+        )}
+      </div>
     </div>
   );
 }

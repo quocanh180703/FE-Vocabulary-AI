@@ -3,6 +3,8 @@ import { motion, AnimatePresence } from 'motion/react';
 import { aiApi, type GrammarHistoryItem, type GrammarHistoryDetail, type GrammarResp } from '../../api';
 import { MotionCard, AnimatedCounter, staggerContainer, staggerItem } from '../../motion';
 import ResultPanel, { type OutlineReport, type TranslationVerdict } from './ResultPanel';
+import { UiIcon } from '../UiIcon';
+import { ViLoadingScreen } from '../states/ViLoadingScreen';
 
 interface HistoryPanelProps {
   onReplay?: (data: {
@@ -138,11 +140,11 @@ export default function HistoryPanel({ onReplay, onGoToTopics }: HistoryPanelPro
   const getModeBadge = (mode: string) => {
     switch (mode) {
       case 'TOPIC':
-        return <span className="pill level" style={{ background: '#EFF6FF', color: '#1D4ED8', borderColor: '#BFDBFE', fontWeight: 800 }}>Chủ đề</span>;
+        return <span className="pill level" style={{ background: 'rgba(71, 96, 63, 0.14)', color: 'var(--sage-dark)', borderColor: 'rgba(71, 96, 63, 0.28)', fontWeight: 800 }}>Chủ đề</span>;
       case 'TRANSLATION':
-        return <span className="pill level" style={{ background: '#F5F3FF', color: '#6D28D9', borderColor: '#DDD6FE', fontWeight: 800 }}>Luyện dịch</span>;
+        return <span className="pill level" style={{ background: 'rgba(201, 134, 47, 0.14)', color: 'var(--amber-dark)', borderColor: 'rgba(201, 134, 47, 0.32)', fontWeight: 800 }}>Luyện dịch</span>;
       default:
-        return <span className="pill level" style={{ background: '#ECFDF5', color: '#047857', borderColor: '#A7F3D0', fontWeight: 800 }}>Viết tự do</span>;
+        return <span className="pill greensoft" style={{ fontWeight: 800 }}>Viết tự do</span>;
     }
   };
 
@@ -179,7 +181,7 @@ export default function HistoryPanel({ onReplay, onGoToTopics }: HistoryPanelPro
             onClick={() => handleFilterChange('TOPIC')}
             style={{ fontWeight: 700, padding: '7px 16px', fontSize: 13 }}
           >
-            ✍️ Viết theo chủ đề
+            <UiIcon name="pen" size={13} /> Viết theo chủ đề
           </button>
           <button
             type="button"
@@ -187,7 +189,7 @@ export default function HistoryPanel({ onReplay, onGoToTopics }: HistoryPanelPro
             onClick={() => handleFilterChange('TRANSLATION')}
             style={{ fontWeight: 700, padding: '7px 16px', fontSize: 13 }}
           >
-            ❤️ Luyện câu theo từ
+            <UiIcon name="heart" size={13} /> Luyện câu theo từ
           </button>
           <button
             type="button"
@@ -195,7 +197,7 @@ export default function HistoryPanel({ onReplay, onGoToTopics }: HistoryPanelPro
             onClick={() => handleFilterChange('FREE')}
             style={{ fontWeight: 700, padding: '7px 16px', fontSize: 13 }}
           >
-            ✨ Viết tự do
+            <UiIcon name="sparkles" size={13} /> Viết tự do
           </button>
         </div>
       </MotionCard>
@@ -307,7 +309,7 @@ export default function HistoryPanel({ onReplay, onGoToTopics }: HistoryPanelPro
                         }}
                         style={{ fontWeight: 800 }}
                       >
-                        🔄 Làm lại bài này
+                        <UiIcon name="refresh" size={13} /> Làm lại bài này
                       </button>
                     </div>
                   }
@@ -325,11 +327,11 @@ export default function HistoryPanel({ onReplay, onGoToTopics }: HistoryPanelPro
       {/* 3. List of History Items */}
       {loading ? (
         <MotionCard className="card" style={{ padding: 40, textAlign: 'center' }}>
-          <div className="sub" style={{ fontSize: 15, fontWeight: 600 }}>Đang tải lịch sử bài viết...</div>
+          <ViLoadingScreen compact subtitle="Đang tải lịch sử bài viết" />
         </MotionCard>
       ) : items.length === 0 ? (
         <MotionCard className="card" style={{ padding: '48px 24px', textAlign: 'center' }}>
-          <div style={{ fontSize: 44, marginBottom: 12 }}>📝</div>
+          <div style={{ marginBottom: 12, color: 'var(--sage)' }}><UiIcon name="file" size={40} /></div>
           <b style={{ fontSize: 17, color: 'var(--ink)' }}>Bạn chưa có bài luyện viết nào trong mục này</b>
           <div className="sub mt8" style={{ maxWidth: 420, margin: '8px auto 0' }}>
             Hãy bắt đầu viết bài đầu tiên theo chủ đề hoặc luyện dịch câu từ kho từ yêu thích của bạn nhé!
@@ -341,7 +343,7 @@ export default function HistoryPanel({ onReplay, onGoToTopics }: HistoryPanelPro
               onClick={onGoToTopics}
               style={{ fontWeight: 800, padding: '10px 24px' }}
             >
-              ✍️ Bắt đầu viết theo chủ đề
+              <UiIcon name="pen" size={14} /> Bắt đầu viết theo chủ đề
             </button>
           )}
         </MotionCard>
@@ -364,7 +366,7 @@ export default function HistoryPanel({ onReplay, onGoToTopics }: HistoryPanelPro
                 alignItems: 'center',
                 gap: 16,
                 cursor: 'pointer',
-                transition: 'all 0.18s ease',
+                transition: 'transform var(--dur-micro) var(--ease), border-color var(--dur-micro) var(--ease)',
               }}
               onClick={() => handleViewDetail(item.id)}
             >

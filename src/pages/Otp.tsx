@@ -3,7 +3,8 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { authApi, errMsg } from '../api';
 import { Icon } from '../components/icons';
 import { PageTransition } from '../motion';
-import vi3dImg from '../assets/vi-3d.webp';
+import { ViMascotImage } from '../components/ViMascotImage';
+import { SageScene } from '../components/SageEffects';
 
 export default function Otp() {
   const { state } = useLocation() as { state?: { email: string; username: string; fullName: string; password: string } };
@@ -108,15 +109,15 @@ export default function Otp() {
     <PageTransition
       className="auth"
       style={{
-        minHeight: '100vh',
+        minHeight: '100dvh',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         padding: '24px',
         position: 'relative',
-        background: 'radial-gradient(ellipse 90% 80% at 50% -10%, #E8F2FD 0%, var(--bg) 70%)',
       }}
     >
+      <SageScene />
       <button
         type="button"
         className="topbar-home-btn"
@@ -127,8 +128,10 @@ export default function Otp() {
           top: 24,
           left: 24,
           zIndex: 50,
-          background: 'rgba(255, 255, 255, 0.92)',
-          backdropFilter: 'blur(8px)',
+          background: 'var(--glass-strong)',
+          color: 'var(--ink)',
+          border: '1px solid var(--rim)',
+          backdropFilter: 'blur(12px)',
         }}
       >
         <Icon n="arrow-left" s={16} />
@@ -136,7 +139,9 @@ export default function Otp() {
       </button>
 
       <div className="otp-card">
-        <img src={vi3dImg} alt="Vi Mascot" className="otp-mascot" />
+        <div style={{ display: 'inline-flex', padding: '5px', borderRadius: '24px', background: 'var(--cream)', border: '1px solid var(--rim)', boxShadow: 'var(--shadow-sm)', marginBottom: '12px' }}>
+          <ViMascotImage pose="encourage" size={84} priority />
+        </div>
         <h1>Gần xong rồi — nhập mã OTP</h1>
         <p className="sub">
           Mã xác thực 6 số vừa được gửi tới
@@ -241,10 +246,10 @@ export default function Otp() {
             marginTop: '22px',
             minHeight: '52px',
             fontSize: '16px',
-            fontWeight: 800,
-            borderRadius: '14px',
-            background: isComplete && !busy ? 'linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%)' : undefined,
-            boxShadow: isComplete && !busy ? '0 8px 22px rgba(21, 101, 192, 0.28)' : undefined,
+            fontWeight: 700,
+            borderRadius: '999px',
+            background: isComplete && !busy ? 'linear-gradient(135deg, var(--sage) 0%, var(--sage-dark) 100%)' : undefined,
+            boxShadow: isComplete && !busy ? '0 10px 24px rgba(34, 48, 31, 0.25)' : undefined,
           }}
           disabled={busy || !isComplete}
           onClick={submit}
@@ -274,7 +279,7 @@ export default function Otp() {
         >
           <span>Chưa nhận được mã?</span>
           {countdown > 0 ? (
-            <span style={{ color: 'var(--primary-dark)', fontWeight: 800, fontVariantNumeric: 'tabular-nums' }}>
+            <span style={{ color: 'var(--sage-dark)', fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>
               Gửi lại sau {countdown}s
             </span>
           ) : (
@@ -284,8 +289,8 @@ export default function Otp() {
               onClick={resend}
               disabled={busy}
               style={{
-                fontWeight: 800,
-                color: 'var(--primary)',
+                fontWeight: 700,
+                color: 'var(--sage-dark)',
                 cursor: 'pointer',
                 background: 'none',
                 border: 'none',

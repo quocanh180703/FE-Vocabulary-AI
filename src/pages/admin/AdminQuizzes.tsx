@@ -5,6 +5,8 @@ import { adminApi, quizApi } from '../../api';
 import type { AdminQuiz, QuizDetail } from '../../api';
 import { useAuth } from '../../auth/AuthContext';
 import { Icon } from '../../components/icons';
+import { ViLoadingScreen } from '../../components/states/ViLoadingScreen';
+import { UiIcon } from '../../components/UiIcon';
 import { ConfirmModal } from '../../components/ConfirmModal';
 import { MotionCard, AnimatedCounter, staggerContainer, staggerItem } from '../../motion';
 
@@ -300,9 +302,7 @@ export default function AdminQuizzes() {
 
       {/* Quizzes Grid */}
       {loading ? (
-        <div className="card center" style={{ padding: 48, color: 'var(--muted)' }}>
-          Đang tải danh sách bài trắc nghiệm...
-        </div>
+        <ViLoadingScreen compact subtitle="Đang tải danh sách bài trắc nghiệm" />
       ) : paginatedQuizzes.length === 0 ? (
         <div className="card center" style={{ padding: 48, color: 'var(--muted)' }}>
           Không có bài trắc nghiệm nào phù hợp.
@@ -713,7 +713,7 @@ export default function AdminQuizzes() {
 
                       {q.explanation && (
                         <div className="sub mt8" style={{ fontSize: 12 }}>
-                          💡 Giải thích: {q.explanation}
+                          <UiIcon name="lightbulb" size={13} /> Giải thích: {q.explanation}
                         </div>
                       )}
                     </div>

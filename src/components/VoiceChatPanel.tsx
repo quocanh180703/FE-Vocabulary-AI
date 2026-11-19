@@ -4,7 +4,9 @@ import type { VoiceChatScoreResponse, VoiceChatNewWord } from '../api';
 import { Icon } from './icons';
 import { QuotaBadge } from './QuotaBadge';
 import { useUsage } from '../context/UsageContext';
-import viAvatar from '../assets/vi-3d.webp';
+import { ViMascotImage } from './ViMascotImage';
+import { UiIcon } from './UiIcon';
+import { ScoreRing } from './SageEffects';
 import './VoiceChatPanel.css';
 
 interface Message {
@@ -28,40 +30,40 @@ function getScoreTier(score: number) {
   if (score >= 90) {
     return {
       label: 'Xuất sắc',
-      color: '#059669',
-      bg: '#ecfdf5',
-      border: '#a7f3d0',
-      strokeColor: '#10b981',
-      icon: '🏆',
+      color: 'var(--green-dark)',
+      bg: 'var(--success-bg)',
+      border: 'rgba(66, 119, 77, 0.35)',
+      strokeColor: 'var(--success)',
+      icon: 'trophy',
     };
   }
   if (score >= 80) {
     return {
       label: 'Rất tốt',
-      color: '#1d4ed8',
-      bg: '#eff6ff',
-      border: '#bfdbfe',
-      strokeColor: '#2563eb',
-      icon: '🌟',
+      color: 'var(--sage-dark)',
+      bg: 'rgba(71, 96, 63, 0.14)',
+      border: 'rgba(71, 96, 63, 0.32)',
+      strokeColor: 'var(--sage)',
+      icon: 'star',
     };
   }
   if (score >= 65) {
     return {
       label: 'Khá tốt',
-      color: '#d97706',
-      bg: '#fffbeb',
-      border: '#fde68a',
-      strokeColor: '#f59e0b',
-      icon: '👍',
+      color: 'var(--amber-dark)',
+      bg: 'var(--amber-bg)',
+      border: 'rgba(201, 134, 47, 0.35)',
+      strokeColor: 'var(--amber)',
+      icon: 'thumbs-up',
     };
   }
   return {
     label: 'Cần cố gắng',
-    color: '#7c3aed',
-    bg: '#f5f3ff',
-    border: '#ddd6fe',
-    strokeColor: '#8b5cf6',
-    icon: '💪',
+    color: 'var(--red-dark)',
+    bg: 'var(--danger-bg)',
+    border: 'rgba(154, 75, 67, 0.32)',
+    strokeColor: 'var(--danger)',
+    icon: 'dumbbell',
   };
 }
 
@@ -940,7 +942,7 @@ export const VoiceChatPanel: React.FC<VoiceChatPanelProps> = ({
             className="voice-result-tier-pill"
             style={{ background: tier.bg, color: tier.color, borderColor: tier.border }}
           >
-            <span style={{ fontSize: '16px' }}>{tier.icon}</span>
+            <span style={{ display: 'inline-flex' }}><UiIcon name={tier.icon} size={16} /></span>
             <span style={{ fontWeight: 800 }}>{tier.label}</span>
           </div>
         </div>
@@ -948,54 +950,25 @@ export const VoiceChatPanel: React.FC<VoiceChatPanelProps> = ({
         {/* Hero Score & Vi Summary */}
         <div className="voice-result-hero">
           <div className="voice-result-dial-wrap">
-            <svg
-              className="voice-result-dial-svg"
-              width={120}
-              height={120}
-              viewBox="0 0 120 120"
-              style={{ width: 120, height: 120, display: 'block' }}
-            >
-              <circle
-                cx="60"
-                cy="60"
-                r="48"
-                fill="none"
-                stroke="#e2e8f0"
-                strokeWidth="9"
-                className="voice-dial-track"
-              />
-              <circle
-                cx="60"
-                cy="60"
-                r="48"
-                fill="none"
-                stroke={tier.strokeColor}
-                strokeWidth="9"
-                strokeLinecap="round"
-                className="voice-dial-progress"
-                strokeDasharray={301.6}
-                strokeDashoffset={301.6 - (301.6 * Math.min(scoreReport.overall, 100)) / 100}
-                transform="rotate(-90 60 60)"
-              />
-            </svg>
-            <div className="voice-result-dial-text">
-              <div className="voice-result-dial-num">{scoreReport.overall}</div>
-              <div className="voice-result-dial-max">/ 100</div>
-              <div className="voice-result-dial-lbl">Tổng điểm</div>
-            </div>
+            <ScoreRing
+              value={scoreReport.overall}
+              label={`${scoreReport.overall}`}
+              size={110}
+              accentColor={tier.strokeColor}
+            />
           </div>
 
           <div className="voice-result-summary-box">
             <div className="voice-result-summary-head">
-              <img
-                src={viAvatar}
-                alt="Vi"
-                className="voice-result-summary-avatar"
-                style={{ width: 34, height: 34, minWidth: 34, minHeight: 34, maxWidth: 34, maxHeight: 34, borderRadius: '50%', objectFit: 'cover' }}
+              <ViMascotImage
+                pose={scoreReport.overall >= 70 ? 'celebrate' : 'listen'}
+                animated={scoreReport.overall >= 80}
+                size={44}
+                alt="Vi nhận xét phản xạ giao tiếp tiếng Anh của bạn"
               />
               <div>
-                <div style={{ fontWeight: 800, fontSize: '14.5px', color: '#1e293b' }}>Nhận xét từ trợ lý Vi</div>
-                <div style={{ fontSize: '12px', color: '#64748b' }}>Đánh giá phản xạ &amp; độ tự nhiên theo khung CEFR</div>
+                <div style={{ fontWeight: 800, fontSize: '14.5px', color: 'var(--ink)' }}>Nhận xét từ trợ lý Vi</div>
+                <div style={{ fontSize: '12px', color: 'var(--muted)' }}>Đánh giá phản xạ &amp; độ tự nhiên theo khung CEFR</div>
               </div>
             </div>
             <div className="voice-result-summary-content">
@@ -1015,7 +988,7 @@ export const VoiceChatPanel: React.FC<VoiceChatPanelProps> = ({
             {criteriaList.map((crit, idx) => {
               const isLast = idx === 4; // Pronunciation
               const score = Math.round(crit.data?.score ?? 0);
-              const color = score >= 85 ? '#10b981' : score >= 70 ? '#2563eb' : '#f59e0b';
+              const color = score >= 85 ? 'var(--success)' : score >= 70 ? 'var(--sage)' : 'var(--amber)';
               return (
                 <div key={crit.key} className={`voice-crit-card ${isLast ? 'full-span' : ''}`}>
                   <div className="voice-crit-top">
@@ -1129,7 +1102,7 @@ export const VoiceChatPanel: React.FC<VoiceChatPanelProps> = ({
             onClick={handleResetSession}
             className="btn btn-outline voice-btn-replay"
           >
-            🔄 Luyện tập lại phiên mới
+            <UiIcon name="refresh" size={14} /> Luyện tập lại phiên mới
           </button>
           {onBackToPractice && (
             <button
@@ -1172,9 +1145,9 @@ export const VoiceChatPanel: React.FC<VoiceChatPanelProps> = ({
                   style={{
                     padding: '3px 8px',
                     borderRadius: '8px',
-                    border: '1px solid #93c5fd',
-                    background: '#eff6ff',
-                    color: '#1d4ed8',
+                    border: '1px solid rgba(71, 96, 63, 0.3)',
+                    background: 'rgba(71, 96, 63, 0.12)',
+                    color: 'var(--sage-dark)',
                     fontSize: '12px',
                     fontWeight: 800,
                     cursor: 'pointer',
@@ -1220,7 +1193,7 @@ export const VoiceChatPanel: React.FC<VoiceChatPanelProps> = ({
           >
             {VOICES.map((v) => (
               <option key={v.id} value={v.id}>
-                🎙️ {v.name}
+                {v.name}
               </option>
             ))}
           </select>
@@ -1262,23 +1235,28 @@ export const VoiceChatPanel: React.FC<VoiceChatPanelProps> = ({
             className="btn btn-primary"
             style={{ padding: '7px 16px', fontSize: '13.5px', fontWeight: 700 }}
           >
-            {isScoring ? 'Đang chấm điểm…' : '🏁 Kết thúc & Chấm điểm'}
+            {isScoring ? 'Đang chấm điểm…' : <><UiIcon name="flag" size={14} /> Kết thúc &amp; Chấm điểm</>}
           </button>
         </div>
       </div>
 
       {/* 2. Messages Timeline */}
-      <div className="voice-chat-messages" ref={chatScrollRef}>
+      <div className="voice-chat-messages long-list" ref={chatScrollRef}>
         {!hasStarted ? (
           <div className="voice-start-card">
             <div className="voice-start-avatar-wrap">
-              <img src={viAvatar} alt="Trợ lý Vi" className="voice-start-avatar" />
+              <ViMascotImage
+                pose="listen"
+                animated
+                size={88}
+                alt="Vi đeo tai nghe sẵn sàng trò chuyện luyện phản xạ nói"
+              />
               <span className="voice-start-online-dot" title="Sẵn sàng đối thoại" />
             </div>
 
             <div className="voice-start-title">Trò chuyện giọng nói cùng AI Vi</div>
             <div className="voice-start-desc">
-              Chủ đề: <b style={{ color: 'var(--primary, #2563eb)' }}>{effectiveTopic}</b> · Trình độ: <b>{level}</b>
+              Chủ đề: <b style={{ color: 'var(--sage-dark)' }}>{effectiveTopic}</b> · Trình độ: <b>{level}</b>
               <br />
               Bấm nút <b>Bắt đầu</b> để Vi mở lời chào và câu hỏi phản xạ đầu tiên cho bạn nhé!
             </div>
@@ -1293,14 +1271,18 @@ export const VoiceChatPanel: React.FC<VoiceChatPanelProps> = ({
             </button>
 
             <div className="voice-start-hint">
-              <span>💡 Bạn có thể chọn giọng đọc hoặc tốc độ nói ở góc trên trước khi bắt đầu</span>
+              <span><UiIcon name="lightbulb" size={14} /> Bạn có thể chọn giọng đọc hoặc tốc độ nói ở góc trên trước khi bắt đầu</span>
             </div>
           </div>
         ) : (
           messages.map((m: Message) => (
           <div key={m.id} className={`voice-msg-row ${m.role}`}>
             {m.role === 'assistant' ? (
-              <img src={viAvatar} alt="Vi" className="voice-avatar" />
+              <ViMascotImage
+                pose="explain"
+                size={42}
+                alt="Vi trả lời hội thoại luyện nói"
+              />
             ) : (
               <div className="voice-user-avatar">Bạn</div>
             )}
@@ -1372,14 +1354,14 @@ export const VoiceChatPanel: React.FC<VoiceChatPanelProps> = ({
         {/* Live Status Indicator */}
         {status === 'transcribing' && (
           <div className="voice-status-box">
-            <span className="grading-spin" style={{ display: 'inline-block' }}>🎧</span>
+            <span className="grading-spin" style={{ display: 'inline-flex' }}><UiIcon name="headphones" size={18} /></span>
             <span>Whisper đang chuyển giọng nói thành văn bản…</span>
           </div>
         )}
 
         {status === 'thinking' && (
           <div className="voice-status-box" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px' }}>
-            <span className="grading-spin" style={{ display: 'inline-block' }}>✨</span>
+            <span className="grading-spin" style={{ display: 'inline-flex' }}><UiIcon name="sparkles" size={18} /></span>
             <span>Vi đang suy nghĩ câu trả lời…</span>
             <button
               onClick={handleCancelWaiting}
@@ -1417,7 +1399,7 @@ export const VoiceChatPanel: React.FC<VoiceChatPanelProps> = ({
               justifyContent: 'center',
             }}
           >
-            <span>⚠️ {errorMsg}</span>
+            <span><UiIcon name="warning" size={14} /> {errorMsg}</span>
             <button
               onClick={handleRetry}
               className="btn btn-primary"
@@ -1433,7 +1415,7 @@ export const VoiceChatPanel: React.FC<VoiceChatPanelProps> = ({
               }}
               title="Thử lại request vừa rồi"
             >
-              🔄 Thử lại
+              <UiIcon name="refresh" size={13} /> Thử lại
             </button>
           </div>
         )}
@@ -1465,11 +1447,11 @@ export const VoiceChatPanel: React.FC<VoiceChatPanelProps> = ({
         <div style={{ textAlign: 'center' }}>
           {!hasStarted ? (
             <div style={{ color: '#64748b', fontSize: '13.5px', fontWeight: 600 }}>
-              👉 Bấm <b>&quot;Bắt đầu&quot;</b> ở trên để Vi mở lời chào và câu hỏi phản xạ đầu tiên
+              <UiIcon name="arrow-right" size={14} /> Bấm <b>&quot;Bắt đầu&quot;</b> ở trên để Vi mở lời chào và câu hỏi phản xạ đầu tiên
             </div>
           ) : status === 'recording' ? (
             <div style={{ color: '#ef4444', fontWeight: 800, fontSize: '15px' }}>
-              🔴 Đang ghi âm: {recordSeconds}s · Thả ra để gửi
+              <UiIcon name="mic" size={13} color="var(--danger)" /> Đang ghi âm: {recordSeconds}s · Thả ra để gửi
             </div>
           ) : (
             <div style={{ color: '#64748b', fontSize: '13.5px', fontWeight: 600 }}>

@@ -114,25 +114,19 @@ export function NotificationBell() {
           cursor: 'pointer',
           position: 'relative',
           padding: '6px 10px',
-          border: 'none',
-          background: open ? 'var(--bg-subtle, #f1f5f9)' : 'transparent',
-          borderRadius: 20,
-          display: 'inline-flex',
-          alignItems: 'center',
-          justifyContent: 'center',
         }}
       >
-        <span style={{ color: unreadCount > 0 ? 'var(--primary, #3b82f6)' : 'var(--text-muted, #64748b)' }}>
-          <Icon n="bell" s={19} />
+        <span style={{ color: unreadCount > 0 ? 'var(--sage)' : 'var(--muted)' }}>
+          <Icon n="bell" s={17} />
         </span>
         {unreadCount > 0 && (
           <span
             style={{
               position: 'absolute',
-              top: -2,
-              right: -2,
-              background: '#ef4444',
-              color: '#ffffff',
+              top: -3,
+              right: -3,
+              background: 'var(--danger)',
+              color: 'var(--white)',
               fontSize: 10,
               fontWeight: 700,
               minWidth: 17,
@@ -142,8 +136,7 @@ export function NotificationBell() {
               alignItems: 'center',
               justifyContent: 'center',
               padding: '0 4px',
-              border: '2px solid #ffffff',
-              boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
+              border: '2px solid var(--cream)',
             }}
           >
             {unreadCount > 9 ? '9+' : unreadCount}
@@ -153,16 +146,15 @@ export function NotificationBell() {
 
       {open && (
         <div
+          className="glass"
           style={{
             position: 'absolute',
             top: 'calc(100% + 8px)',
             right: 0,
             width: 340,
             maxWidth: '90vw',
-            background: 'var(--bg-card, #ffffff)',
-            borderRadius: 14,
-            boxShadow: '0 12px 32px rgba(15, 23, 42, 0.16), 0 4px 12px rgba(15, 23, 42, 0.08)',
-            border: '1px solid var(--border-color, #e2e8f0)',
+            background: 'var(--glass-strong)',
+            borderRadius: 'var(--r-md)',
             zIndex: 1000,
             overflow: 'hidden',
           }}
@@ -174,25 +166,16 @@ export function NotificationBell() {
               alignItems: 'center',
               justifyContent: 'space-between',
               padding: '12px 16px',
-              borderBottom: '1px solid var(--border-color, #f1f5f9)',
-              background: 'var(--bg-subtle, #f8fafc)',
+              borderBottom: '1px solid var(--line)',
+              background: 'rgba(250, 248, 241, 0.55)',
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <span style={{ fontWeight: 700, fontSize: 14, color: 'var(--text-main, #0f172a)' }}>
+              <span style={{ fontWeight: 700, fontSize: 14, color: 'var(--ink)' }}>
                 Thông báo
               </span>
               {unreadCount > 0 && (
-                <span
-                  style={{
-                    background: 'rgba(59, 130, 246, 0.12)',
-                    color: '#2563eb',
-                    fontSize: 11,
-                    fontWeight: 700,
-                    padding: '1px 6px',
-                    borderRadius: 10,
-                  }}
-                >
+                <span className="tag">
                   {unreadCount} mới
                 </span>
               )}
@@ -201,15 +184,8 @@ export function NotificationBell() {
               <button
                 type="button"
                 onClick={handleReadAll}
-                style={{
-                  border: 'none',
-                  background: 'transparent',
-                  color: 'var(--primary, #2563eb)',
-                  fontSize: 12,
-                  cursor: 'pointer',
-                  fontWeight: 600,
-                  padding: 0,
-                }}
+                className="link"
+                style={{ fontSize: 12 }}
               >
                 Đọc tất cả
               </button>

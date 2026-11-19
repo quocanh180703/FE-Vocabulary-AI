@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { wordApi, adminApi, getPartOfSpeechBadgeStyle } from '../api';
 import type { Word } from '../api';
 import { Icon } from './icons';
+import { UiIcon } from './UiIcon';
 
 export interface AutocompleteSearchProps {
   value: string;
@@ -36,11 +37,11 @@ interface SuggestionItem {
 }
 
 const CEFR_COLORS: Record<string, { bg: string; color: string; border: string }> = {
-  A1: { bg: '#ecfdf5', color: '#047857', border: '#a7f3d0' },
-  A2: { bg: '#f0f9ff', color: '#0284c7', border: '#bae6fd' },
-  B1: { bg: '#eef2ff', color: '#4338ca', border: '#c7d2fe' },
-  B2: { bg: '#faf5ff', color: '#7e22ce', border: '#e9d5ff' },
-  C1: { bg: '#fff7ed', color: '#c2410c', border: '#fed7aa' },
+  A1: { bg: 'rgba(47, 122, 104, 0.12)', color: '#1f5c4e', border: 'rgba(47, 122, 104, 0.28)' },
+  A2: { bg: 'rgba(71, 96, 63, 0.12)', color: 'var(--sage-dark)', border: 'rgba(71, 96, 63, 0.28)' },
+  B1: { bg: 'var(--amber-bg)', color: 'var(--amber-dark)', border: 'rgba(201, 134, 47, 0.32)' },
+  B2: { bg: 'rgba(183, 116, 36, 0.14)', color: '#7b4910', border: 'rgba(183, 116, 36, 0.32)' },
+  C1: { bg: 'rgba(34, 48, 31, 0.14)', color: 'var(--scene-deep)', border: 'rgba(34, 48, 31, 0.28)' },
 };
 
 const EMPTY_FAVORITE_WORDS: Word[] = [];
@@ -85,10 +86,10 @@ export const AutocompleteSearch: React.FC<AutocompleteSearchProps> = ({
       const restPart = text.slice(lowerQuery.length);
       return (
         <span>
-          <span style={{ fontWeight: 800, color: '#4F46E5', background: 'rgba(79, 70, 229, 0.08)', borderRadius: 2, padding: '1px 2px' }}>
+          <span style={{ fontWeight: 700, color: 'var(--sage-dark)', background: 'var(--sage-soft)', borderRadius: 2, padding: '1px 2px' }}>
             {matchPart}
           </span>
-          <span style={{ color: '#0F172A', fontWeight: 600 }}>{restPart}</span>
+          <span style={{ color: 'var(--ink)', fontWeight: 600 }}>{restPart}</span>
         </span>
       );
     }
@@ -101,7 +102,7 @@ export const AutocompleteSearch: React.FC<AutocompleteSearchProps> = ({
       return (
         <span>
           <span>{before}</span>
-          <span style={{ fontWeight: 800, color: '#4F46E5', background: 'rgba(79, 70, 229, 0.08)', borderRadius: 2, padding: '1px 2px' }}>
+          <span style={{ fontWeight: 700, color: 'var(--sage-dark)', background: 'var(--sage-soft)', borderRadius: 2, padding: '1px 2px' }}>
             {match}
           </span>
           <span>{after}</span>
@@ -411,8 +412,8 @@ export const AutocompleteSearch: React.FC<AutocompleteSearchProps> = ({
               transform: 'translateY(-50%)',
               width: 16,
               height: 16,
-              border: '2px solid #CBD5E1',
-              borderTopColor: '#4F46E5',
+              border: '2px solid var(--line)',
+              borderTopColor: 'var(--sage)',
               borderRadius: '50%',
               animation: 'spin 0.6s linear infinite',
               display: 'inline-block',
@@ -456,8 +457,8 @@ export const AutocompleteSearch: React.FC<AutocompleteSearchProps> = ({
           style={{
             height: 46,
             padding: '0 20px',
-            background: 'linear-gradient(135deg, #4F46E5 0%, #3730A3 100%)',
-            color: '#FFFFFF',
+            background: 'linear-gradient(135deg, var(--sage) 0%, var(--sage-dark) 100%)',
+            color: 'var(--cream)',
             border: 'none',
             borderRadius: 10,
             fontWeight: 700,
@@ -467,8 +468,8 @@ export const AutocompleteSearch: React.FC<AutocompleteSearchProps> = ({
             display: 'flex',
             alignItems: 'center',
             gap: 8,
-            boxShadow: '0 2px 8px rgba(79, 70, 229, 0.25)',
-            transition: 'all 0.15s ease',
+            boxShadow: '0 2px 8px rgba(34, 48, 31, 0.2)',
+            transition: 'transform var(--dur-micro) var(--ease), box-shadow var(--dur-micro) var(--ease)',
             ...buttonStyle,
           }}
         >
@@ -532,14 +533,14 @@ export const AutocompleteSearch: React.FC<AutocompleteSearchProps> = ({
                   gap: 12,
                   cursor: 'pointer',
                   background: isHighlighted
-                    ? '#F8FAFC'
+                    ? 'var(--sage-soft)'
                     : item.isExactMatch
-                    ? 'rgba(79, 70, 229, 0.03)'
+                    ? 'rgba(71, 96, 63, 0.05)'
                     : 'transparent',
                   borderLeft: isHighlighted
-                    ? '3px solid #4F46E5'
+                    ? '3px solid var(--sage)'
                     : item.isExactMatch
-                    ? '3px solid #10B981'
+                    ? '3px solid var(--success)'
                     : '3px solid transparent',
                   transition: 'background-color 0.1s ease',
                 }}
@@ -560,7 +561,7 @@ export const AutocompleteSearch: React.FC<AutocompleteSearchProps> = ({
                       ⭐
                     </span>
                   ) : (
-                    <span style={{ color: '#94A3B8', fontSize: 13, flexShrink: 0 }}>🔍</span>
+                    <span style={{ color: 'var(--muted)', display: 'inline-flex', flexShrink: 0 }}><UiIcon name="search" size={14} /></span>
                   )}
 
                   <div style={{ minWidth: 0, flex: 1 }}>

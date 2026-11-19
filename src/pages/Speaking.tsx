@@ -8,7 +8,9 @@ import { useAuth } from '../auth/AuthContext';
 import { useUsage } from '../context/UsageContext';
 import { QuotaBadge } from '../components/QuotaBadge';
 import { MotionCard, AnimatedCounter, staggerContainer, staggerItem } from '../motion';
-import viAvatar from '../assets/vi-3d.webp';
+import { ViMascotImage } from '../components/ViMascotImage';
+import { UiIcon } from '../components/UiIcon';
+import { SplitHeading } from '../components/SageEffects';
 import { VoiceChatPanel } from '../components/VoiceChatPanel';
 
 interface TopicItem {
@@ -244,103 +246,91 @@ export default function Speaking() {
 
   if (isGrading) {
     return (
-      <div className="content" style={{ maxWidth: 1600 }}>
-        <div className="card" style={{ textAlign: 'center', padding: '48px 34px', maxWidth: 680, margin: '40px auto 0' }}>
-          <svg width="110" height="110" viewBox="0 0 110 110" style={{ margin: '0 auto' }}>
-            <circle cx="55" cy="55" r="46" fill="none" stroke="#E7EEF5" strokeWidth="10" />
-            <circle
-              cx="55"
-              cy="55"
-              r="46"
-              fill="none"
-              stroke="#1565C0"
-              strokeWidth="10"
-              strokeLinecap="round"
-              strokeDasharray="289"
-              strokeDashoffset="110"
-              transform="rotate(-90 55 55)"
-              className="grading-spin"
-            />
-          </svg>
-          <h1 style={{ fontSize: 26, fontWeight: 900, marginTop: 24 }}>Vi đang chấm bài nói của bạn…</h1>
-          <div className="sub mt8">
+      <div className="content narrow center">
+        <MotionCard className="center" style={{ maxWidth: 600, width: '100%', padding: '32px 26px', gap: 14 }}>
+          <ViMascotImage
+            pose="thinking"
+            size={88}
+            priority
+            alt="Vi đang nghe và chấm điểm 5 tiêu chí bài nói của bạn"
+          />
+          <SplitHeading text="Vi đang chấm bài nói của bạn…" />
+          <p className="sub" style={{ margin: 0 }}>
             Chủ đề &quot;{isCustom && customTopic ? customTopic : topic}&quot; · bản ghi {recordSeconds} giây vừa được gửi lên.
-          </div>
-          <div style={{ textAlign: 'left', marginTop: 28, display: 'flex', flexDirection: 'column', gap: 10 }}>
+          </p>
+          <div className="colstack" style={{ width: '100%', textAlign: 'left', gap: 8, marginTop: 6 }}>
             <div className="taskrow">
-              <span className="tk" style={{ color: 'var(--primary)' }}>
-                <Icon n="check" s={18} />
+              <span className="tk" style={{ color: 'var(--sage-dark)' }}>
+                <Icon n="check" s={16} />
               </span>
               <div style={{ flex: 1 }}>
-                <b style={{ fontSize: 15 }}>Nghe &amp; chuyển thành văn bản</b>
-                <div className="sub">Whisper AI đang nhận diện lời nói của bạn.</div>
+                <b style={{ fontSize: 14 }}>Nghe &amp; chuyển thành văn bản</b>
+                <div className="tiny muted">Whisper AI đang nhận diện lời nói của bạn.</div>
               </div>
               <span className="pill greensoft">Đang xử lý</span>
             </div>
             <div className="taskrow">
-              <span className="tk" style={{ color: 'var(--primary)' }}>
-                <Icon n="spark" s={18} />
+              <span className="tk" style={{ color: 'var(--sage-dark)' }}>
+                <Icon n="spark" s={16} />
               </span>
               <div style={{ flex: 1 }}>
-                <b style={{ fontSize: 15 }}>Chấm 5 tiêu chí</b>
-                <div className="sub">Ngữ pháp · Từ vựng · Trôi chảy · Nội dung · Phát âm</div>
+                <b style={{ fontSize: 14 }}>Chấm 5 tiêu chí</b>
+                <div className="tiny muted">Ngữ pháp · Từ vựng · Trôi chảy · Nội dung · Phát âm</div>
               </div>
               <span className="pill warn">Đang chấm…</span>
             </div>
             <div className="taskrow">
-              <span className="tk" style={{ color: 'var(--primary)' }}>
-                <Icon n="clock" s={18} />
+              <span className="tk" style={{ color: 'var(--sage-dark)' }}>
+                <Icon n="clock" s={16} />
               </span>
               <div style={{ flex: 1 }}>
-                <b style={{ fontSize: 15 }}>Tổng hợp nhận xét</b>
-                <div className="sub">Vi viết góp ý chi tiết riêng cho bạn.</div>
+                <b style={{ fontSize: 14 }}>Tổng hợp nhận xét</b>
+                <div className="tiny muted">Vi viết góp ý chi tiết riêng cho bạn.</div>
               </div>
               <span className="pill">Chờ</span>
             </div>
           </div>
-          <div className="sub mt16" style={{ fontSize: 12.5 }}>
+          <div className="tiny muted">
             Thường mất khoảng 10–20 giây — bạn cứ để nguyên màn hình này nhé.
           </div>
-        </div>
+        </MotionCard>
       </div>
     );
   }
 
   return (
-    <div className="content" style={{ maxWidth: 1600 }}>
+    <div className="content">
       {!isVoiceScoringResult && (
-        <>
-          <div className="pagehead" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
-            <div>
-              <h1>Luyện nói phản xạ cùng AI</h1>
-              <div className="sub">Chọn chủ đề, nói 1–2 phút — Vi nghe và chấm 5 tiêu chí ngay</div>
+        <div className="pagehead">
+          <div>
+            <div className="eyebrow">SPEAKING STUDIO · 5 CRITERIA</div>
+            <SplitHeading text="Luyện nói phản xạ cùng AI" />
+            <p className="sub">Chọn chủ đề, nói 1–2 phút — Vi nghe và chấm 5 tiêu chí ngay</p>
+          </div>
+
+          <div className="row" style={{ gap: 10, flexWrap: 'wrap' }}>
+            <div className="chips">
+              <button
+                type="button"
+                onClick={() => {
+                  setMode('practice');
+                  setIsVoiceScoringResult(false);
+                }}
+                className={'fchip' + (mode === 'practice' ? ' on' : '')}
+              >
+                <UiIcon name="mic" size={14} /> Luyện nói &amp; Chấm điểm
+              </button>
+              <button
+                type="button"
+                onClick={() => setMode('voice')}
+                className={'fchip' + (mode === 'voice' ? ' on' : '')}
+              >
+                <UiIcon name="message" size={14} /> Voice Chat cùng Vi
+              </button>
             </div>
             <QuotaBadge featureKey={mode === 'voice' ? 'voice' : 'speaking'} labelSuffix={mode === 'voice' ? 'lượt thoại hôm nay' : 'lượt chấm hôm nay'} />
           </div>
-
-          {/* Mode Switcher Tabs */}
-          <div style={{ display: 'flex', gap: '10px', margin: '20px 0' }}>
-            <button
-              type="button"
-              onClick={() => {
-                setMode('practice');
-                setIsVoiceScoringResult(false);
-              }}
-              className={'fchip' + (mode === 'practice' ? ' on' : '')}
-              style={{ fontSize: '14px', padding: '9px 20px', fontWeight: 800, cursor: 'pointer' }}
-            >
-              🎙️ Luyện nói & Chấm điểm
-            </button>
-            <button
-              type="button"
-              onClick={() => setMode('voice')}
-              className={'fchip' + (mode === 'voice' ? ' on' : '')}
-              style={{ fontSize: '14px', padding: '9px 20px', fontWeight: 800, cursor: 'pointer' }}
-            >
-              💬 Trò chuyện giọng nói với AI (Voice Chat)
-            </button>
-          </div>
-        </>
+        </div>
       )}
 
       <AnimatePresence mode="wait">
@@ -351,6 +341,7 @@ export default function Speaking() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -6 }}
             transition={{ duration: 0.22 }}
+            style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}
           >
             <VoiceChatPanel
               topic={isCustom && customTopic ? customTopic : topic}
@@ -371,214 +362,227 @@ export default function Speaking() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -6 }}
             transition={{ duration: 0.22 }}
+            className="colstack"
+            style={{ flex: 1, minHeight: 0, gap: 10 }}
           >
             {err && <div className="error">{err}</div>}
 
-          {/* Category & Level Filter Row */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, marginBottom: 16 }}>
-            <div className="chiprow" style={{ margin: 0 }}>
-              {CATEGORIES.map((c) => (
-                <button
-                  key={c.id}
-                  type="button"
-                  className={'fchip' + (selectedCategory === c.id ? ' on' : '')}
-                  onClick={() => setSelectedCategory(c.id)}
-                >
-                  {c.name}
-                </button>
-              ))}
+            {/* Category & Level Filter Row */}
+            <div className="row between" style={{ flexWrap: 'wrap', gap: 10, flex: 'none' }}>
+              <div className="chiprow" style={{ margin: 0 }}>
+                {CATEGORIES.map((c) => (
+                  <button
+                    key={c.id}
+                    type="button"
+                    className={'fchip' + (selectedCategory === c.id ? ' on' : '')}
+                    onClick={() => setSelectedCategory(c.id)}
+                  >
+                    {c.name}
+                  </button>
+                ))}
+              </div>
+
+              <div className="chips">
+                <span className="tiny" style={{ fontWeight: 800, color: 'var(--cream)', textShadow: '0 1px 4px rgba(0,0,0,0.4)', marginRight: 2 }}>
+                  Trình độ:
+                </span>
+                {LEVELS.map((lvl) => (
+                  <button
+                    key={lvl}
+                    type="button"
+                    className={'fchip' + (level === lvl ? ' on' : '')}
+                    onClick={() => setLevel(lvl)}
+                  >
+                    {lvl}
+                  </button>
+                ))}
+              </div>
             </div>
 
-            {/* Trình độ (Level) Selector */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#fff', padding: '5px 12px', borderRadius: 14, border: '1px solid var(--border, #e2e8f0)', boxShadow: '0 2px 6px rgba(0,0,0,0.03)' }}>
-              <span style={{ fontSize: '13px', fontWeight: 700, color: '#64748b', marginRight: 2 }}>Trình độ:</span>
-              {LEVELS.map((lvl) => (
-                <button
-                  key={lvl}
-                  type="button"
-                  className={'fchip' + (level === lvl ? ' on' : '')}
-                  style={{
-                    padding: '4px 12px',
-                    fontSize: '12.5px',
-                    fontWeight: 800,
-                    cursor: 'pointer',
-                  }}
-                  onClick={() => setLevel(lvl)}
-                >
-                  {lvl}
-                </button>
-              ))}
-            </div>
-          </div>
+            {/* Main 2-Column Viewport-Locked Studio */}
+            <div className="cols2" style={{ flex: 1, minHeight: 0, alignItems: 'stretch' }}>
+              {/* Left Column: Topics & Custom Topic */}
+              <div className="card colstack" style={{ gap: 10, minHeight: 0 }}>
+                <div className="long-list" style={{ flex: 1, minHeight: 0, paddingRight: 4 }}>
+                  <motion.div
+                    variants={staggerContainer}
+                    initial="hidden"
+                    animate="visible"
+                    key={selectedCategory}
+                    style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(165px, 1fr))', gap: 10 }}
+                  >
+                    {filteredTopics.map((t) => {
+                      const isSelected = !isCustom && topic === t.name;
+                      return (
+                        <motion.div key={t.name} variants={staggerItem}>
+                          <button
+                            type="button"
+                            className={'topic' + (isSelected ? ' on' : '')}
+                            onClick={() => {
+                              setTopic(t.name);
+                              setIsCustom(false);
+                            }}
+                          >
+                            <b style={{ fontSize: 14, display: 'block' }}>{t.name}</b>
+                            <div className="tiny muted mt4">{t.en}</div>
+                          </button>
+                        </motion.div>
+                      );
+                    })}
+                  </motion.div>
+                </div>
 
-          <div className="cols2" style={{ alignItems: 'start' }}>
-            {/* Left Column: Topics Grid */}
-            <div className="colstack">
-              <motion.div
-                variants={staggerContainer}
-                initial="hidden"
-                animate="visible"
-                key={selectedCategory}
-                style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 14 }}
-              >
-                {filteredTopics.map((t) => {
-                  const isSelected = !isCustom && topic === t.name;
-                  return (
-                    <motion.div key={t.name} variants={staggerItem}>
+                {/* Custom Topic Input pinned inside left card */}
+                <div style={{ flex: 'none', paddingTop: 10, borderTop: '1px solid var(--line)' }}>
+                  <label className="tiny" style={{ fontWeight: 800, color: 'var(--ink)' }}>
+                    Hoặc tự nhập chủ đề theo ý bạn:
+                  </label>
+                  <div className="row mt4" style={{ gap: 8 }}>
+                    <input
+                      className="input"
+                      style={{ flex: 1, fontSize: 13.5 }}
+                      placeholder="Ví dụ: My favorite season, Living in a big city..."
+                      value={customTopic}
+                      onChange={(e) => {
+                        setCustomTopic(e.target.value);
+                        if (e.target.value.trim()) setIsCustom(true);
+                      }}
+                    />
+                    {isCustom && customTopic.trim() && (
                       <button
                         type="button"
-                        className={'topic' + (isSelected ? ' on' : '')}
-                        onClick={() => {
-                          setTopic(t.name);
-                          setIsCustom(false);
-                        }}
+                        className="btn ghost sm"
+                        onClick={() => setIsCustom(false)}
                       >
-                        <b style={{ fontSize: 15.5, display: 'block' }}>{t.name}</b>
-                        <div className="sub mt8" style={{ fontSize: 12.5 }}>{t.en}</div>
+                        Dùng gợi ý
                       </button>
-                    </motion.div>
-                  );
-                })}
-          </motion.div>
+                    )}
+                  </div>
+                </div>
+              </div>
 
-          {/* Custom Topic Input */}
-          <MotionCard className="mt16" style={{ padding: 18 }}>
-            <label style={{ fontSize: 13, fontWeight: 800, color: 'var(--ink)' }}>
-              Hoặc tự nhập chủ đề theo ý bạn:
-            </label>
-            <div style={{ display: 'flex', gap: 10, marginTop: 8 }}>
-              <input
-                className="input"
-                style={{ flex: 1, minHeight: 44, fontSize: 14 }}
-                placeholder="Ví dụ: My favorite season, Living in a big city..."
-                value={customTopic}
-                onChange={(e) => {
-                  setCustomTopic(e.target.value);
-                  if (e.target.value.trim()) setIsCustom(true);
-                }}
-              />
-              {isCustom && customTopic.trim() && (
-                <button
-                  type="button"
-                  className="btn ghost sm"
-                  onClick={() => setIsCustom(false)}
-                >
-                  Dùng gợi ý
-                </button>
-              )}
-            </div>
-          </MotionCard>
-        </div>
+              {/* Right Column: Recorder Stage + Recent Sessions + Listen Pose */}
+              <div className="colstack long-list" style={{ gap: 10, paddingRight: 4 }}>
+                <MotionCard className="center" style={{ padding: '20px 22px', gap: 10 }}>
+                  <div className="row between" style={{ width: '100%' }}>
+                    {rec ? (
+                      <span className="pill redsoft">● Đang ghi âm · {formatTime(recordSeconds)}</span>
+                    ) : (
+                      <span className="pill greensoft">Micro đã sẵn sàng</span>
+                    )}
+                    <span className="pill level">{level}</span>
+                  </div>
 
-        {/* Right Column: Recording card & History */}
-        <div className="colstack">
-          {/* Main Recording Card */}
-          <MotionCard style={{ textAlign: 'center', padding: 30 }}>
-            {rec ? (
-              <span className="pill redsoft">● Đang ghi âm · {formatTime(recordSeconds)}</span>
-            ) : (
-              <span className="pill level">Micro đã sẵn sàng</span>
-            )}
-
-            <div style={{ margin: '26px 0 6px' }}>
-              <button
-                type="button"
-                className="micbig"
-                onClick={rec ? stopRecording : startSessionAndRecord}
-                disabled={busy}
-                title={rec ? 'Dừng ghi âm' : 'Bắt đầu ghi âm'}
-              >
-                <Icon n="mic" s={38} />
-              </button>
-            </div>
-
-            {/* Audio Wave Visualizer */}
-            <div className="wave mt16">
-              {[10, 20, 30, 16, 34, 24, 12, 28, 36, 18, 26, 32, 14, 22, 30, 12, 24, 34, 16, 26, 10, 20, 28, 15].map(
-                (h, idx) => (
-                  <i key={idx} style={{ height: rec ? h : 6, opacity: rec ? 1 : 0.4 }} />
-                )
-              )}
-            </div>
-
-            <b style={{ fontSize: 17, display: 'block', marginTop: 14 }}>
-              Chủ đề: {isCustom && customTopic ? customTopic : topic} · Trình độ {level}
-            </b>
-            <div className="sub mt8" style={{ fontSize: 13 }}>
-              {activeTopicObj?.desc || 'Hãy nói tự nhiên từ 30–60 giây để Vi đánh giá.'}
-            </div>
-
-            {rec ? (
-              <button
-                type="button"
-                className="btn block mt16"
-                style={{ background: 'var(--red)', boxShadow: '0 14px 28px rgba(229,72,77,.3)' }}
-                onClick={stopRecording}
-              >
-                ■ Dừng &amp; gửi chấm điểm
-              </button>
-            ) : (
-              <button
-                type="button"
-                className="btn block mt16"
-                disabled={busy}
-                onClick={startSessionAndRecord}
-              >
-                <Icon n="mic" s={20} />
-                {busy ? 'Đang kết nối micro...' : 'Bắt đầu nói ngay'}
-              </button>
-            )}
-          </MotionCard>
-
-          {/* Recent sessions card */}
-          {historySessions.length > 0 && (
-            <MotionCard>
-              <h2>
-                <span className="dot g" />
-                Các lần nói gần đây
-              </h2>
-              <div className="mt8" style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
-                {historySessions.slice(0, 4).map((hs: any) => {
-                  const score = hs.overallScore != null ? Math.round(Number(hs.overallScore)) : null;
-                  return (
-                    <div
-                      key={hs.id}
-                      className="taskrow"
-                      style={{ cursor: 'pointer' }}
-                      onClick={() => nav('/speaking/result', { state: { sessionId: hs.id } })}
+                  <div className="row" style={{ gap: 18, justifyContent: 'center', margin: '4px 0' }}>
+                    <button
+                      type="button"
+                      className={'record-circle' + (rec ? ' recording' : '')}
+                      onClick={rec ? stopRecording : startSessionAndRecord}
+                      disabled={busy}
+                      title={rec ? 'Dừng ghi âm' : 'Bắt đầu ghi âm'}
                     >
-                      <span className="tk" style={{ color: 'var(--primary)' }}>
-                        <Icon n="mic" s={18} />
-                      </span>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <b style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', display: 'block' }}>
-                          {hs.topic}
-                        </b>
-                        <div className="sub">
-                          {hs.level} · {hs.createdAt ? new Date(hs.createdAt).toLocaleDateString('vi-VN') : 'Gần đây'}
-                        </div>
-                      </div>
-                      <span className="pill level">
-                        {score != null ? <><AnimatedCounter value={score} />đ</> : 'Xem'}
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
-            </MotionCard>
-          )}
+                      <Icon n="mic" s={36} />
+                    </button>
 
-          {/* Mascot reminder */}
-          <MotionCard>
-            <div className="coach">
-              <img src={viAvatar} alt="Vi" />
-              <div className="bubble">
-                <b>Vi nhắc bạn:</b> Đừng ngại nói sai! Nói chậm, rõ ràng theo cụm ý (chunking) sẽ giúp điểm trôi chảy và phát âm tăng rất nhanh đấy.
+                    <ViMascotImage
+                      pose="listen"
+                      animated
+                      size={82}
+                      priority
+                      alt="Vi đeo tai nghe sẵn sàng lắng nghe bài luyện nói của bạn"
+                    />
+                  </div>
+
+                  {/* Audio Wave Visualizer */}
+                  <div className="wave">
+                    {[10, 20, 30, 16, 34, 24, 12, 28, 36, 18, 26, 32, 14, 22, 30, 12, 24, 34, 16, 26].map(
+                      (h, idx) => (
+                        <i key={idx} style={{ height: rec ? h : 6, opacity: rec ? 1 : 0.4 }} />
+                      )
+                    )}
+                  </div>
+
+                  <div>
+                    <b style={{ fontSize: 16, display: 'block', color: 'var(--ink)' }}>
+                      Chủ đề: {isCustom && customTopic ? customTopic : topic}
+                    </b>
+                    <div className="tiny muted mt4">
+                      {activeTopicObj?.desc || 'Hãy nói tự nhiên từ 30–60 giây để Vi đánh giá.'}
+                    </div>
+                  </div>
+
+                  {rec ? (
+                    <button
+                      type="button"
+                      className="btn softred block"
+                      onClick={stopRecording}
+                    >
+                      ■ Dừng &amp; gửi chấm điểm
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      className="btn block"
+                      disabled={busy}
+                      onClick={startSessionAndRecord}
+                    >
+                      <Icon n="mic" s={18} />
+                      {busy ? 'Đang kết nối micro...' : 'Bắt đầu nói ngay'}
+                    </button>
+                  )}
+                </MotionCard>
+
+                {historySessions.length > 0 && (
+                  <MotionCard style={{ gap: 8 }}>
+                    <div className="row between">
+                      <h2 style={{ fontSize: 15, margin: 0 }}>Các lần nói gần đây</h2>
+                      <span className="pill">{historySessions.length} lượt</span>
+                    </div>
+                    <div className="colstack" style={{ gap: 6 }}>
+                      {historySessions.slice(0, 3).map((hs: any) => {
+                        const score = hs.overallScore != null ? Math.round(Number(hs.overallScore)) : null;
+                        return (
+                          <div
+                            key={hs.id}
+                            className="taskrow"
+                            style={{ cursor: 'pointer', padding: '8px 10px' }}
+                            onClick={() => nav('/speaking/result', { state: { sessionId: hs.id } })}
+                          >
+                            <span className="tk" style={{ color: 'var(--sage-dark)' }}>
+                              <Icon n="mic" s={15} />
+                            </span>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <b style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', display: 'block', fontSize: 13.5 }}>
+                                {hs.topic}
+                              </b>
+                              <div className="tiny muted">
+                                {hs.level} · {hs.createdAt ? new Date(hs.createdAt).toLocaleDateString('vi-VN') : 'Gần đây'}
+                              </div>
+                            </div>
+                            <span className="pill level">
+                              {score != null ? <><AnimatedCounter value={score} />đ</> : 'Xem'}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </MotionCard>
+                )}
+
+                <MotionCard style={{ padding: '12px 14px' }}>
+                  <div className="coach">
+                    <ViMascotImage
+                      pose="listen"
+                      size={44}
+                      alt="Vi khuyên bạn nói chậm và rõ theo cụm ý"
+                    />
+                    <div className="bubble" style={{ fontSize: 13 }}>
+                      <b>Vi nhắc bạn:</b> Đừng ngại nói sai! Nói chậm, rõ theo cụm ý (chunking) sẽ giúp điểm trôi chảy và phát âm tăng rất nhanh.
+                    </div>
+                  </div>
+                </MotionCard>
               </div>
             </div>
-          </MotionCard>
-        </div>
-      </div>
           </motion.div>
         )}
       </AnimatePresence>

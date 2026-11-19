@@ -13,6 +13,7 @@ import type {
   ContentReportType,
 } from '../../api';
 import { Icon } from '../../components/icons';
+import { ViLoadingScreen } from '../../components/states/ViLoadingScreen';
 
 const STATUS_FILTERS: { value: ContentReportStatus | 'ALL'; label: string }[] = [
   { value: 'ALL', label: 'Tất cả trạng thái' },
@@ -228,11 +229,7 @@ export default function AdminContentReview() {
         </div>
 
         {loading ? (
-          <div style={{ padding: 60, textAlign: 'center', color: 'var(--muted)' }}>
-            <div style={{ fontSize: 16, fontWeight: 800, color: 'var(--primary)', marginBottom: 4 }}>
-              Đang tải danh sách báo lỗi...
-            </div>
-          </div>
+          <ViLoadingScreen compact subtitle="Đang tải danh sách báo lỗi" />
         ) : reports.length === 0 ? (
           <div style={{ padding: 60, textAlign: 'center', color: 'var(--muted)' }}>
             <div style={{ fontSize: 16, fontWeight: 800, marginBottom: 4 }}>

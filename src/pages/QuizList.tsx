@@ -3,14 +3,18 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { quizApi, personalizedApi, errMsg } from '../api';
 import type { Quiz, QuizHistoryItem } from '../api';
-import { Mascot, Icon } from '../components/icons';
+import { Icon } from '../components/icons';
+import { ViMascotImage } from '../components/ViMascotImage';
+import { ViLoadingScreen } from '../components/states/ViLoadingScreen';
+import { UiIcon } from '../components/UiIcon';
+import { ScoreRing, SplitHeading } from '../components/SageEffects';
 import { CreateAiQuizModal } from '../components/quiz/CreateAiQuizModal';
 import { QuizDetailEditModal } from '../components/quiz/QuizDetailEditModal';
 import { QuotaBadge } from '../components/QuotaBadge';
 import { useAuth } from '../auth/AuthContext';
 import { MotionCard, staggerContainer, staggerItem, AnimatedCounter } from '../motion';
 
-const LEVELS = ['Tất cả', '🎯 Đề xuất cho bạn', 'A1', 'A2', 'B1', 'B2', 'C1'];
+const LEVELS = ['Tất cả', 'Đề xuất cho bạn', 'A1', 'A2', 'B1', 'B2', 'C1'];
 const QUIZ_PAGE_SIZE = 10;
 const HISTORY_PAGE_SIZE = 6;
 
@@ -255,7 +259,7 @@ export default function QuizList() {
   };
 
   const filteredQuizzes = useMemo(() => {
-    if (level === '🎯 Đề xuất cho bạn') {
+    if (level === 'Đề xuất cho bạn') {
       return allQuizzes.filter((q) => isQuizRecommended(q));
     }
     if (level !== 'Tất cả') {
@@ -281,7 +285,7 @@ export default function QuizList() {
 
   const getTabCount = (l: string) => {
     if (l === 'Tất cả') return allQuizzes.length;
-    if (l === '🎯 Đề xuất cho bạn') return allQuizzes.filter(isQuizRecommended).length;
+    if (l === 'Đề xuất cho bạn') return allQuizzes.filter(isQuizRecommended).length;
     return allQuizzes.filter((q) => (q.level || '').toUpperCase() === l.toUpperCase()).length;
   };
 
@@ -309,93 +313,98 @@ export default function QuizList() {
   };
 
   return (
-    <div className="content" style={{ maxWidth: 1600 }}>
+    <div className="content">
       <div className="pagehead">
-        <h1>Quiz luyện tập tính giờ</h1>
-        <div className="sub">Chọn một bài để luyện — điểm được tính khi bạn nộp bài</div>
-      </div>
+        <div>
+          <div className="eyebrow">QUIZ ARENA · LUYỆN TẬP TÍNH GIỜ</div>
+          <SplitHeading text="Quiz luyện tập tính giờ" />
+          <p className="sub">Chọn một bài để luyện — điểm được tính và phân tích khi bạn nộp bài</p>
+        </div>
 
-      {/* Main Tab Navigation: Bài thi vs Lịch sử làm bài */}
-      <div className="chips" style={{ marginBottom: 20, gap: 10 }}>
-        <button
-          className={'chip' + (activeTab === 'quizzes' ? ' on' : '')}
-          onClick={() => handleTabChange('quizzes')}
-          style={{ padding: '8px 20px', fontSize: 14, fontWeight: 700 }}
-        >
-          <Icon n="book" s={18} /> Bài thi
-        </button>
-        <button
-          className={'chip' + (activeTab === 'my-quizzes' ? ' on' : '')}
-          onClick={() => handleTabChange('my-quizzes')}
-          style={{ padding: '8px 20px', fontSize: 14, fontWeight: 700 }}
-        >
-          <Icon n="user" s={18} /> Bài tập của tôi
-        </button>
-        <button
-          className={'chip' + (activeTab === 'history' ? ' on' : '')}
-          onClick={() => handleTabChange('history')}
-          style={{ padding: '8px 20px', fontSize: 14, fontWeight: 700 }}
-        >
-          <Icon n="clock" s={18} /> Lịch sử làm bài
-        </button>
+        {/* Main Tab Navigation inside pagehead for crisp 100dvh fit */}
+        <div className="chips">
+          <button
+            type="button"
+            className={'chip' + (activeTab === 'quizzes' ? ' on' : '')}
+            onClick={() => handleTabChange('quizzes')}
+          >
+            <Icon n="book" s={16} /> Bài thi
+          </button>
+          <button
+            type="button"
+            className={'chip' + (activeTab === 'my-quizzes' ? ' on' : '')}
+            onClick={() => handleTabChange('my-quizzes')}
+          >
+            <Icon n="user" s={16} /> Bài tập của tôi
+          </button>
+          <button
+            type="button"
+            className={'chip' + (activeTab === 'history' ? ' on' : '')}
+            onClick={() => handleTabChange('history')}
+          >
+            <Icon n="clock" s={16} /> Lịch sử làm bài
+          </button>
+        </div>
       </div>
 
       {/* ================= TAB 1: BÀI THI ================= */}
       {activeTab === 'quizzes' && (
-        <>
+        <div ref={listRef} className="colstack" style={{ flex: 1, minHeight: 0, gap: 10 }}>
           {weakTopics.length > 0 && (
             <div
               className="card"
               style={{
-                background: 'linear-gradient(135deg, #F5F3FF 0%, #EEF2FF 100%)',
-                border: '1px solid #DDD6FE',
-                padding: '16px 22px',
-                marginBottom: 20,
+                padding: '10px 16px',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
-                gap: 16,
+                gap: 12,
                 flexWrap: 'wrap',
-                borderRadius: 16,
+                flex: 'none',
               }}
             >
-              <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-                <Mascot s={40} />
-                <div style={{ fontSize: 13.5, color: '#1E1B4B', lineHeight: 1.5 }}>
-                  <b style={{ color: 'var(--primary)' }}>Gợi ý thích ứng từ Vi AI:</b> Bạn nên tập trung củng cố chủ đề{' '}
-                  <b style={{ color: 'var(--primary)' }}>{weakTopics.join(', ')}</b> (trình độ đề xuất: <b>{recommendedLevel}</b>). Hãy ưu tiên các bài có nhãn ✨ để tăng tốc cải thiện nhé!
+              <div className="row" style={{ gap: 12, flex: 1, minWidth: 240 }}>
+                <ViMascotImage
+                  pose="encourage"
+                  size={44}
+                  alt="Vi cổ vũ bạn chọn bài quiz phù hợp để luyện tập"
+                />
+                <div style={{ fontSize: 13, color: 'var(--ink)', lineHeight: 1.45 }}>
+                  <b style={{ color: 'var(--sage-dark)' }}>Gợi ý thích ứng từ Vi AI:</b> Bạn nên tập trung củng cố chủ đề{' '}
+                  <b style={{ color: 'var(--sage-dark)' }}>{weakTopics.join(', ')}</b> (trình độ đề xuất: <b>{recommendedLevel}</b>).
                 </div>
               </div>
               <button
-                className="btn ghost sm"
-                onClick={() => handleLevelChange('🎯 Đề xuất cho bạn')}
-                style={{ borderColor: '#C7D2FE', color: 'var(--primary)', background: '#FFFFFF', minHeight: 38, fontSize: 13.5, fontWeight: 800 }}
+                type="button"
+                className="btn secondary sm"
+                onClick={() => handleLevelChange('Đề xuất cho bạn')}
               >
                 Lọc bài AI khuyên làm
               </button>
             </div>
           )}
 
-          {/* Chiprow matching quiz-list.html */}
-          <div ref={listRef} className="chiprow" style={{ marginBottom: 16 }}>
+          {/* Level Filter Chips */}
+          <div className="chiprow" style={{ flex: 'none' }}>
             {LEVELS.map((l) => {
               const count = getTabCount(l);
               return (
                 <button
                   key={l}
+                  type="button"
                   className={'fchip' + (level === l ? ' on' : '')}
                   onClick={() => handleLevelChange(l)}
                 >
                   {l === 'Tất cả' ? 'Tất cả trình độ' : l}
                   <span
                     style={{
-                      marginLeft: 6,
+                      marginLeft: 4,
                       fontSize: 11,
                       fontWeight: 800,
-                      padding: '1px 7px',
+                      padding: '1px 6px',
                       borderRadius: 99,
-                      background: level === l ? 'rgba(255,255,255,0.28)' : 'rgba(10,37,64,0.08)',
-                      color: level === l ? '#fff' : 'var(--ink)',
+                      background: level === l ? 'rgba(255,255,255,0.26)' : 'rgba(71,96,63,0.12)',
+                      color: level === l ? 'var(--cream)' : 'var(--ink)',
                     }}
                   >
                     <AnimatedCounter value={count} />
@@ -407,335 +416,202 @@ export default function QuizList() {
 
           {err && <div className="error">{err}</div>}
 
-          {/* Grid 2 cols with smooth page switch animation */}
-          <AnimatePresence mode="wait" initial={false}>
-            <motion.div
-              key={`${level}-${page}`}
-              className="cols2"
-              style={{ gridTemplateColumns: '1fr 1fr' }}
-              variants={staggerContainer}
-              initial="hidden"
-              animate="visible"
-              exit={{ opacity: 0, y: -8, transition: { duration: 0.15 } }}
-            >
-              {paginatedQuizzes.map((qz) => {
-                const recommended = isQuizRecommended(qz);
-                return (
-                  <motion.div key={qz.id} variants={staggerItem}>
-                    <MotionCard>
-                      <div className="row">
-                        <b style={{ fontSize: '18.5px' }}>{qz.title}</b>
-                        <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                          {qz.creatorUsername ? (
-                            <span
-                              className="pill"
-                              style={{
-                                background: '#F3E8FF',
-                                color: '#7E22CE',
-                                border: '1px solid #D8B4FE',
-                                fontWeight: 700,
-                                fontSize: 11.5,
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: 4,
-                              }}
-                              title={`Người tạo và công khai: @${qz.creatorUsername}`}
-                            >
-                              <Icon n="user" s={12} /> @{qz.creatorUsername}
-                            </span>
-                          ) : qz.isAiGenerated ? (
-                            <span
-                              className="pill"
-                              style={{
-                                background: '#F3E8FF',
-                                color: '#7E22CE',
-                                border: '1px solid #D8B4FE',
-                                fontWeight: 700,
-                                fontSize: 11.5,
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: 4,
-                              }}
-                            >
-                              <Icon n="spark" s={12} /> Do AI tạo
-                            </span>
-                          ) : null}
-                          <span className="pill level">Cấp {qz.level}</span>
-                        </div>
-                      </div>
-                      {(() => {
-                        const mins = qz.timeLimit > 60 ? Math.round(qz.timeLimit / 60) : qz.timeLimit;
-                        return (
-                          <>
-                            <div className="sub mt8">
+          {/* Scrollable 2-col Quiz Grid */}
+          <div className="long-list" style={{ flex: 1, minHeight: 0, paddingRight: 4 }}>
+            <AnimatePresence mode="wait" initial={false}>
+              <motion.div
+                key={`${level}-${page}`}
+                className="cols2"
+                variants={staggerContainer}
+                initial="hidden"
+                animate="visible"
+                exit={{ opacity: 0, y: -8, transition: { duration: 0.15 } }}
+              >
+                {paginatedQuizzes.map((qz) => {
+                  const recommended = isQuizRecommended(qz);
+                  const mins = qz.timeLimit > 60 ? Math.round(qz.timeLimit / 60) : qz.timeLimit;
+                  return (
+                    <motion.div key={qz.id} variants={staggerItem}>
+                      <MotionCard style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                        <div className="row between" style={{ alignItems: 'flex-start', gap: 10 }}>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <b style={{ fontSize: 16.5, color: 'var(--ink)', display: 'block', lineHeight: 1.3 }}>{qz.title}</b>
+                            <div className="tiny muted mt4">
                               {qz.questionCount} câu · giới hạn {mins} phút{qz.category ? ` · ${qz.category}` : ''}
                             </div>
-                            <div className="row mt16">
-                              {recommended ? (
-                                <span className="pill" style={{ background: 'var(--primary)', color: '#fff' }}>✨ AI đề xuất</span>
-                              ) : (
-                                <span className="pill level">Bấm giờ {mins}p</span>
-                              )}
-                              <button
-                                className="btn"
-                                style={{ minHeight: 46, padding: '0 22px' }}
-                                onClick={() => nav(`/quiz/${qz.id}`)}
-                              >
-                                Bắt đầu làm
-                              </button>
-                            </div>
-                          </>
-                        );
-                      })()}
-                    </MotionCard>
-                  </motion.div>
-                );
-              })}
-            </motion.div>
-          </AnimatePresence>
+                          </div>
+                          <ScoreRing
+                            value={Math.min(100, Math.max(25, (qz.questionCount || 10) * 5))}
+                            label={`${qz.questionCount}c`}
+                            size={52}
+                          />
+                        </div>
 
-          {filteredQuizzes.length === 0 && !loading && !err && (
-            <div className="empty" style={{ textAlign: 'center', padding: '48px 16px' }}>
-              {level === '🎯 Đề xuất cho bạn'
-                ? 'Không tìm thấy bài quiz nào trùng với chủ đề đề xuất hiện tại.'
-                : 'Chưa có quiz nào ở trình độ này.'}
-            </div>
-          )}
+                        <div className="row between" style={{ flexWrap: 'wrap', gap: 8 }}>
+                          <div className="row" style={{ gap: 6, flexWrap: 'wrap' }}>
+                            <span className="pill level">Cấp {qz.level}</span>
+                            {qz.creatorUsername ? (
+                              <span className="pill" title={`Người tạo và công khai: @${qz.creatorUsername}`}>
+                                <Icon n="user" s={12} /> @{qz.creatorUsername}
+                              </span>
+                            ) : qz.isAiGenerated ? (
+                              <span className="pill">
+                                <Icon n="spark" s={12} /> AI tạo
+                              </span>
+                            ) : null}
+                            {recommended ? (
+                              <span className="pill greensoft"><UiIcon name="sparkles" size={12} /> AI đề xuất</span>
+                            ) : (
+                              <span className="pill level">Bấm giờ {mins}p</span>
+                            )}
+                          </div>
+                          <button
+                            type="button"
+                            className="btn sm"
+                            onClick={() => nav(`/quiz/${qz.id}`)}
+                          >
+                            Bắt đầu làm
+                          </button>
+                        </div>
+                      </MotionCard>
+                    </motion.div>
+                  );
+                })}
+              </motion.div>
+            </AnimatePresence>
 
-          {/* Pagination Controls */}
+            {filteredQuizzes.length === 0 && !loading && !err && (
+              <div className="card center" style={{ padding: '40px 20px', gap: 10 }}>
+                <ViMascotImage
+                  pose="encourage"
+                  size={72}
+                  alt="Vi cổ vũ bạn thử trình độ quiz khác"
+                />
+                <strong style={{ fontSize: 15 }}>
+                  {level === 'Đề xuất cho bạn'
+                    ? 'Không tìm thấy bài quiz nào trùng với chủ đề đề xuất hiện tại.'
+                    : 'Chưa có quiz nào ở trình độ này.'}
+                </strong>
+              </div>
+            )}
+          </div>
+
+          {/* Bottom Pagination Bar */}
           {totalPages > 1 && (
-            <motion.div
-              className="row"
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.2 }}
-              style={{
-                marginTop: 28,
-                padding: '16px 22px',
-                background: '#fff',
-                borderRadius: 18,
-                boxShadow: 'var(--sh)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                flexWrap: 'wrap',
-                gap: 12,
-              }}
-            >
-              <span className="sub" style={{ fontSize: 14 }}>
-                Trang <b>{page + 1}</b> / <b>{totalPages}</b> · Đang hiển thị{' '}
-                <b>{paginatedQuizzes.length}</b> / <b>{totalElements}</b> bài trắc nghiệm
+            <div className="card row between" style={{ padding: '10px 16px', flex: 'none', flexWrap: 'wrap', gap: 10 }}>
+              <span className="tiny muted">
+                Trang <b>{page + 1}</b> / <b>{totalPages}</b> · <b>{paginatedQuizzes.length}</b> / <b>{totalElements}</b> bài trắc nghiệm
               </span>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <motion.button
+              <div className="row" style={{ gap: 6 }}>
+                <button
                   type="button"
-                  className="pagebtn"
+                  className="btn secondary sm"
                   disabled={page === 0}
                   onClick={() => changePage(Math.max(0, page - 1))}
-                  whileTap={page > 0 ? { scale: 0.92 } : undefined}
-                  whileHover={page > 0 ? { y: -1 } : undefined}
                   title="Trang trước"
-                  style={{ opacity: page === 0 ? 0.45 : 1, cursor: page === 0 ? 'not-allowed' : 'pointer' }}
                 >
                   ‹
-                </motion.button>
+                </button>
                 {Array.from({ length: totalPages }, (_, i) => (
-                  <motion.button
+                  <button
                     key={i}
                     type="button"
-                    className={'pagebtn' + (page === i ? ' on' : '')}
+                    className={page === i ? 'btn sm' : 'btn secondary sm'}
                     onClick={() => changePage(i)}
-                    whileTap={{ scale: 0.92 }}
-                    whileHover={{ y: -1 }}
-                    style={
-                      page === i
-                        ? {
-                            background: 'var(--primary)',
-                            color: '#fff',
-                            boxShadow: '0 4px 14px rgba(21, 101, 192, 0.32)',
-                            transform: 'scale(1.04)',
-                          }
-                        : {}
-                    }
                   >
                     {i + 1}
-                  </motion.button>
+                  </button>
                 ))}
-                <motion.button
+                <button
                   type="button"
-                  className="pagebtn"
+                  className="btn secondary sm"
                   disabled={page >= totalPages - 1}
                   onClick={() => changePage(Math.min(totalPages - 1, page + 1))}
-                  whileTap={page < totalPages - 1 ? { scale: 0.92 } : undefined}
-                  whileHover={page < totalPages - 1 ? { y: -1 } : undefined}
                   title="Trang sau"
-                  style={{
-                    opacity: page >= totalPages - 1 ? 0.45 : 1,
-                    cursor: page >= totalPages - 1 ? 'not-allowed' : 'pointer',
-                  }}
                 >
                   ›
-                </motion.button>
+                </button>
               </div>
-            </motion.div>
+            </div>
           )}
-        </>
+        </div>
       )}
 
       {/* ================= TAB: BÀI TẬP CỦA TÔI ================= */}
       {activeTab === 'my-quizzes' && (
-        <div ref={listRef}>
+        <div ref={listRef} className="colstack" style={{ flex: 1, minHeight: 0, gap: 10 }}>
           {/* Header Action Banner */}
           <div
-            className="card"
-            style={{
-              background: 'linear-gradient(135deg, #FAF5FF 0%, #EEF2FF 100%)',
-              border: '1px solid #DDD6FE',
-              padding: '18px 24px',
-              marginBottom: 20,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              gap: 16,
-              flexWrap: 'wrap',
-              borderRadius: 18,
-            }}
+            className="card row between"
+            style={{ padding: '12px 18px', gap: 12, flexWrap: 'wrap', flex: 'none' }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-              <div
-                style={{
-                  width: 44,
-                  height: 44,
-                  borderRadius: 14,
-                  background: 'linear-gradient(135deg, #8B5CF6 0%, #6366F1 100%)',
-                  color: '#fff',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  boxShadow: '0 4px 12px rgba(124, 58, 237, 0.25)',
-                }}
-              >
-                <Icon n="spark" s={22} />
-              </div>
+            <div className="row" style={{ gap: 12, flex: 1, minWidth: 240 }}>
+              <ViMascotImage
+                pose="encourage"
+                size={46}
+                alt="Vi sẵn sàng biên soạn bài tập AI từ tài liệu của bạn"
+              />
               <div>
-                <b style={{ fontSize: 16, color: '#1E1B4B', display: 'block' }}>
+                <b style={{ fontSize: 15, color: 'var(--ink)', display: 'block' }}>
                   Bài tập AI tạo từ tài liệu
                 </b>
-                <div style={{ fontSize: 13, color: '#475569', marginTop: 2 }}>
-                  Tải lên tài liệu PDF, DOCX, TXT để AI tự động trích xuất kiến thức và tạo bài trắc nghiệm tính giờ.
+                <div className="tiny muted">
+                  Tải lên PDF, DOCX, TXT để AI trích xuất từ vựng và tạo trắc nghiệm tính giờ.
                 </div>
               </div>
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+            <div className="row" style={{ gap: 10, flexWrap: 'wrap' }}>
               <QuotaBadge featureKey="exercise_generation" labelSuffix="lượt tạo AI" />
               <button
-                className="btn primary"
+                type="button"
+                className="btn sm"
                 onClick={() => setIsCreateModalOpen(true)}
-                style={{
-                  minHeight: 40,
-                  padding: '0 20px',
-                  fontSize: 13.5,
-                  fontWeight: 800,
-                  background: 'linear-gradient(135deg, #7C3AED 0%, #4F46E5 100%)',
-                  border: 'none',
-                  boxShadow: '0 4px 12px rgba(99, 102, 241, 0.28)',
-                }}
               >
-                <Icon n="plus" s={16} /> Tạo bài tập từ tài liệu
+                <Icon n="plus" s={15} /> Tạo bài tập từ tài liệu
               </button>
             </div>
           </div>
 
           {actionFeedback && (
-            <div
-              style={{
-                background: actionFeedback.type === 'success' ? '#F0FDF4' : '#FEF2F2',
-                border: `1px solid ${actionFeedback.type === 'success' ? '#86EFAC' : '#FCA5A5'}`,
-                borderRadius: 14,
-                padding: '12px 18px',
-                marginBottom: 16,
-                display: 'flex',
-                alignItems: 'center',
-                gap: 10,
-                color: actionFeedback.type === 'success' ? '#15803D' : '#B91C1C',
-                fontSize: 13.5,
-                fontWeight: 600,
-                animation: 'fadeIn 0.2s ease',
-              }}
-            >
-              <Icon n={actionFeedback.type === 'success' ? 'check' : 'alert'} s={18} />
-              <span>{actionFeedback.message}</span>
+            <div className={actionFeedback.type === 'success' ? 'ok' : 'error'}>
+              {actionFeedback.message}
             </div>
           )}
 
           {myQuizzesErr && (
-            <div
-              style={{
-                background: '#FEF2F2',
-                border: '1px solid #FCA5A5',
-                borderRadius: 14,
-                padding: '14px 18px',
-                marginBottom: 20,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                gap: 12,
-              }}
-            >
-              <div style={{ color: '#B91C1C', fontSize: 14, fontWeight: 600 }}>{myQuizzesErr}</div>
-              <button
-                className="btn ghost sm"
-                onClick={() => fetchMyQuizzes(myQuizzesPage)}
-                style={{ borderColor: '#FCA5A5', color: '#B91C1C' }}
-              >
+            <div className="error row between">
+              <span>{myQuizzesErr}</span>
+              <button type="button" className="btn ghost sm" onClick={() => fetchMyQuizzes(myQuizzesPage)}>
                 Thử lại
               </button>
             </div>
           )}
 
-          {myQuizzesLoading ? (
-            <div style={{ textAlign: 'center', padding: '60px 16px' }}>
-              <div className="spinner" style={{ margin: '0 auto 16px' }} />
-              <div className="sub">Đang tải danh sách bài tập của bạn...</div>
-            </div>
-          ) : myQuizzes.length === 0 && !myQuizzesErr ? (
-            <div
-              className="card"
-              style={{
-                textAlign: 'center',
-                padding: '56px 20px',
-                borderRadius: 20,
-                background: '#fff',
-                boxShadow: 'var(--sh)',
-              }}
-            >
-              <div style={{ marginBottom: 14 }}>
-                <Mascot s={64} />
+          <div className="long-list" style={{ flex: 1, minHeight: 0, paddingRight: 4 }}>
+            {myQuizzesLoading ? (
+              <ViLoadingScreen compact subtitle="Đang tải danh sách bài tập của bạn" />
+            ) : myQuizzes.length === 0 && !myQuizzesErr ? (
+              <div className="card center" style={{ padding: '44px 20px', gap: 12 }}>
+                <ViMascotImage
+                  pose="encourage"
+                  size={80}
+                  alt="Vi mời bạn tạo bài tập AI đầu tiên từ tài liệu"
+                />
+                <h3 style={{ fontSize: 18, margin: 0 }}>Bạn chưa có bài tập tự tạo nào</h3>
+                <p className="sub" style={{ maxWidth: 440, margin: 0 }}>
+                  Tải lên tài liệu (.pdf, .docx, .txt) để Vi AI biên soạn bài tập trắc nghiệm riêng cho bạn!
+                </p>
+                <button
+                  type="button"
+                  className="btn"
+                  onClick={() => setIsCreateModalOpen(true)}
+                >
+                  <Icon n="spark" s={16} /> Tạo bài tập đầu tiên
+                </button>
               </div>
-              <h3 style={{ fontSize: 20, fontWeight: 800, color: 'var(--ink)' }}>
-                Bạn chưa có bài tập tự tạo nào
-              </h3>
-              <p className="sub mt8" style={{ maxWidth: 460, margin: '8px auto 24px', lineHeight: 1.5 }}>
-                Tải lên tài liệu (.pdf, .docx, .txt) của bài giảng hoặc giáo trình để Vi AI biên soạn bài tập trắc nghiệm riêng cho bạn!
-              </p>
-              <button
-                className="btn primary"
-                onClick={() => setIsCreateModalOpen(true)}
-                style={{
-                  padding: '10px 24px',
-                  fontWeight: 800,
-                  background: 'linear-gradient(135deg, #7C3AED 0%, #4F46E5 100%)',
-                  border: 'none',
-                }}
-              >
-                <Icon n="spark" s={18} /> Tạo bài tập đầu tiên
-              </button>
-            </div>
-          ) : (
-            <>
-              {/* Grid 2 cột */}
-              <div className="cols2" style={{ gridTemplateColumns: '1fr 1fr' }}>
+            ) : (
+              <div className="cols2">
                 {myQuizzes.map((qz) => {
                   const mins = qz.timeLimit > 60 ? Math.round(qz.timeLimit / 60) : qz.timeLimit;
                   const isPending = qz.visibility === 'PENDING';
@@ -749,117 +625,49 @@ export default function QuizList() {
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.2 }}
                     >
-                      <MotionCard>
-                        <div className="row" style={{ alignItems: 'flex-start' }}>
-                          <b style={{ fontSize: '18px', flex: 1, color: 'var(--ink)' }}>{qz.title}</b>
+                      <MotionCard style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                        <div className="row between" style={{ alignItems: 'flex-start' }}>
+                          <b style={{ fontSize: 16.5, flex: 1, color: 'var(--ink)' }}>{qz.title}</b>
                           <span className="pill level">Cấp {qz.level}</span>
                         </div>
 
-                        <div className="sub mt8">
+                        <div className="tiny muted">
                           {qz.questionCount} câu · giới hạn {mins} phút{qz.category ? ' · ' + qz.category : ''}
                         </div>
 
-                        {/* Badges row */}
-                        <div className="row mt12" style={{ gap: 8, flexWrap: 'wrap' }}>
-                          {/* Sparkle AI Badge */}
+                        <div className="row" style={{ gap: 6, flexWrap: 'wrap' }}>
                           {qz.isAiGenerated && (
-                            <span
-                              className="pill"
-                              style={{
-                                background: '#F3E8FF',
-                                color: '#7E22CE',
-                                border: '1px solid #D8B4FE',
-                                fontWeight: 700,
-                                fontSize: 12,
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: 4,
-                              }}
-                            >
-                              <Icon n="spark" s={13} /> Do AI tạo
+                            <span className="pill">
+                              <Icon n="spark" s={12} /> Do AI tạo
                             </span>
                           )}
-
-                          {/* Visibility Badge */}
                           {isPublic ? (
-                            <span
-                              className="pill"
-                              style={{
-                                background: '#DCFCE7',
-                                color: '#15803D',
-                                border: '1px solid #86EFAC',
-                                fontWeight: 700,
-                                fontSize: 12,
-                              }}
-                            >
-                              🌐 Công khai
-                            </span>
+                            <span className="pill greensoft"><UiIcon name="globe" size={12} /> Công khai</span>
                           ) : isPending ? (
-                            <span
-                              className="pill"
-                              style={{
-                                background: '#FEF3C7',
-                                color: '#B45309',
-                                border: '1px solid #FCD34D',
-                                fontWeight: 700,
-                                fontSize: 12,
-                              }}
-                            >
-                              ⏳ Chờ duyệt
-                            </span>
+                            <span className="pill warn">⏳ Chờ duyệt</span>
                           ) : isRejected ? (
                             <span
-                              className="pill"
-                              style={{
-                                background: '#FEE2E2',
-                                color: '#B91C1C',
-                                border: '1px solid #FCA5A5',
-                                fontWeight: 700,
-                                fontSize: 12,
-                              }}
+                              className="pill redsoft"
                               title={qz.reviewNote ? 'Lý do từ chối: ' + qz.reviewNote : 'Bị từ chối duyệt'}
                             >
-                              ⚠️ Bị từ chối
+                              <UiIcon name="warning" size={12} /> Bị từ chối
                             </span>
                           ) : (
-                            <span
-                              className="pill"
-                              style={{
-                                background: '#F1F5F9',
-                                color: '#475569',
-                                border: '1px solid #CBD5E1',
-                                fontWeight: 700,
-                                fontSize: 12,
-                              }}
-                            >
-                              🔒 Riêng tư
-                            </span>
+                            <span className="pill level"><UiIcon name="lock" size={12} /> Riêng tư</span>
                           )}
                         </div>
 
-                        {/* Review note if rejected */}
                         {isRejected && qz.reviewNote && (
-                          <div
-                            style={{
-                              marginTop: 10,
-                              padding: '8px 12px',
-                              borderRadius: 8,
-                              background: '#FEF2F2',
-                              border: '1px solid #FCA5A5',
-                              fontSize: 12.5,
-                              color: '#B91C1C',
-                            }}
-                          >
+                          <div className="error" style={{ padding: '6px 10px', fontSize: 12 }}>
                             <b>Lý do:</b> {qz.reviewNote}
                           </div>
                         )}
 
-                        <div className="row mt16" style={{ justifyContent: 'flex-end', gap: 8, flexWrap: 'wrap' }}>
+                        <div className="row" style={{ justifyContent: 'flex-end', gap: 8, flexWrap: 'wrap' }}>
                           {isPending && (
                             <button
                               type="button"
-                              className="btn ghost sm"
-                              style={{ minHeight: 38, padding: '0 12px', fontWeight: 700, fontSize: 12.5, borderColor: '#FCD34D', color: '#B45309', background: '#FFFBEB' }}
+                              className="btn secondary sm"
                               onClick={() => {
                                 setActionModal({
                                   isOpen: true,
@@ -875,8 +683,7 @@ export default function QuizList() {
                           {isPublic && (
                             <button
                               type="button"
-                              className="btn ghost sm"
-                              style={{ minHeight: 38, padding: '0 12px', fontWeight: 700, fontSize: 12.5, borderColor: '#CBD5E1', color: '#475569' }}
+                              className="btn secondary sm"
                               onClick={() => {
                                 setActionModal({
                                   isOpen: true,
@@ -886,14 +693,13 @@ export default function QuizList() {
                                 });
                               }}
                             >
-                              🔒 Ẩn bài
+                              <UiIcon name="lock" size={13} /> Ẩn bài
                             </button>
                           )}
                           {!isPending && !isPublic && (
                             <button
                               type="button"
-                              className="btn ghost sm"
-                              style={{ minHeight: 38, padding: '0 12px', fontWeight: 700, fontSize: 12.5, borderColor: '#A5B4FC', color: '#4F46E5', background: '#EEF2FF' }}
+                              className="btn secondary sm"
                               onClick={() => {
                                 setActionModal({
                                   isOpen: true,
@@ -903,23 +709,22 @@ export default function QuizList() {
                                 });
                               }}
                             >
-                              🚀 Gửi duyệt
+                              <UiIcon name="rocket" size={13} /> Gửi duyệt
                             </button>
                           )}
                           <button
                             type="button"
                             className="btn ghost sm"
-                            style={{ minHeight: 38, padding: '0 14px', fontWeight: 700, fontSize: 13 }}
                             onClick={() => {
                               setSelectedQuizIdForDetail(qz.id);
                               setIsDetailModalOpen(true);
                             }}
                           >
-                            <Icon n="edit" s={15} /> Chi tiết / Sửa
+                            <Icon n="edit" s={14} /> Chi tiết / Sửa
                           </button>
                           <button
-                            className="btn primary sm"
-                            style={{ minHeight: 38, padding: '0 18px', fontWeight: 800 }}
+                            type="button"
+                            className="btn sm"
                             onClick={() => nav('/quiz/' + qz.id)}
                           >
                             Bắt đầu làm
@@ -930,162 +735,94 @@ export default function QuizList() {
                   );
                 })}
               </div>
+            )}
+          </div>
 
-              {/* My Quizzes Pagination */}
-              {myQuizzesTotalPages > 1 && (
-                <motion.div
-                  className="row"
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.2 }}
-                  style={{
-                    marginTop: 28,
-                    padding: '16px 22px',
-                    background: '#fff',
-                    borderRadius: 18,
-                    boxShadow: 'var(--sh)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    flexWrap: 'wrap',
-                    gap: 12,
+          {myQuizzesTotalPages > 1 && (
+            <div className="card row between" style={{ padding: '10px 16px', flex: 'none', flexWrap: 'wrap', gap: 10 }}>
+              <span className="tiny muted">
+                Trang <b>{myQuizzesPage + 1}</b> / <b>{myQuizzesTotalPages}</b> · <b>{myQuizzes.length}</b> / <b>{myQuizzesTotalElements}</b> bài tập
+              </span>
+              <div className="row" style={{ gap: 6 }}>
+                <button
+                  type="button"
+                  className="btn secondary sm"
+                  disabled={myQuizzesPage === 0}
+                  onClick={() => {
+                    const p = Math.max(0, myQuizzesPage - 1);
+                    setMyQuizzesPage(p);
+                    fetchMyQuizzes(p);
                   }}
                 >
-                  <span className="sub" style={{ fontSize: 14 }}>
-                    Trang <b>{myQuizzesPage + 1}</b> / <b>{myQuizzesTotalPages}</b> · Đang hiển thị{' '}
-                    <b>{myQuizzes.length}</b> / <b>{myQuizzesTotalElements}</b> bài tập
-                  </span>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <motion.button
-                      type="button"
-                      className="pagebtn"
-                      disabled={myQuizzesPage === 0}
-                      onClick={() => {
-                        const p = Math.max(0, myQuizzesPage - 1);
-                        setMyQuizzesPage(p);
-                        fetchMyQuizzes(p);
-                      }}
-                      title="Trang trước"
-                      style={{
-                        opacity: myQuizzesPage === 0 ? 0.45 : 1,
-                        cursor: myQuizzesPage === 0 ? 'not-allowed' : 'pointer',
-                      }}
-                    >
-                      ‹
-                    </motion.button>
-                    {Array.from({ length: myQuizzesTotalPages }, (_, i) => (
-                      <motion.button
-                        key={i}
-                        type="button"
-                        className={'pagebtn' + (myQuizzesPage === i ? ' on' : '')}
-                        onClick={() => {
-                          setMyQuizzesPage(i);
-                          fetchMyQuizzes(i);
-                        }}
-                        style={
-                          myQuizzesPage === i
-                            ? {
-                                background: 'var(--primary)',
-                                color: '#fff',
-                                boxShadow: '0 4px 14px rgba(21, 101, 192, 0.32)',
-                                transform: 'scale(1.04)',
-                              }
-                            : {}
-                        }
-                      >
-                        {i + 1}
-                      </motion.button>
-                    ))}
-                    <motion.button
-                      type="button"
-                      className="pagebtn"
-                      disabled={myQuizzesPage >= myQuizzesTotalPages - 1}
-                      onClick={() => {
-                        const p = Math.min(myQuizzesTotalPages - 1, myQuizzesPage + 1);
-                        setMyQuizzesPage(p);
-                        fetchMyQuizzes(p);
-                      }}
-                      title="Trang sau"
-                      style={{
-                        opacity: myQuizzesPage >= myQuizzesTotalPages - 1 ? 0.45 : 1,
-                        cursor: myQuizzesPage >= myQuizzesTotalPages - 1 ? 'not-allowed' : 'pointer',
-                      }}
-                    >
-                      ›
-                    </motion.button>
-                  </div>
-                </motion.div>
-              )}
-            </>
+                  ‹
+                </button>
+                {Array.from({ length: myQuizzesTotalPages }, (_, i) => (
+                  <button
+                    key={i}
+                    type="button"
+                    className={myQuizzesPage === i ? 'btn sm' : 'btn secondary sm'}
+                    onClick={() => {
+                      setMyQuizzesPage(i);
+                      fetchMyQuizzes(i);
+                    }}
+                  >
+                    {i + 1}
+                  </button>
+                ))}
+                <button
+                  type="button"
+                  className="btn secondary sm"
+                  disabled={myQuizzesPage >= myQuizzesTotalPages - 1}
+                  onClick={() => {
+                    const p = Math.min(myQuizzesTotalPages - 1, myQuizzesPage + 1);
+                    setMyQuizzesPage(p);
+                    fetchMyQuizzes(p);
+                  }}
+                >
+                  ›
+                </button>
+              </div>
+            </div>
           )}
         </div>
       )}
 
-      {/* ================= TAB 2: LỊCH SỬ LÀM BÀI (6 bài mỗi trang) ================= */}
+      {/* ================= TAB: LỊCH SỬ LÀM BÀI ================= */}
       {activeTab === 'history' && (
-        <div ref={listRef}>
+        <div ref={listRef} className="colstack" style={{ flex: 1, minHeight: 0, gap: 10 }}>
           {historyErr && (
-            <div
-              style={{
-                background: '#FEF2F2',
-                border: '1px solid #FCA5A5',
-                borderRadius: 14,
-                padding: '14px 18px',
-                marginBottom: 20,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                gap: 12,
-              }}
-            >
-              <div style={{ color: '#B91C1C', fontSize: 14, fontWeight: 600 }}>{historyErr}</div>
-              <button
-                className="btn ghost sm"
-                onClick={() => fetchHistory(historyPage)}
-                style={{ borderColor: '#FCA5A5', color: '#B91C1C' }}
-              >
+            <div className="error row between">
+              <span>{historyErr}</span>
+              <button type="button" className="btn ghost sm" onClick={() => fetchHistory(historyPage)}>
                 Thử lại
               </button>
             </div>
           )}
 
-          {historyLoading ? (
-            <div style={{ textAlign: 'center', padding: '60px 16px' }}>
-              <div className="spinner" style={{ margin: '0 auto 16px' }} />
-              <div className="sub">Đang tải lịch sử làm bài...</div>
-            </div>
-          ) : historyList.length === 0 && !historyErr ? (
-            <div
-              className="card"
-              style={{
-                textAlign: 'center',
-                padding: '56px 20px',
-                borderRadius: 20,
-                background: '#fff',
-                boxShadow: 'var(--sh)',
-              }}
-            >
-              <div style={{ marginBottom: 14 }}>
-                <Mascot s={64} />
+          <div className="long-list" style={{ flex: 1, minHeight: 0, paddingRight: 4 }}>
+            {historyLoading ? (
+              <ViLoadingScreen compact subtitle="Đang tải lịch sử làm bài" />
+            ) : historyList.length === 0 && !historyErr ? (
+              <div className="card center" style={{ padding: '44px 20px', gap: 12 }}>
+                <ViMascotImage
+                  pose="happy-wave"
+                  size={80}
+                  alt="Vi chào bạn bắt đầu làm bài quiz đầu tiên"
+                />
+                <h3 style={{ fontSize: 18, margin: 0 }}>Bạn chưa làm bài trắc nghiệm nào</h3>
+                <p className="sub" style={{ maxWidth: 440, margin: 0 }}>
+                  Hãy chọn một bài thi ở tab <b>Bài thi</b> để bắt đầu luyện tập tính giờ và xem phân tích chi tiết.
+                </p>
+                <button
+                  type="button"
+                  className="btn"
+                  onClick={() => handleTabChange('quizzes')}
+                >
+                  Về danh sách bài thi
+                </button>
               </div>
-              <h3 style={{ fontSize: 20, fontWeight: 800, color: 'var(--ink)' }}>
-                Bạn chưa làm bài trắc nghiệm nào
-              </h3>
-              <p className="sub mt8" style={{ maxWidth: 460, margin: '8px auto 24px', lineHeight: 1.5 }}>
-                Hãy chọn một bài thi ở tab <b>Bài thi</b> để bắt đầu luyện tập tính giờ và kiểm tra kiến thức. Toàn bộ lịch sử điểm số sẽ hiển thị tại đây!
-              </p>
-              <button
-                className="btn primary"
-                onClick={() => handleTabChange('quizzes')}
-                style={{ padding: '10px 24px', fontWeight: 800 }}
-              >
-                Về danh sách bài thi
-              </button>
-            </div>
-          ) : (
-            <>
-              {/* Grid 2 cột: hiển thị tối đa 6 bài (3 hàng) mỗi trang */}
-              <div className="cols2" style={{ gridTemplateColumns: '1fr 1fr' }}>
+            ) : (
+              <div className="cols2">
                 {historyList.map((item) => {
                   const pct =
                     item.totalQuestions > 0
@@ -1093,8 +830,6 @@ export default function QuizList() {
                       : Math.round(item.score || 0);
                   const isPassed = pct >= 80;
                   const isMedium = pct >= 50;
-                  const badgeColor = isPassed ? '#15803D' : isMedium ? 'var(--primary)' : '#DC2626';
-                  const badgeBg = isPassed ? '#DCFCE7' : isMedium ? '#EFF6FF' : '#FEE2E2';
 
                   return (
                     <motion.div
@@ -1103,174 +838,91 @@ export default function QuizList() {
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.2 }}
                     >
-                      <MotionCard>
-                        <div
-                          className="row"
-                          style={{
-                            alignItems: 'flex-start',
-                            justifyContent: 'space-between',
-                            gap: 12,
-                          }}
-                        >
+                      <MotionCard style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                        <div className="row between" style={{ alignItems: 'flex-start', gap: 12 }}>
                           <div style={{ flex: 1, minWidth: 0 }}>
-                            <b
-                              style={{
-                                fontSize: '18px',
-                                display: 'block',
-                                color: 'var(--ink)',
-                                wordBreak: 'break-word',
-                              }}
-                            >
+                            <b style={{ fontSize: 16.5, display: 'block', color: 'var(--ink)', wordBreak: 'break-word' }}>
                               {item.quizTitle}
                             </b>
-                            <div className="sub mt4" style={{ fontSize: 13, color: '#64748B' }}>
+                            <div className="tiny muted mt4">
                               Nộp lúc: <b>{formatDateTime(item.submittedAt)}</b>
                             </div>
                           </div>
-                          <span
-                            className="pill"
-                            style={{
-                              background: badgeBg,
-                              color: badgeColor,
-                              fontWeight: 800,
-                              fontSize: 13.5,
-                              padding: '5px 12px',
-                              borderRadius: 99,
-                              whiteSpace: 'nowrap',
-                              border: `1px solid ${badgeColor}33`,
-                            }}
-                          >
-                            {pct}% ({item.correctAnswers}/{item.totalQuestions})
-                          </span>
+                          <ScoreRing
+                            value={pct}
+                            label={`${pct}%`}
+                            size={56}
+                            accentColor={isPassed ? 'var(--success)' : isMedium ? 'var(--sage)' : 'var(--danger)'}
+                          />
                         </div>
 
-                        <div
-                          className="row mt12"
-                          style={{
-                            fontSize: 13.5,
-                            color: '#475569',
-                            background: '#F8FAFC',
-                            padding: '8px 14px',
-                            borderRadius: 10,
-                          }}
-                        >
-                          <span>⏱️ Thời gian: <b>{formatDuration(item.timeTaken)}</b></span>
-                          <span>🎯 Điểm số: <b>{item.score}đ</b></span>
-                        </div>
-
-                        <div className="row mt16" style={{ gap: 10, justifyContent: 'flex-end' }}>
-                          <button
-                            className="btn ghost sm"
-                            style={{
-                              minHeight: 38,
-                              padding: '0 16px',
-                              fontWeight: 700,
-                              fontSize: 13.5,
-                            }}
-                            onClick={() => nav(`/quiz/${item.quizId}/result?attemptId=${item.attemptId}`)}
-                          >
-                            🔍 Xem lại
-                          </button>
-                          <button
-                            className="btn primary sm"
-                            style={{
-                              minHeight: 38,
-                              padding: '0 16px',
-                              fontWeight: 700,
-                              fontSize: 13.5,
-                            }}
-                            onClick={() => nav(`/quiz/${item.quizId}`)}
-                          >
-                            🔄 Làm lại
-                          </button>
+                        <div className="row between" style={{ flexWrap: 'wrap', gap: 8 }}>
+                          <div className="row" style={{ gap: 8 }}>
+                            <span className={'pill ' + (isPassed ? 'greensoft' : isMedium ? 'level' : 'redsoft')}>
+                              {item.correctAnswers}/{item.totalQuestions} câu
+                            </span>
+                            <span className="pill level">⏱️ {formatDuration(item.timeTaken)}</span>
+                            <span className="pill level"><UiIcon name="target" size={12} /> {item.score}đ</span>
+                          </div>
+                          <div className="row" style={{ gap: 8 }}>
+                            <button
+                              type="button"
+                              className="btn secondary sm"
+                              onClick={() => nav(`/quiz/${item.quizId}/result?attemptId=${item.attemptId}`)}
+                            >
+                              Xem lại
+                            </button>
+                            <button
+                              type="button"
+                              className="btn sm"
+                              onClick={() => nav(`/quiz/${item.quizId}`)}
+                            >
+                              Làm lại
+                            </button>
+                          </div>
                         </div>
                       </MotionCard>
                     </motion.div>
                   );
                 })}
               </div>
+            )}
+          </div>
 
-              {/* History Pagination: 6 bài mỗi trang */}
-              {historyTotalPages > 1 && (
-                <motion.div
-                  className="row"
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.2 }}
-                  style={{
-                    marginTop: 28,
-                    padding: '16px 22px',
-                    background: '#fff',
-                    borderRadius: 18,
-                    boxShadow: 'var(--sh)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    flexWrap: 'wrap',
-                    gap: 12,
-                  }}
+          {historyTotalPages > 1 && (
+            <div className="card row between" style={{ padding: '10px 16px', flex: 'none', flexWrap: 'wrap', gap: 10 }}>
+              <span className="tiny muted">
+                Trang <b>{historyPage + 1}</b> / <b>{historyTotalPages}</b> · <b>{historyList.length}</b> / <b>{historyTotalElements}</b> bài đã làm
+              </span>
+              <div className="row" style={{ gap: 6 }}>
+                <button
+                  type="button"
+                  className="btn secondary sm"
+                  disabled={historyPage === 0}
+                  onClick={() => changeHistoryPage(Math.max(0, historyPage - 1))}
                 >
-                  <span className="sub" style={{ fontSize: 14 }}>
-                    Trang <b>{historyPage + 1}</b> / <b>{historyTotalPages}</b> · Đang hiển thị{' '}
-                    <b>{historyList.length}</b> / <b>{historyTotalElements}</b> bài đã làm
-                  </span>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <motion.button
-                      type="button"
-                      className="pagebtn"
-                      disabled={historyPage === 0}
-                      onClick={() => changeHistoryPage(Math.max(0, historyPage - 1))}
-                      whileTap={historyPage > 0 ? { scale: 0.92 } : undefined}
-                      whileHover={historyPage > 0 ? { y: -1 } : undefined}
-                      title="Trang trước"
-                      style={{
-                        opacity: historyPage === 0 ? 0.45 : 1,
-                        cursor: historyPage === 0 ? 'not-allowed' : 'pointer',
-                      }}
-                    >
-                      ‹
-                    </motion.button>
-                    {Array.from({ length: historyTotalPages }, (_, i) => (
-                      <motion.button
-                        key={i}
-                        type="button"
-                        className={'pagebtn' + (historyPage === i ? ' on' : '')}
-                        onClick={() => changeHistoryPage(i)}
-                        whileTap={{ scale: 0.92 }}
-                        whileHover={{ y: -1 }}
-                        style={
-                          historyPage === i
-                            ? {
-                                background: 'var(--primary)',
-                                color: '#fff',
-                                boxShadow: '0 4px 14px rgba(21, 101, 192, 0.32)',
-                                transform: 'scale(1.04)',
-                              }
-                            : {}
-                        }
-                      >
-                        {i + 1}
-                      </motion.button>
-                    ))}
-                    <motion.button
-                      type="button"
-                      className="pagebtn"
-                      disabled={historyPage >= historyTotalPages - 1}
-                      onClick={() => changeHistoryPage(Math.min(historyTotalPages - 1, historyPage + 1))}
-                      whileTap={historyPage < historyTotalPages - 1 ? { scale: 0.92 } : undefined}
-                      whileHover={historyPage < historyTotalPages - 1 ? { y: -1 } : undefined}
-                      title="Trang sau"
-                      style={{
-                        opacity: historyPage >= historyTotalPages - 1 ? 0.45 : 1,
-                        cursor: historyPage >= historyTotalPages - 1 ? 'not-allowed' : 'pointer',
-                      }}
-                    >
-                      ›
-                    </motion.button>
-                  </div>
-                </motion.div>
-              )}
-            </>
+                  ‹
+                </button>
+                {Array.from({ length: historyTotalPages }, (_, i) => (
+                  <button
+                    key={i}
+                    type="button"
+                    className={historyPage === i ? 'btn sm' : 'btn secondary sm'}
+                    onClick={() => changeHistoryPage(i)}
+                  >
+                    {i + 1}
+                  </button>
+                ))}
+                <button
+                  type="button"
+                  className="btn secondary sm"
+                  disabled={historyPage >= historyTotalPages - 1}
+                  onClick={() => changeHistoryPage(Math.min(historyTotalPages - 1, historyPage + 1))}
+                >
+                  ›
+                </button>
+              </div>
+            </div>
           )}
         </div>
       )}
@@ -1311,9 +963,9 @@ export default function QuizList() {
             position: 'fixed',
             inset: 0,
             zIndex: 99999,
-            backgroundColor: 'rgba(15, 23, 42, 0.65)',
-            backdropFilter: 'blur(5px)',
-            WebkitBackdropFilter: 'blur(5px)',
+            backgroundColor: 'rgba(12, 20, 11, 0.56)',
+            backdropFilter: 'blur(8px)',
+            WebkitBackdropFilter: 'blur(8px)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -1325,18 +977,14 @@ export default function QuizList() {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.94 }}
             transition={{ duration: 0.2 }}
+            className="card"
             style={{
-              background: '#FFFFFF',
-              borderRadius: 20,
               width: '100%',
               maxWidth: 460,
               padding: '24px 24px 20px',
-              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
-              border: '1px solid #F1F5F9',
               textAlign: 'center',
             }}
           >
-            {/* Header Icon */}
             <div
               style={{
                 width: 56,
@@ -1344,54 +992,51 @@ export default function QuizList() {
                 borderRadius: '50%',
                 background:
                   actionModal.type === 'publish'
-                    ? '#EEF2FF'
+                    ? 'rgba(71, 96, 63, 0.14)'
                     : actionModal.type === 'withdraw'
-                    ? '#FFFBEB'
-                    : '#F1F5F9',
+                    ? 'var(--amber-bg)'
+                    : 'rgba(71, 96, 63, 0.08)',
                 color:
                   actionModal.type === 'publish'
-                    ? '#4F46E5'
+                    ? 'var(--sage-dark)'
                     : actionModal.type === 'withdraw'
-                    ? '#D97706'
-                    : '#475569',
+                    ? 'var(--amber-dark)'
+                    : 'var(--muted)',
                 display: 'inline-flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                marginBottom: 16,
+                marginBottom: 14,
               }}
             >
-              {actionModal.type === 'publish' && <Icon n="send" s={26} />}
+              {actionModal.type === 'publish' && <Icon n="send" s={24} />}
               {actionModal.type === 'withdraw' && <Icon n="arrowLeft" s={24} />}
               {actionModal.type === 'hide' && <Icon n="lock" s={24} />}
             </div>
 
-            {/* Title */}
-            <h3 style={{ fontSize: 18, fontWeight: 800, color: '#0F172A', margin: '0 0 8px' }}>
+            <h3 style={{ fontSize: 18, fontWeight: 800, color: 'var(--ink)', margin: '0 0 8px' }}>
               {actionModal.type === 'publish' && 'Gửi bài tập cho Giảng viên duyệt'}
               {actionModal.type === 'withdraw' && 'Rút yêu cầu duyệt bài tập'}
               {actionModal.type === 'hide' && 'Chuyển bài tập về riêng tư'}
             </h3>
 
-            {/* Content text */}
-            <div style={{ fontSize: 14, color: '#475569', lineHeight: 1.55, margin: '0 0 16px' }}>
+            <div style={{ fontSize: 14, color: 'var(--muted)', lineHeight: 1.55, margin: '0 0 16px' }}>
               {actionModal.type === 'publish' && (
                 <p style={{ margin: 0 }}>
-                  Bạn có chắc muốn gửi đề thi <b style={{ color: '#0F172A' }}>"{actionModal.quizTitle}"</b> cho Giảng viên duyệt để công khai cho cộng đồng?
+                  Bạn có chắc muốn gửi đề thi <b>"{actionModal.quizTitle}"</b> cho Giảng viên duyệt để công khai cho cộng đồng?
                 </p>
               )}
               {actionModal.type === 'withdraw' && (
                 <p style={{ margin: 0 }}>
-                  Bạn có chắc muốn rút yêu cầu duyệt đề thi <b style={{ color: '#0F172A' }}>"{actionModal.quizTitle}"</b> về chế độ riêng tư?
+                  Bạn có chắc muốn rút yêu cầu duyệt đề thi <b>"{actionModal.quizTitle}"</b> về chế độ riêng tư?
                 </p>
               )}
               {actionModal.type === 'hide' && (
                 <p style={{ margin: 0 }}>
-                  Chuyển đề thi <b style={{ color: '#0F172A' }}>"{actionModal.quizTitle}"</b> về chế độ riêng tư (chỉ bạn thấy)? Người khác sẽ không thấy bài này trong danh sách chung nữa.
+                  Chuyển đề thi <b>"{actionModal.quizTitle}"</b> về chế độ riêng tư (chỉ bạn thấy)? Người khác sẽ không thấy bài này trong danh sách chung nữa.
                 </p>
               )}
             </div>
 
-            {/* Helpful Callout Card */}
             <div
               style={{
                 borderRadius: 12,
@@ -1403,25 +1048,9 @@ export default function QuizList() {
                 display: 'flex',
                 gap: 10,
                 alignItems: 'flex-start',
-                background:
-                  actionModal.type === 'publish'
-                    ? '#F5F3FF'
-                    : actionModal.type === 'withdraw'
-                    ? '#FFFBEB'
-                    : '#F8FAFC',
-                border: `1px solid ${
-                  actionModal.type === 'publish'
-                    ? '#DDD6FE'
-                    : actionModal.type === 'withdraw'
-                    ? '#FDE68A'
-                    : '#E2E8F0'
-                }`,
-                color:
-                  actionModal.type === 'publish'
-                    ? '#6D28D9'
-                    : actionModal.type === 'withdraw'
-                    ? '#B45309'
-                    : '#475569',
+                background: actionModal.type === 'withdraw' ? 'var(--amber-bg)' : 'rgba(71, 96, 63, 0.1)',
+                border: `1px solid ${actionModal.type === 'withdraw' ? 'rgba(201,134,47,0.3)' : 'rgba(71,96,63,0.22)'}`,
+                color: actionModal.type === 'withdraw' ? 'var(--amber-dark)' : 'var(--ink)',
               }}
             >
               <div style={{ flexShrink: 0, marginTop: 1 }}>
@@ -1430,94 +1059,44 @@ export default function QuizList() {
               <div>
                 {actionModal.type === 'publish' && (
                   <span>
-                    Sau khi Giảng viên phê duyệt, bài tập sẽ xuất hiện công khai để tất cả học viên cùng luyện tập. Trong lúc chờ duyệt, bạn tạm thời không thể sửa câu hỏi.
+                    Sau khi Giảng viên phê duyệt, bài tập sẽ xuất hiện công khai để tất cả học viên cùng luyện tập.
                   </span>
                 )}
                 {actionModal.type === 'withdraw' && (
                   <span>
-                    Bài tập sẽ trở về trạng thái riêng tư và Giảng viên sẽ ngừng xét duyệt. Bạn có thể chỉnh sửa lại nội dung bất cứ lúc nào.
+                    Bài tập sẽ trở về trạng thái riêng tư và bạn có thể chỉnh sửa lại nội dung bất cứ lúc nào.
                   </span>
                 )}
                 {actionModal.type === 'hide' && (
                   <span>
-                    Bài tập sẽ được ẩn khỏi danh sách chung. Bạn vẫn có thể luyện tập bình thường trong mục Bài tập của tôi.
+                    Bài tập sẽ được ẩn khỏi danh sách chung. Bạn vẫn có thể luyện tập trong mục Bài tập của tôi.
                   </span>
                 )}
               </div>
             </div>
 
-            {/* Action buttons */}
-            <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+            <div className="row" style={{ gap: 10 }}>
               <button
                 type="button"
-                className="btn ghost"
+                className="btn secondary"
+                style={{ flex: 1 }}
                 onClick={() => setActionModal((prev) => ({ ...prev, isOpen: false }))}
                 disabled={actionSubmitting}
-                style={{
-                  flex: 1,
-                  padding: '10px 16px',
-                  borderRadius: 12,
-                  fontWeight: 700,
-                  fontSize: 13.5,
-                  borderColor: '#CBD5E1',
-                  color: '#475569',
-                }}
               >
                 Hủy bỏ
               </button>
-
               <button
                 type="button"
                 className="btn"
+                style={{ flex: 1.25 }}
                 onClick={handleConfirmAction}
                 disabled={actionSubmitting}
-                style={{
-                  flex: 1.25,
-                  padding: '10px 16px',
-                  borderRadius: 12,
-                  fontWeight: 800,
-                  fontSize: 13.5,
-                  color: '#FFFFFF',
-                  background:
-                    actionModal.type === 'publish'
-                      ? 'linear-gradient(135deg, #4F46E5 0%, #6366F1 100%)'
-                      : actionModal.type === 'withdraw'
-                      ? '#D97706'
-                      : '#475569',
-                  border: 'none',
-                  cursor: actionSubmitting ? 'wait' : 'pointer',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: 8,
-                  boxShadow:
-                    actionModal.type === 'publish'
-                      ? '0 4px 14px rgba(79, 70, 229, 0.3)'
-                      : '0 4px 12px rgba(0, 0, 0, 0.12)',
-                }}
               >
-                {actionSubmitting ? (
+                {actionSubmitting ? 'Đang xử lý...' : (
                   <>
-                    <div
-                      className="spinner"
-                      style={{
-                        width: 14,
-                        height: 14,
-                        borderWidth: 2,
-                        borderColor: '#FFFFFF',
-                        borderTopColor: 'transparent',
-                      }}
-                    />
-                    <span>Đang xử lý...</span>
-                  </>
-                ) : (
-                  <>
-                    {actionModal.type === 'publish' && <Icon n="send" s={15} />}
-                    <span>
-                      {actionModal.type === 'publish' && 'Xác nhận gửi duyệt'}
-                      {actionModal.type === 'withdraw' && 'Rút yêu cầu'}
-                      {actionModal.type === 'hide' && 'Chuyển riêng tư'}
-                    </span>
+                    {actionModal.type === 'publish' && 'Xác nhận gửi duyệt'}
+                    {actionModal.type === 'withdraw' && 'Rút yêu cầu'}
+                    {actionModal.type === 'hide' && 'Chuyển riêng tư'}
                   </>
                 )}
               </button>

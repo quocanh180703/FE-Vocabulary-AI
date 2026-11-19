@@ -6,7 +6,9 @@ import { Icon } from '../components/icons';
 import { ConfirmModal } from '../components/ConfirmModal';
 import { AutocompleteSearch } from '../components/AutocompleteSearch';
 import { messageBubbleVariant } from '../motion';
-import viAvatar from '../assets/vi-3d.webp';
+import { ViMascotImage } from '../components/ViMascotImage';
+import { UiIcon } from '../components/UiIcon';
+import { SplitHeading } from '../components/SageEffects';
 import { QuotaBadge } from '../components/QuotaBadge';
 import { useUsage } from '../context/UsageContext';
 
@@ -171,10 +173,10 @@ function ChatMarkdownView({ content }: { content: string }) {
 
 // ---------------- Suggested Prompts ----------------
 const STARTER_PROMPTS = [
-  '💡 Phân biệt Affect và Effect',
-  '📝 Sửa ngữ pháp: "She don\'t like apple"',
-  '🎯 5 cách chào hỏi tự nhiên trong công việc',
-  '🗣️ Cách dùng thì Hiện tại hoàn thành (Present Perfect)',
+  'Phân biệt Affect và Effect',
+  'Sửa ngữ pháp: "She don\'t like apple"',
+  '5 cách chào hỏi tự nhiên trong công việc',
+  'Cách dùng thì Hiện tại hoàn thành (Present Perfect)',
 ];
 
 export default function Chat() {
@@ -368,27 +370,39 @@ export default function Chat() {
   const isCurPinned = cur ? pinnedIds.includes(cur) : false;
 
   return (
-    <div className="content" style={{ maxWidth: 1600 }}>
-      {/* Page Header */}
+    <div className="content">
+      {/* Compact Page Header */}
       <div className="pagehead">
-        <h1>Trò chuyện với Vi</h1>
-        <div className="sub">Hỏi nghĩa từ, luyện viết câu, giải thích ngữ pháp — Vi trả lời ngay</div>
+        <div>
+          <div className="eyebrow">VI AI TUTOR · CONVERSATION</div>
+          <SplitHeading text="Trò chuyện với Vi" />
+          <p className="sub">Hỏi nghĩa từ, luyện viết câu, giải thích ngữ pháp — Vi trả lời ngay</p>
+        </div>
+        <QuotaBadge featureKey="chat" labelSuffix="lượt hôm nay" />
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '320px 1fr', gap: 18, alignItems: 'start' }}>
+      {/* Viewport-Locked 2-Column Chat Workspace */}
+      <div
+        className="cols2"
+        style={{
+          gridTemplateColumns: '280px minmax(0, 1fr)',
+          flex: 1,
+          minHeight: 0,
+          alignItems: 'stretch',
+        }}
+      >
         {/* Left Sidebar: Conversations list */}
-        <div className="card" style={{ padding: 14 }}>
+        <div className="card colstack" style={{ padding: 12, gap: 10, minHeight: 0 }}>
           <button
             type="button"
-            className="btn block"
-            style={{ minHeight: 48 }}
+            className="btn block sm"
+            style={{ flex: 'none' }}
             onClick={newConv}
           >
-            <Icon n="pen" s={18} /> Cuộc trò chuyện mới
+            <Icon n="pen" s={16} /> Cuộc trò chuyện mới
           </button>
 
-          {/* Search bar with autocomplete */}
-          <div style={{ marginTop: 10 }}>
+          <div style={{ flex: 'none' }}>
             <AutocompleteSearch
               value={search}
               onChange={setSearch}
@@ -408,34 +422,31 @@ export default function Chat() {
                 raw: c,
               }))}
               limit={6}
-              inputStyle={{ height: 40, fontSize: 13, borderRadius: 12, paddingLeft: 38 }}
+              inputStyle={{ height: 38, fontSize: 13, borderRadius: 10, paddingLeft: 36 }}
             />
           </div>
 
-          {/* Scrollable Conversation List */}
-          <div className="conv mt8" style={{ maxHeight: 520, overflowY: 'auto' }}>
-            {/* Pinned Section */}
+          <div className="conv long-list" style={{ flex: 1, minHeight: 0, paddingRight: 2 }}>
             {pinnedList.length > 0 && (
               <div style={{ marginBottom: 6 }}>
-                <div style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: 0.8, color: 'var(--yellow-dark)', padding: '4px 8px 6px', display: 'flex', alignItems: 'center', gap: 4 }}>
-                  <span>📌</span> Đã ghim ({pinnedList.length})
+                <div style={{ fontSize: 10.5, fontWeight: 800, textTransform: 'uppercase', letterSpacing: 0.8, color: 'var(--amber-dark)', padding: '4px 8px' }}>
+                  <UiIcon name="pin" size={12} /> Đã ghim ({pinnedList.length})
                 </div>
                 {pinnedList.map((c) => renderConvItem(c, true))}
               </div>
             )}
 
-            {/* Other / Recent Section */}
             <div>
               {pinnedList.length > 0 && (
-                <div style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: 0.8, color: 'var(--muted)', padding: '6px 8px 4px' }}>
-                  💬 Gần đây ({otherList.length})
+                <div style={{ fontSize: 10.5, fontWeight: 800, textTransform: 'uppercase', letterSpacing: 0.8, color: 'var(--muted)', padding: '6px 8px 4px' }}>
+                  <UiIcon name="message" size={12} /> Gần đây ({otherList.length})
                 </div>
               )}
               {otherList.map((c) => renderConvItem(c, false))}
             </div>
 
             {filteredConvs.length === 0 && (
-              <div className="center" style={{ padding: 24, fontSize: 13, color: 'var(--muted)' }}>
+              <div className="center" style={{ padding: 20, fontSize: 13, color: 'var(--muted)' }}>
                 {search ? 'Không tìm thấy đoạn chat nào.' : 'Chưa có đoạn chat nào.'}
               </div>
             )}
@@ -443,62 +454,43 @@ export default function Chat() {
         </div>
 
         {/* Right Chat Panel */}
-        <div className="card" style={{ padding: 22, display: 'flex', flexDirection: 'column', minHeight: 620 }}>
+        <div className="card colstack" style={{ padding: 16, gap: 10, minHeight: 0 }}>
           {/* Chat Window Header */}
           <div
+            className="row between"
             style={{
-              paddingBottom: 14,
+              paddingBottom: 10,
               borderBottom: '1px solid var(--line)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              gap: 12,
+              flex: 'none',
+              flexWrap: 'wrap',
+              gap: 10,
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0, flex: 1 }}>
-              <div style={{ position: 'relative', flexShrink: 0 }}>
-                <img
-                  src={viAvatar}
-                  alt="Vi"
-                  style={{ width: 42, height: 42, borderRadius: '50%', objectFit: 'cover' }}
-                />
-                <span
-                  style={{
-                    position: 'absolute',
-                    bottom: 0,
-                    right: 0,
-                    width: 10,
-                    height: 10,
-                    borderRadius: '50%',
-                    background: 'var(--green)',
-                    border: '2px solid #fff',
-                  }}
-                  title="Vi đang online"
-                />
-              </div>
+            <div className="row" style={{ gap: 10, minWidth: 0, flex: 1 }}>
+              <ViMascotImage
+                pose="explain"
+                size={44}
+                priority
+                alt="Vi trợ lý AI giải thích tiếng Anh"
+              />
               <div style={{ minWidth: 0, flex: 1 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <b style={{ fontSize: 15.5, color: 'var(--ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                <div className="row" style={{ gap: 6 }}>
+                  <b style={{ fontSize: 15, color: 'var(--ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {curConv?.title || 'Trò chuyện cùng Vi'}
                   </b>
-                  {isCurPinned && <span title="Đoạn chat đã được ghim">📌</span>}
+                  {isCurPinned && <span title="Đoạn chat đã được ghim"><UiIcon name="pin" size={13} /></span>}
                 </div>
-                <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 2 }}>
-                  Trợ lý AI tiếng Anh · Phản hồi thông minh 24/7
-                </div>
+                <div className="tiny muted">Trợ lý AI tiếng Anh · Phản hồi thông minh</div>
               </div>
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
-              <QuotaBadge featureKey="chat" labelSuffix="lượt hôm nay" />
-              {curConv && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            {curConv && (
+              <div className="row" style={{ gap: 6 }}>
                 <button
                   type="button"
                   className="btn ghost sm"
                   onClick={() => cur && togglePin(cur)}
                   title={isCurPinned ? 'Bỏ ghim' : 'Ghim'}
-                  style={{ padding: '6px 10px', fontSize: 12.5 }}
                 >
                   <Icon n="pin" s={14} />
                   <span>{isCurPinned ? 'Đã ghim' : 'Ghim'}</span>
@@ -508,61 +500,49 @@ export default function Chat() {
                   className="btn ghost sm"
                   onClick={() => curConv && startRename(curConv)}
                   title="Đổi tên"
-                  style={{ padding: '6px 10px', fontSize: 12.5 }}
                 >
                   <Icon n="edit" s={14} />
                   <span>Đổi tên</span>
                 </button>
                 <button
                   type="button"
-                  className="btn ghost sm"
+                  className="btn softred sm"
                   onClick={() => cur && setConvToDelete({ id: cur, title: curConv?.title || 'Đoạn hội thoại này' })}
                   title="Xóa"
-                  style={{ padding: '6px 10px', color: 'var(--red-dark)', borderColor: 'rgba(229,72,77,0.3)' }}
                 >
                   <Icon n="trash" s={14} />
                 </button>
               </div>
             )}
-            </div>
           </div>
 
-          {err && <div className="error mt8">{err}</div>}
+          {err && <div className="error">{err}</div>}
 
           {/* Messages Scroll Area */}
-          <div className="chatwin" style={{ flex: 1, overflowY: 'auto', maxHeight: 460, padding: '16px 4px' }}>
+          <div className="chat-window long-list" style={{ flex: 1, minHeight: 0, padding: '8px 4px' }}>
             {msgs.length === 0 && (
-              <div className="center" style={{ padding: '40px 20px', maxWidth: 480, margin: '0 auto' }}>
-                <img src={viAvatar} alt="Vi" style={{ width: 72, height: 72, objectFit: 'contain' }} />
-                <h3 style={{ marginTop: 14, marginBottom: 6 }}>Chào bạn! Vi có thể giúp gì cho bạn?</h3>
-                <div className="sub" style={{ fontSize: 13.5, lineHeight: 1.5 }}>
+              <div className="center" style={{ padding: '20px 16px', maxWidth: 480, margin: 'auto', gap: 10 }}>
+                <ViMascotImage
+                  pose="explain"
+                  size={76}
+                  alt="Vi chào bạn — hãy hỏi bất kỳ câu hỏi tiếng Anh nào"
+                />
+                <h3 style={{ margin: 0, fontSize: 17 }}>Chào bạn! Vi có thể giúp gì cho bạn?</h3>
+                <div className="tiny muted">
                   Hỏi mình nghĩa từ, sửa câu, gợi ý từ vựng theo chủ đề hoặc giải thích cấu trúc ngữ pháp nhé!
                 </div>
 
-                {/* Prompt suggestion chips */}
-                <div style={{ marginTop: 20, display: 'flex', flexDirection: 'column', gap: 8, width: '100%', textAlign: 'left' }}>
-                  <div style={{ fontSize: 11.5, fontWeight: 800, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: 0.5 }}>
-                    Gợi ý câu hỏi nhanh:
-                  </div>
+                <div className="colstack" style={{ gap: 6, width: '100%', textAlign: 'left', marginTop: 6 }}>
+                  <div className="overline">Gợi ý câu hỏi nhanh</div>
                   {STARTER_PROMPTS.map((prompt, idx) => (
                     <button
                       key={idx}
                       type="button"
                       className="taskrow"
-                      style={{
-                        cursor: 'pointer',
-                        border: '1px solid var(--line)',
-                        background: '#fff',
-                        textAlign: 'left',
-                        padding: '10px 14px',
-                        fontSize: 13.5,
-                        fontWeight: 700,
-                        color: 'var(--ink)',
-                        width: '100%',
-                      }}
+                      style={{ cursor: 'pointer', textAlign: 'left', width: '100%', padding: '8px 12px' }}
                       onClick={() => send(prompt)}
                     >
-                      {prompt}
+                      <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink)' }}>{prompt}</span>
                     </button>
                   ))}
                 </div>
@@ -586,10 +566,10 @@ export default function Chat() {
                 >
                   <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, maxWidth: '85%' }}>
                     {!isMe && (
-                      <img
-                        src={viAvatar}
-                        alt="Vi"
-                        style={{ width: 32, height: 32, borderRadius: '50%', objectFit: 'cover', flexShrink: 0, marginTop: 4 }}
+                      <ViMascotImage
+                        pose="explain"
+                        size={34}
+                        alt="Vi AI trả lời câu hỏi"
                       />
                     )}
                     <div className={'msg ' + (isMe ? 'me' : 'ai')}>
@@ -601,25 +581,13 @@ export default function Chat() {
                     </div>
                   </div>
 
-                  {/* Actions under AI message: Copy button */}
                   {!isMe && (
-                    <div style={{ marginLeft: 40, display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <div style={{ marginLeft: 42, display: 'flex', alignItems: 'center', gap: 10 }}>
                       <button
                         type="button"
                         onClick={() => copyToClipboard(m.id, m.content)}
-                        style={{
-                          background: 'none',
-                          border: 'none',
-                          cursor: 'pointer',
-                          fontSize: 11.5,
-                          padding: '2px 8px',
-                          borderRadius: 6,
-                          color: 'var(--muted)',
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: 4,
-                          fontWeight: 700,
-                        }}
+                        className="btn ghost sm"
+                        style={{ padding: '2px 8px', fontSize: 11.5 }}
                         title="Sao chép câu trả lời"
                       >
                         {copiedId === m.id ? (
@@ -649,10 +617,10 @@ export default function Chat() {
                   transition={{ duration: 0.2 }}
                   style={{ display: 'flex', alignItems: 'center', gap: 10 }}
                 >
-                  <img
-                    src={viAvatar}
-                    alt="Vi"
-                    style={{ width: 32, height: 32, borderRadius: '50%', objectFit: 'cover' }}
+                  <ViMascotImage
+                    pose="thinking"
+                    size={36}
+                    alt="Vi đang suy nghĩ câu trả lời"
                   />
                   <div className="msg ai" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <span className="copilot-dot" />
@@ -666,8 +634,8 @@ export default function Chat() {
             <div ref={bottom} />
           </div>
 
-          {/* Chatbar / Input Box */}
-          <div className="chatbar mt16">
+          {/* Chatbar / Input Box pinned at bottom */}
+          <div className="chatbar" style={{ flex: 'none' }}>
             <input
               value={text}
               onChange={(e) => setText(e.target.value)}
@@ -687,7 +655,7 @@ export default function Chat() {
               disabled={busy || !text.trim()}
               aria-label="Gửi tin nhắn"
             >
-              <Icon n="send" s={20} />
+              <Icon n="send" s={18} />
             </button>
           </div>
         </div>
@@ -773,7 +741,7 @@ export default function Chat() {
       >
         <span className="wchk" style={{ flexShrink: 0 }}>
           {isPinned ? (
-            <span style={{ fontSize: 12 }}>📌</span>
+            <UiIcon name="pin" size={12} />
           ) : (
             <Icon n="spark" s={14} />
           )}

@@ -73,12 +73,12 @@ export const getPartOfSpeechBadgeStyle = (pos?: string): PosBadgeStyle => {
   }
   if (p === 'ADJECTIVE' || p === 'ADJ') {
     return {
-      bg: '#e0f2fe',
-      color: '#0369a1',
-      border: '#7dd3fc',
+      bg: 'rgba(47, 122, 104, 0.12)',
+      color: '#1f5c4e',
+      border: 'rgba(47, 122, 104, 0.32)',
       label: 'Tính từ (Adjective)',
       shortLabel: 'Tính từ',
-      icon: '🔵',
+      icon: '🟢',
     };
   }
   if (p === 'NOUN') {

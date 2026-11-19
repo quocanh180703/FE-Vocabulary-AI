@@ -1,5 +1,5 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react';
-import vi3dImg from '../assets/vi-3d.webp';
+import { ApiErrorState } from './states/SageStates';
 
 interface Props {
   children: ReactNode;
@@ -28,48 +28,12 @@ export class ErrorBoundary extends Component<Props, State> {
     if (this.state.hasError) {
       return (
         <div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}>
-          <div className="errcard">
-            <img src={vi3dImg} alt="Vi Mascot" />
-            <h1>Đã có lỗi xảy ra</h1>
-            <p className="sub" style={{ marginTop: '10px', lineHeight: 1.65 }}>
-              Rất tiếc, đã có sự cố ngoài ý muốn khi tải nội dung này. Dữ liệu học của bạn vẫn an toàn — bạn thử lại hoặc quay về trang chính nhé.
-            </p>
-            {this.state.error && (
-              <div
-                style={{
-                  marginTop: '16px',
-                  padding: '12px 14px',
-                  background: 'var(--red-bg)',
-                  color: 'var(--red-dark)',
-                  borderRadius: '12px',
-                  fontSize: '13px',
-                  textAlign: 'left',
-                  overflowX: 'auto',
-                  fontFamily: 'monospace',
-                }}
-              >
-                {this.state.error.message}
-              </div>
-            )}
-            <div className="btn-row" style={{ justifyContent: 'center', marginTop: '24px', gap: '12px' }}>
-              <button
-                type="button"
-                className="btn ghost"
-                style={{ minHeight: '48px', padding: '0 22px' }}
-                onClick={() => { window.location.href = '/dashboard'; }}
-              >
-                Về trang chính
-              </button>
-              <button
-                type="button"
-                className="btn"
-                style={{ minHeight: '48px', padding: '0 22px' }}
-                onClick={() => this.setState({ hasError: false, error: null })}
-              >
-                Thử lại
-              </button>
-            </div>
-          </div>
+          <ApiErrorState
+            title="Đã xảy ra sự cố hiển thị"
+            description="Dữ liệu học tập của bạn vẫn an toàn. Hãy tải lại trang để tiếp tục buổi học cùng Vi."
+            errorDetail={this.state.error?.message}
+            onRetry={() => window.location.reload()}
+          />
         </div>
       );
     }

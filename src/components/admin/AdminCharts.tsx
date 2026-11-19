@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { Icon } from '../icons';
+import { ViLoadingScreen } from '../states/ViLoadingScreen';
 
 /* ==========================================================================
    1. ACTIVITY TREND CHART (AREA / LINE CHART)
@@ -302,7 +303,7 @@ export function ActivityTrendChart({ data, loading, defaultMetric = 'sessions' }
             fontWeight: 700,
             color: '#6366F1'
           }}>
-            Đang tải dữ liệu biểu đồ...
+            <ViLoadingScreen compact subtitle="Đang tải dữ liệu biểu đồ" />
           </div>
         )}
 

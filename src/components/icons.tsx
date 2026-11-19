@@ -97,13 +97,18 @@ export const Icon = ({
   </span>
 );
 export const Mascot = ({ s = 40 }: { s?: number }) => (
-  <svg viewBox="0 0 72 72" width={s} height={s}>
-    <ellipse cx="36" cy="40" rx="26" ry="24" fill="#359E7D"/><ellipse cx="36" cy="50" rx="14" ry="11" fill="#C2E4D2"/>
-    <rect x="30" y="8" width="5" height="12" rx="2.5" fill="#E5484D" transform="rotate(-15 32 14)"/>
-    <rect x="36" y="6" width="5" height="13" rx="2.5" fill="#B57F1F"/>
-    <rect x="42" y="8" width="5" height="12" rx="2.5" fill="#1565C0" transform="rotate(15 44 14)"/>
-    <circle cx="27" cy="32" r="8" fill="#fff"/><circle cx="27.5" cy="33" r="3.6" fill="#0A2540"/>
-    <circle cx="45" cy="32" r="8" fill="#fff"/><circle cx="45.5" cy="33" r="3.6" fill="#0A2540"/>
-    <path d="M31 42 Q36 38 41 42 Q36 50 31 42" fill="#C96F2E"/>
-  </svg>
+  <img
+    src="/mascot/vi-logo-transparent.webp"
+    alt="Biểu tượng Vi — VocabularyAI"
+    width={s}
+    height={s}
+    style={{
+      width: s,
+      height: s,
+      objectFit: 'contain',
+      display: 'block',
+      flexShrink: 0,
+      filter: 'drop-shadow(0 4px 8px rgba(10, 28, 18, 0.22))',
+    }}
+  />
 );

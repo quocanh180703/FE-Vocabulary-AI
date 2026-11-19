@@ -6,6 +6,7 @@ import type { AdminStudent, AdminStudentDetail } from '../../api';
 import { useAuth } from '../../auth/AuthContext';
 import { AutocompleteSearch } from '../../components/AutocompleteSearch';
 import { Icon } from '../../components/icons';
+import { ViLoadingScreen } from '../../components/states/ViLoadingScreen';
 import { MotionCard, AnimatedCounter, modalVariants, backdropVariants } from '../../motion';
 
 const STATUS_FILTERS = [
@@ -306,8 +307,8 @@ export default function AdminUsers() {
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={roleTab === 'STUDENT' ? 7 : 6} style={{ padding: 40, textAlign: 'center', color: 'var(--muted)' }}>
-                  Đang tải danh sách...
+                <td colSpan={roleTab === 'STUDENT' ? 7 : 6} style={{ padding: 16 }}>
+                  <ViLoadingScreen compact subtitle="Đang tải danh sách người dùng" />
                 </td>
               </tr>
             ) : students.length === 0 ? (

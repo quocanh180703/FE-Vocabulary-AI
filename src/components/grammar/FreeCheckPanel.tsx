@@ -3,7 +3,8 @@ import { aiApi, errMsg } from '../../api';
 import type { GrammarResp } from '../../api';
 import { useUsage } from '../../context/UsageContext';
 import { MotionCard } from '../../motion';
-import viAvatar from '../../assets/vi-3d.webp';
+import { ViMascotImage } from '../ViMascotImage';
+import { UiIcon } from '../UiIcon';
 import ResultPanel from './ResultPanel';
 
 const SAMPLE_SENTENCES = [
@@ -39,9 +40,9 @@ export default function FreeCheckPanel() {
   };
 
   return (
-    <div className="cols2" style={{ alignItems: 'start' }}>
+    <div className="cols2" style={{ alignItems: 'stretch', flex: 1, minHeight: 0 }}>
       {/* Left Column: Input */}
-      <MotionCard className="card">
+      <MotionCard className="card" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         <h2>
           <span className="dot" />
           Câu của bạn
@@ -61,7 +62,7 @@ export default function FreeCheckPanel() {
 
         <div style={{ marginTop: 12 }}>
           <span style={{ fontSize: 12, fontWeight: 800, color: 'var(--muted)', display: 'block', marginBottom: 6 }}>
-            💡 Thử nhanh câu mẫu:
+            <UiIcon name="lightbulb" size={14} /> Thử nhanh câu mẫu:
           </span>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
             {SAMPLE_SENTENCES.map((s, idx) => (
@@ -78,7 +79,7 @@ export default function FreeCheckPanel() {
                   fontWeight: 700,
                   color: 'var(--muted)',
                   cursor: 'pointer',
-                  transition: 'all 0.15s var(--ease-gentle)',
+                  transition: 'border-color var(--dur-micro) var(--ease), color var(--dur-micro) var(--ease)',
                 }}
                 onMouseEnter={(e) => (e.currentTarget.style.borderColor = 'var(--primary)')}
                 onMouseLeave={(e) => (e.currentTarget.style.borderColor = 'var(--line)')}
@@ -106,10 +107,10 @@ export default function FreeCheckPanel() {
       </MotionCard>
 
       {/* Right Column: Output */}
-      <div>
+      <div className="long-list" style={{ paddingRight: 4 }}>
         {!res && !busy && (
-          <div className="card center" style={{ padding: '48px 24px' }}>
-            <img src={viAvatar} alt="Vi" style={{ width: 72, height: 72, objectFit: 'contain' }} />
+          <div className="card center" style={{ padding: '44px 24px' }}>
+            <ViMascotImage pose="thinking" size={76} alt="Vi đang chờ câu tiếng Anh của bạn để phân tích" />
             <b style={{ fontSize: 16, color: 'var(--ink)', display: 'block', marginTop: 12 }}>
               Kết quả phân tích sẽ xuất hiện ở đây
             </b>
@@ -120,13 +121,9 @@ export default function FreeCheckPanel() {
         )}
 
         {busy && (
-          <div className="card center" style={{ padding: '48px 24px' }}>
-            <img
-              src={viAvatar}
-              alt="Vi"
-              style={{ width: 64, height: 64, objectFit: 'contain', animation: 'float 2s ease-in-out infinite' }}
-            />
-            <div className="mt16" style={{ fontWeight: 700, color: 'var(--primary)' }}>
+          <div className="card center" style={{ padding: '44px 24px' }}>
+            <ViMascotImage pose="thinking" size={72} alt="Vi đang suy nghĩ và kiểm tra ngữ pháp cho bạn" />
+            <div className="mt16" style={{ fontWeight: 700, color: 'var(--sage-dark)' }}>
               Vi đang phân tích từng từ và cấu trúc ngữ pháp...
             </div>
           </div>
